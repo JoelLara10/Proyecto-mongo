@@ -4,6 +4,11 @@ import pymysql
 import bcrypt
 from datetime import datetime, date
 import pymysql.cursors
+import os
+import zipfile
+from datetime import datetime
+from flask import render_template, flash
+
 
 
 app = Flask(__name__)
@@ -84,7 +89,7 @@ def dashboard():
             {'name': 'Administrativo', 'url': url_for('administrativo')},
             {'name': 'Médico', 'url': url_for('medico')},
             {'name': 'Estudios', 'url': '#'},
-            {'name': 'Configuración', 'url': '#'}
+            {'name': 'Configuración', 'url': url_for('menu_configuracion')},
         ]
 
     return render_template('dashboard.html', role=role, menu_options=menu_options)
@@ -562,6 +567,152 @@ def expediente(id_atencion, id_exp):
         cuenta=cuenta,
         total=total
     )
+# ====================================================================================
+# ============================       CONFIGURACION      ===============================
+# ====================================================================================
+
+
+
+# -------------------- MENÚ CONFIGURACIÓN --------------------
+@app.route('/configuracion/configuracion')
+def menu_configuracion():
+    if 'user_id' not in session:
+        flash('Debes iniciar sesión', 'error')
+        return redirect(url_for('login'))
+
+    usuario = {
+        'username': session.get('username'),
+        'role': session.get('role')
+    }
+
+    return render_template(
+        'configuracion/menu_configuracion.html',
+        usuario=usuario
+    )
+
+
+# -------------------- MENÚ CAMAS --------------------
+@app.route('/configuracion/menu_camas')
+def menu_camas():
+    if 'user_id' not in session:
+        flash('Debes iniciar sesión', 'error')
+        return redirect(url_for('login'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    cursor.execute("SELECT * FROM camas ORDER BY numero ASC")
+    camas = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return render_template(
+        'configuracion/camas/menu_camas.html',
+        camas=camas
+    )
+
+
+# -------------------- ALTA DE CAMAS --------------------
+@app.route('/configuracion/alta_camas', methods=['GET', 'POST'])
+def alta_camas():
+    if 'user_id' not in session or session.get('role') != 'admin':
+        flash('Acceso denegado.', 'error')
+        return redirect(url_for('dashboard'))
+
+    if request.method == 'POST':
+        try:
+            num_cama = request.form['num_cama']
+            estatus = request.form['estatus']
+            area = request.form['tipo']
+            tipo_habitacion = request.form['hab']
+            piso = request.form['piso']
+            seccion = request.form['seccion']
+
+            conn = get_db_connection()
+            cursor = conn.cursor()
+
+            # Validar duplicados
+            cursor.execute(
+                "SELECT id_cama FROM camas WHERE numero = %s",
+                (num_cama,)
+            )
+            if cursor.fetchone():
+                flash('Ya existe una cama con ese número.', 'warning')
+                return redirect(url_for('alta_camas'))
+
+            cursor.execute("""
+                INSERT INTO camas
+                (numero, estatus, area, tipo_habitacion, piso, seccion, ocupada)
+                VALUES (%s, %s, %s, %s, %s, %s, 0)
+            """, (
+                num_cama,
+                estatus,
+                area,
+                tipo_habitacion,
+                piso,
+                seccion
+            ))
+
+            conn.commit()
+            cursor.close()
+            conn.close()
+
+            flash('Cama registrada correctamente ✅', 'success')
+            return redirect(url_for('menu_camas'))
+
+        except Exception as e:
+            flash(f'Error al registrar cama: {e}', 'error')
+
+    return render_template(
+        'configuracion/camas/alta_camas.html'
+    )
+
+
+# -------------------- COPIAS DE SEGURIDAD --------------------
+@app.route('/configuracion/copias')
+def copias_seguridad():
+    if 'user_id' not in session or session.get('role') != 'admin':
+        flash('Acceso denegado.', 'error')
+        return redirect(url_for('dashboard'))
+
+    # Ruta base real del proyecto
+    ruta_proyecto = current_app.root_path
+
+    # Carpeta copias dentro de configuracion
+    carpeta_copias = os.path.join(
+        ruta_proyecto,
+        'configuracion',
+        'copias'
+    )
+    os.makedirs(carpeta_copias, exist_ok=True)
+
+    fecha = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+    nombre_zip = f'respaldo_{fecha}.zip'
+    ruta_zip = os.path.join(carpeta_copias, nombre_zip)
+
+    with zipfile.ZipFile(ruta_zip, 'w', zipfile.ZIP_DEFLATED) as zipf:
+        for carpeta, _, archivos in os.walk(ruta_proyecto):
+
+            # Excluir copias y entorno virtual
+            if 'copias' in carpeta or 'venv' in carpeta:
+                continue
+
+            for archivo in archivos:
+                ruta_completa = os.path.join(carpeta, archivo)
+                ruta_relativa = os.path.relpath(
+                    ruta_completa,
+                    ruta_proyecto
+                )
+                zipf.write(ruta_completa, ruta_relativa)
+
+    flash('Copia de seguridad creada correctamente 🛡️', 'success')
+
+    return render_template(
+        'configuracion/copias/copias_seguridad.html',
+        archivo=nombre_zip
+    )
+
 
 
 # ====================================================================================

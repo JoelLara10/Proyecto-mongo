@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Gestión de Camas</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+
+  <style>
+    body {
+      background-color: #f4f6f9;
+    }
+
+    .navbar {
+      background-color: #1e3c72;
+    }
+
+    .navbar-brand, .navbar-text {
+      color: #ffffff !important;
+    }
+
+    .table thead {
+      background: #1e3c72;
+      color: white;
+    }
+
+    .badge-status {
+      font-size: 0.85rem;
+      padding: 6px 10px;
+      border-radius: 12px;
+    }
+  </style>
+</head>
+
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar navbar-expand-lg shadow">
+  <div class="container-fluid">
+
+    <a href="{{ url_for('menu_configuracion') }}" class="btn btn-outline-light btn-sm me-3">
+      <i class="bi bi-arrow-left"></i> Configuración
+    </a>
+
+    <span class="navbar-brand fw-semibold">
+      <i class="bi bi-bed-fill"></i> Gestión de Camas
+    </span>
+
+    <div class="ms-auto">
+      <a href="{{ url_for('logout') }}" class="btn btn-outline-light btn-sm">
+        <i class="bi bi-box-arrow-right"></i> Cerrar sesión
+      </a>
+    </div>
+  </div>
+</nav>
+
+<!-- CONTENIDO -->
+<div class="container mt-4">
+
+  <!-- MENSAJES -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <!-- BOTÓN AGREGAR -->
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="fw-semibold">Listado de Camas</h4>
+
+    <a href="{{ url_for('alta_camas') }}" class="btn btn-success">
+      <i class="bi bi-plus-circle"></i> Nueva Cama
+    </a>
+  </div>
+
+  <!-- TABLA -->
+  <div class="card shadow-sm">
+    <div class="card-body table-responsive">
+
+      <table class="table table-bordered table-hover align-middle">
+        <thead>
+          <tr class="text-center">
+            <th>#</th>
+            <th>Número</th>
+            <th>Área</th>
+            <th>Tipo</th>
+            <th>Piso</th>
+            <th>Sección</th>
+            <th>Estatus</th>
+            <th>Ocupación</th>
+          </tr>
+        </thead>
+        <tbody>
+
+        {% if camas %}
+          {% for cama in camas %}
+          <tr class="text-center">
+            <td>{{ loop.index }}</td>
+            <td>{{ cama.numero }}</td>
+            <td>{{ cama.area }}</td>
+            <td>{{ cama.tipo_habitacion }}</td>
+            <td>{{ cama.piso }}</td>
+            <td>{{ cama.seccion }}</td>
+
+            <td>
+              {% if cama.estatus == 'LIBRE' %}
+                <span class="badge bg-success badge-status">LIBRE</span>
+              {% else %}
+                <span class="badge bg-warning text-dark badge-status">
+                  {{ cama.estatus }}
+                </span>
+              {% endif %}
+            </td>
+
+            <td>
+              {% if cama.ocupada == 1 %}
+                <span class="badge bg-danger badge-status">OCUPADA</span>
+              {% else %}
+                <span class="badge bg-secondary badge-status">DISPONIBLE</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="8" class="text-center text-muted py-4">
+              No hay camas registradas
+            </td>
+          </tr>
+        {% endif %}
+
+        </tbody>
+      </table>
+
+    </div>
+  </div>
+
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>
