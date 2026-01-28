@@ -1201,6 +1201,320 @@ def ver_resultado_gabinete(id_examen):
     )
 
 
+@app.route('/medico/diagnostico/<int:id_atencion>', methods=['GET', 'POST'])
+def diagnostico(id_atencion):
+
+    if 'user_id' not in session:
+        flash('Sesión no válida', 'error')
+        return redirect(url_for('dashboard'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
+
+    # ===== ESTADO ATENCIÓN =====
+    cursor.execute("""
+        SELECT status
+        FROM atencion
+        WHERE id_atencion = %s
+    """, (id_atencion,))
+    atencion = cursor.fetchone()
+
+    if not atencion:
+        flash('Atención no encontrada', 'danger')
+        return redirect(url_for('dashboard'))
+
+    # ===== POST =====
+    if request.method == 'POST':
+
+        if atencion['status'] == 'CERRADA':
+            flash('La atención está cerrada, no se puede modificar el diagnóstico', 'danger')
+            return redirect(url_for('diagnostico', id_atencion=id_atencion))
+
+        diagnostico_principal = request.form['diagnostico_principal']
+        secundarios = request.form.get('diagnosticos_secundarios')
+        observaciones = request.form.get('observaciones')
+
+        cursor.execute("""
+            SELECT id_diagnostico
+            FROM diagnosticos
+            WHERE id_atencion = %s
+        """, (id_atencion,))
+        existe = cursor.fetchone()
+
+        if existe:
+            cursor.execute("""
+                UPDATE diagnosticos
+                SET diagnostico_principal=%s,
+                    diagnosticos_secundarios=%s,
+                    observaciones=%s
+                WHERE id_atencion=%s
+            """, (diagnostico_principal, secundarios, observaciones, id_atencion))
+        else:
+            cursor.execute("""
+                INSERT INTO diagnosticos
+                (id_atencion, diagnostico_principal, diagnosticos_secundarios, observaciones)
+                VALUES (%s, %s, %s, %s)
+            """, (id_atencion, diagnostico_principal, secundarios, observaciones))
+
+        # ===== HISTORIAL =====
+        cursor.execute("""
+            INSERT INTO diagnosticos_historial
+            (id_atencion, diagnostico_principal, diagnosticos_secundarios, observaciones, id_medico)
+            VALUES (%s, %s, %s, %s, %s)
+        """, (
+            id_atencion,
+            diagnostico_principal,
+            secundarios,
+            observaciones,
+            session['user_id']
+        ))
+
+        conn.commit()
+        flash('Diagnóstico guardado correctamente', 'success')
+        return redirect(url_for('diagnostico', id_atencion=id_atencion))
+
+    # ===== GET =====
+    cursor.execute("""
+        SELECT *
+        FROM diagnosticos
+        WHERE id_atencion = %s
+    """, (id_atencion,))
+    diagnostico = cursor.fetchone()
+
+    cursor.execute("""
+        SELECT p.*
+        FROM atencion a
+        JOIN pacientes p ON a.Id_exp = p.Id_exp
+        WHERE a.id_atencion = %s
+    """, (id_atencion,))
+    paciente = cursor.fetchone()
+
+    cursor.close()
+    conn.close()
+
+    return render_template(
+        'medico/forms/diagnostico.html',
+        diagnostico=diagnostico,
+        paciente=paciente,
+        id_atencion=id_atencion,
+        status_atencion=atencion['status']
+    )
+
+
+
+@app.route('/medico/diagnostico/historial/<int:id_atencion>')
+def historial_diagnostico(id_atencion):
+
+    if 'user_id' not in session:
+        flash('Sesión no válida', 'error')
+        return redirect(url_for('dashboard'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
+
+    # ================= HISTORIAL =================
+    cursor.execute("""
+        SELECT dh.*, u.papell AS medico_papell
+        FROM diagnosticos_historial dh
+        JOIN users u ON dh.id_medico = u.id
+        WHERE dh.id_atencion = %s
+        ORDER BY dh.fecha_registro DESC
+    """, (id_atencion,))
+    historial = cursor.fetchall()
+
+    # ================= PACIENTE =================
+    cursor.execute("""
+        SELECT p.*
+        FROM atencion a
+        JOIN pacientes p ON a.Id_exp = p.Id_exp
+        WHERE a.id_atencion = %s
+    """, (id_atencion,))
+    paciente = cursor.fetchone()
+
+    cursor.close()
+    conn.close()
+
+    return render_template(
+        'medico/forms/historial_diagnostico.html',
+        historial=historial,
+        paciente=paciente,
+        id_atencion=id_atencion
+    )
+
+
+@app.route('/medico/nota-medica/<int:id_atencion>', methods=['GET', 'POST'])
+def nota_medica(id_atencion):
+
+    if 'user_id' not in session:
+        flash('Sesión no válida', 'error')
+        return redirect(url_for('dashboard'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
+
+    if request.method == 'POST':
+        cursor.execute("""
+            INSERT INTO notas_medicas
+            (id_atencion, subjetivo, objetivo, analisis, plan, id_medico)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """, (
+            id_atencion,
+            request.form['subjetivo'],
+            request.form['objetivo'],
+            request.form['analisis'],
+            request.form['plan'],
+            session['user_id']
+        ))
+
+        conn.commit()
+        flash('Nota médica registrada correctamente', 'success')
+        return redirect(url_for('nota_medica', id_atencion=id_atencion))
+
+    cursor.execute("""
+        SELECT p.*
+        FROM atencion a
+        JOIN pacientes p ON a.Id_exp = p.Id_exp
+        WHERE a.id_atencion = %s
+    """, (id_atencion,))
+    paciente = cursor.fetchone()
+
+    cursor.execute("""
+        SELECT *
+        FROM notas_medicas
+        WHERE id_atencion = %s
+        ORDER BY fecha_registro DESC
+    """, (id_atencion,))
+    notas = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return render_template(
+        'medico/forms/nota_medica.html',
+        paciente=paciente,
+        notas=notas,
+        id_atencion=id_atencion
+    )
+
+
+@app.route('/medico/receta/<int:id_atencion>', methods=['GET', 'POST'])
+def receta_medica(id_atencion):
+
+    if 'user_id' not in session:
+        flash('Sesión no válida', 'error')
+        return redirect(url_for('dashboard'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
+
+    # ================= GUARDAR RECETA =================
+    if request.method == 'POST':
+        cursor.execute("""
+            INSERT INTO recetas
+            (id_atencion, medicamento, dosis, frecuencia, duracion, indicaciones, id_medico)
+            VALUES (%s,%s,%s,%s,%s,%s,%s)
+        """, (
+            id_atencion,
+            request.form['medicamento'],
+            request.form['dosis'],
+            request.form['frecuencia'],
+            request.form['duracion'],
+            request.form['indicaciones'],
+            session['user_id']
+        ))
+
+        conn.commit()
+        flash('Receta guardada correctamente', 'success')
+        return redirect(url_for('receta_medica', id_atencion=id_atencion))
+
+    # ================= PACIENTE =================
+    cursor.execute("""
+        SELECT p.*
+        FROM atencion a
+        JOIN pacientes p ON a.Id_exp = p.Id_exp
+        WHERE a.id_atencion = %s
+    """, (id_atencion,))
+    paciente = cursor.fetchone()
+
+    # ================= RECETAS =================
+    cursor.execute("""
+        SELECT *
+        FROM recetas
+        WHERE id_atencion = %s
+        ORDER BY fecha_registro DESC
+    """, (id_atencion,))
+    recetas = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return render_template(
+        'medico/forms/receta.html',
+        paciente=paciente,
+        recetas=recetas,
+        id_atencion=id_atencion
+    )
+
+
+
+@app.route('/medico/signos-vitales/<int:id_atencion>', methods=['GET', 'POST'])
+def signos_vitales(id_atencion):
+
+    if 'user_id' not in session:
+        flash('Sesión no válida', 'error')
+        return redirect(url_for('dashboard'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
+
+    # ========= PACIENTE =========
+    cursor.execute("""
+        SELECT p.*
+        FROM atencion a
+        JOIN pacientes p ON a.Id_exp = p.Id_exp
+        WHERE a.id_atencion = %s
+    """, (id_atencion,))
+    paciente = cursor.fetchone()
+
+    if not paciente:
+        flash('Paciente no encontrado', 'error')
+        return redirect(url_for('dashboard'))
+
+    # ========= POST =========
+    if request.method == 'POST':
+        cursor.execute("""
+            INSERT INTO signos_vitales
+            (id_atencion, ta, fc, fr, temp, spo2, peso, talla)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
+        """, (
+            id_atencion,
+            request.form.get('ta'),
+            request.form.get('fc'),
+            request.form.get('fr'),
+            request.form.get('temp'),
+            request.form.get('spo2'),
+            request.form.get('peso'),
+            request.form.get('talla')
+        ))
+
+        conn.commit()
+        flash('Signos vitales registrados correctamente', 'success')
+        return redirect(url_for('signos_vitales', id_atencion=id_atencion))
+
+    cursor.close()
+    conn.close()
+
+    return render_template(
+        'medico/forms/signos_vitales.html',
+        paciente=paciente,
+        id_atencion=id_atencion
+    )
+
+
+
+
+
+
 @app.route('/logout')
 def logout():
     session.clear()

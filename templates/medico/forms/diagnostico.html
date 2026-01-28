@@ -1,0 +1,55 @@
+{% extends "base_medico.html" %}
+
+{% block content %}
+<section class="content-header">
+  <h1>
+    Diagnóstico Médico
+    <small>Registro clínico</small>
+  </h1>
+</section>
+
+<section class="content">
+  <div class="card card-primary">
+    <div class="card-header">
+      <h3 class="card-title">
+        <i class="fas fa-clipboard-list"></i> Diagnóstico
+      </h3>
+    </div>
+
+    <form method="POST">
+      <div class="card-body">
+
+        <div class="form-group">
+          <label>Diagnóstico principal</label>
+          <input type="text"
+                 name="diagnostico_principal"
+                 class="form-control"
+                 required
+                 value="{{ diagnostico.diagnostico_principal if diagnostico }}">
+        </div>
+
+        <div class="form-group">
+          <label>Diagnósticos secundarios</label>
+          <textarea name="diagnosticos_secundarios"
+                    class="form-control"
+                    rows="3">{{ diagnostico.diagnosticos_secundarios if diagnostico }}</textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Observaciones</label>
+          <textarea name="observaciones"
+                    class="form-control"
+                    rows="3">{{ diagnostico.observaciones if diagnostico }}</textarea>
+        </div>
+
+      </div>
+
+      <div class="card-footer text-right">
+        <button type="submit" class="btn btn-primary">
+          <i class="fas fa-save"></i> Guardar diagnóstico
+        </button>
+      </div>
+    </form>
+  </div>
+</section>
+{% endblock %}
