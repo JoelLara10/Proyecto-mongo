@@ -2,6 +2,10 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from templates.administrativo.pacientes.doc_pacientes import pdf
 import pymysql
 import bcrypt
+from flask import request, make_response
+from fpdf import FPDF
+from decimal import Decimal
+from datetime import datetime, timedelta
 from datetime import datetime, date
 import pymysql.cursors
 
@@ -1199,6 +1203,265 @@ def ver_resultado_gabinete(id_examen):
             'sapell': encabezado['sapell']
         }
     )
+# ==================== GESTIÓN DE CUENTAS ====================
+
+@app.route('/admin/cuenta_pacientes')
+def cuenta_pacientes():
+    if 'user_id' not in session or session['role'] != 'admin':
+        flash('Acceso denegado.', 'error')
+        return redirect(url_for('dashboard'))
+
+    return render_template('administrativo/gestion_cuentas/cuenta_pacientes.html')
+
+
+@app.route('/admin/presupuestos', methods=['GET', 'POST'])
+def presupuestos():
+    if 'user_id' not in session or session.get('role') != 'admin':
+        flash('Acceso denegado.', 'error')
+        return redirect(url_for('dashboard'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
+
+    # ⚠️ Temporal
+    id_pac = 1
+    nombre = 'PRUEBA'
+
+    IVA = Decimal('1.16')
+
+    # ======================
+    # INSERTAR SERVICIO
+    # ======================
+    if request.method == 'POST' and 'btnserv' in request.form:
+        serv_id = request.form.get('serv')
+        cantidad = int(request.form.get('cantidad'))
+
+        cursor.execute(
+            "SELECT serv_desc FROM cat_servicios WHERE id_serv = %s",
+            (serv_id,)
+        )
+        serv = cursor.fetchone()
+
+        if serv:
+            cursor.execute("""
+                INSERT INTO presupuesto
+                (fecha, id_pac, nombre, id_serv, servicio, cantidad)
+                VALUES (NOW(), %s, %s, %s, %s, %s)
+            """, (id_pac, nombre, serv_id, serv['serv_desc'], cantidad))
+            conn.commit()
+
+        return redirect(url_for('presupuestos'))
+
+    # ======================
+    # INSERTAR MEDICAMENTO
+    # ======================
+    if request.method == 'POST' and 'btnmed' in request.form:
+        item_id = request.form.get('med')
+        cantidad = int(request.form.get('cantidad'))
+
+        cursor.execute(
+            "SELECT item_code, item_name FROM item WHERE item_id = %s",
+            (item_id,)
+        )
+        item = cursor.fetchone()
+
+        if item:
+            cursor.execute("""
+                INSERT INTO presupuesto
+                (fecha, id_pac, nombre, id_serv, servicio, cantidad)
+                VALUES (NOW(), %s, %s, %s, %s, %s)
+            """, (id_pac, nombre, item['item_code'], item['item_name'], cantidad))
+            conn.commit()
+
+        return redirect(url_for('presupuestos'))
+
+    # ======================
+    # SELECTS PARA FORMULARIOS
+    # ======================
+    cursor.execute("""
+        SELECT id_serv, serv_desc, serv_costo
+        FROM cat_servicios
+        WHERE serv_activo = 'SI'
+    """)
+    servicios = cursor.fetchall()
+
+    cursor.execute("""
+        SELECT item_id, item_code, item_name, item_price
+        FROM item
+    """)
+    items = cursor.fetchall()
+
+    # ======================
+    # TABLA PRESUPUESTO - SERVICIOS
+    # ======================
+    cursor.execute("""
+        SELECT p.*, c.serv_costo
+        FROM presupuesto p
+        JOIN cat_servicios c ON c.id_serv = p.id_serv
+        WHERE p.id_pac = %s
+    """, (id_pac,))
+    lista_serv = cursor.fetchall()
+
+    for p in lista_serv:
+        costo = Decimal(p['serv_costo'])
+        cantidad = Decimal(p['cantidad'])
+        p['subtotal'] = costo * cantidad
+        p['total'] = p['subtotal'] * IVA
+
+    # ======================
+    # TABLA PRESUPUESTO - ITEMS
+    # ======================
+    cursor.execute("""
+        SELECT p.*, i.item_price
+        FROM presupuesto p
+        JOIN item i ON i.item_code = p.id_serv
+        WHERE p.id_pac = %s
+    """, (id_pac,))
+    lista_items = cursor.fetchall()
+
+    for p in lista_items:
+        precio = Decimal(p['item_price'])
+        cantidad = Decimal(p['cantidad'])
+        p['subtotal'] = precio * cantidad
+        p['total'] = p['subtotal'] * IVA
+
+    conn.close()
+
+    return render_template(
+        'administrativo/gestion_cuentas/presupuestos.html',
+        servicios=servicios,
+        items=items,
+        lista_serv=lista_serv,
+        lista_items=lista_items,
+        IVA=IVA
+    )
+
+
+@app.route('/admin/presupuestos/eliminar/<int:id_presupuesto>', methods=['POST'])
+def eliminar_presupuesto(id_presupuesto):
+    if 'user_id' not in session or session.get('role') != 'admin':
+        flash('Acceso denegado.', 'error')
+        return redirect(url_for('dashboard'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        "DELETE FROM presupuesto WHERE id_presupuesto = %s",
+        (id_presupuesto,)
+    )
+
+    conn.commit()
+    conn.close()
+
+    flash('Registro eliminado correctamente', 'success')
+    return redirect(url_for('presupuestos'))
+
+
+
+@app.route('/admin/corte_caja')
+def corte_caja():
+    if 'user_id' not in session or session['role'] != 'admin':
+        flash('Acceso denegado.', 'error')
+        return redirect(url_for('dashboard'))
+    
+    return render_template('administrativo/gestion_cuentas/corte_caja.html')
+
+@app.route('/corte_caja/pdf', methods=['POST'])
+def corte_caja_pdf():
+
+    fecha_inicio = request.form['fecha_inicio']
+    fecha_fin = request.form['fecha_fin']
+
+    # Sumar 1 día a fecha final
+    fecha_fin_real = (
+        datetime.strptime(fecha_fin, "%Y-%m-%d") + timedelta(days=1)
+    ).strftime("%Y-%m-%d")
+
+    conexion = get_db_connection()
+
+    pdf = FPDF()
+    pdf.alias_nb_pages()
+    pdf.add_page()
+
+    # =============================
+    # ENCABEZADO
+    # =============================
+    pdf.set_font('Arial', 'B', 12)
+    pdf.set_text_color(43, 45, 127)
+    pdf.cell(0, 10, 'REPORTE CORTE DE CAJA', border=1, ln=1, align='C')
+    pdf.ln(5)
+
+    pdf.set_font('Arial', '', 10)
+    pdf.cell(
+        0, 8,
+        f"Periodo del {fecha_inicio} al {fecha_fin}",
+        ln=1
+    )
+
+    # =============================
+    # TABLA
+    # =============================
+    pdf.ln(5)
+    pdf.set_font('Arial', 'B', 9)
+
+    headers = ['#', 'Fecha', 'Paciente', 'Monto', 'Tipo', 'Metodo']
+    widths = [8, 25, 80, 20, 15, 30]
+
+    for h, w in zip(headers, widths):
+        pdf.cell(w, 8, h, 1)
+    pdf.ln()
+
+    pdf.set_font('Arial', '', 8)
+
+    total_efectivo = 0
+    contador = 1
+
+    with conexion.cursor() as cursor:
+        sql = """
+        SELECT p.nombre, m.fecha, m.deposito, m.tipo_pago
+        FROM pago_serv p
+        JOIN depositos_pserv m ON p.id_pac = m.id_pac
+        WHERE m.fecha BETWEEN %s AND %s
+          AND m.tipo_pago NOT IN ('DESCUENTO','ASEGURADORA')
+        ORDER BY p.nombre
+        """
+        cursor.execute(sql, (fecha_inicio, fecha_fin_real))
+        rows = cursor.fetchall()
+
+        for r in rows:
+            pdf.cell(8, 8, str(contador), 1)
+            pdf.cell(25, 8, str(r['fecha']), 1)
+            pdf.cell(80, 8, r['nombre'], 1)
+            pdf.cell(20, 8, f"${float(r['deposito']):.2f}", 1)
+            pdf.cell(15, 8, 'SERV', 1)
+            pdf.cell(30, 8, r['tipo_pago'], 1)
+            pdf.ln()
+
+            total_efectivo += float(r['deposito'])
+            contador += 1
+
+    conexion.close()
+
+    # =============================
+    # TOTAL
+    # =============================
+    pdf.set_font('Arial', 'B', 10)
+    pdf.cell(0, 10, f"TOTAL EFECTIVO: ${total_efectivo:,.2f}", 1, ln=1)
+
+    response = make_response(pdf.output(dest='S').encode('latin-1'))
+    response.headers['Content-Type'] = 'application/pdf'
+    response.headers['Content-Disposition'] = 'inline; filename=corte_caja.pdf'
+
+    return response
+
+
+
+@app.route('/corte_caja/excel')
+def corte_caja_excel():
+    # Consulta SQL
+    # Generar Excel
+    return "Generar Excel"
 
 
 @app.route('/medico/diagnostico/<int:id_atencion>', methods=['GET', 'POST'])
