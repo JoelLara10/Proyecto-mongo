@@ -3,8 +3,10 @@ import pymysql
 import bcrypt
 from datetime import datetime, date
 import pymysql.cursors
+from estudios import estudios_bp
 
 app = Flask(__name__)
+app.register_blueprint(estudios_bp, url_prefix='/estudios')
 app.secret_key = 'tu_clave_secreta_aqui'  # Cambia esto por algo seguro
 
 # Configuración de MySQL
@@ -80,7 +82,7 @@ def dashboard():
         menu_options = [
             {'name': 'Administrativo', 'url': url_for('administrativo')},
             {'name': 'Médico', 'url': '#'},
-            {'name': 'Estudios', 'url': '#'},
+            {'name': 'Estudios', 'url': url_for('estudios.estudios_home')},
             {'name': 'Configuración', 'url': '#'}
         ]
 
@@ -426,5 +428,6 @@ def logout():
     return redirect(url_for('login'))
 
 
+#-------------------------------------------------------------------------------------------------------
 if __name__ == '__main__':
     app.run(debug=True)

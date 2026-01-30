@@ -1,0 +1,52 @@
+<div>
+  <div class="mb-3">
+    <input id="search-labo" class="form-control" placeholder="Buscar por paciente, habitación, solicitante...">
+  </div>
+  <br>
+  <br>
+  <div class="table-responsive">
+    <table class="table table-striped table-hover">
+      <thead class="thead-light">
+        <tr>
+          <th>Habitación</th>
+          <th>Paciente</th>
+          <th>Fecha Solicitud</th>
+          <th>Solicitante</th>
+          <th>Estudio(s)</th>
+          <th>Solicitud</th>
+          <th>Editar</th>
+          <th>Ver</th>
+          <th>Eliminar</th>
+          <th>Fecha Resultados</th>
+          <th>Atendío Solicitud</th>
+        </tr>
+      </thead>
+      <tbody id="tbody-labo">
+        <tr>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td><button class="btn btn-sm btn-outline-primary">PDF</button></td>
+          <td>
+            <a href="{{ url_for('estudios.estudios_home', vista='editar_resultado_gabinete') }}"
+              class="btn btn-sm btn-outline-primary">
+              Editar
+            </a>
+          </td>
+
+          <td>
+            <a href="{{ url_for('estudios.estudios_home', vista='ver_resultado_gabinete') }}"
+              class="btn btn-sm btn-outline-primary">
+              Ver
+            </a>
+          </td>
+          <td><button class="btn btn-sm btn-outline-primary">Eliminar</button></td>
+          <td></td>
+          <td></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

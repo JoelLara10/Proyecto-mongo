@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Estudios</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap/css/bootstrap.min.css') }}">
+  <style>
+    body { background:#faf6ff; }
+    .left-menu { background:#f2eefe; min-height:80vh; padding:1rem; }
+    .menu-link { display:block; padding:10px; color:#2b6fb3; text-decoration:none; margin-bottom:6px; border-radius:6px; }
+    .menu-link.active { background:#dcd0f7; font-weight:600; }
+    .section-title { padding:0.5rem 0; }
+    .content-right { padding:1rem; background:white; border-radius:8px; min-height:80vh; }
+    .side-sep { border-right:1px solid rgba(0,0,0,0.05); }
+  </style>
+</head>
+<body>
+
+<div class="container-fluid mt-3">
+  <div class="row">
+
+    <!-- MENU IZQUIERDO -->
+    <div class="col-lg-3 col-md-4 left-menu side-sep">
+    <br>
+    <a href="/dashboard" class=" btn-secondary">Volver</a>
+      <h4>Menú</h4>
+    <br>
+    <br>
+      <div class="section-title">Solicitudes</div>
+      <a class="menu-link {% if vista=='solicitudes_laboratorio' %}active{% endif %}"
+         href="{{ url_for('estudios.estudios_home', vista='solicitudes_laboratorio') }}">
+         Solicitud - Laboratorio
+      </a>
+
+      <a class="menu-link {% if vista=='solicitudes_gabinete' %}active{% endif %}"
+         href="{{ url_for('estudios.estudios_home', vista='solicitudes_gabinete') }}">
+         Solicitud - Gabinete
+      </a>
+
+      <a class="menu-link {% if vista=='solicitudes_patologia' %}active{% endif %}"
+         href="{{ url_for('estudios.estudios_home', vista='solicitudes_patologia') }}">
+         Solicitud - Patología
+      </a>
+
+      <hr>
+
+      <div class="section-title">Resultados</div>
+      <a class="menu-link {% if vista=='resultados_laboratorio' %}active{% endif %}"
+         href="{{ url_for('estudios.estudios_home', vista='resultados_laboratorio') }}">
+         Resultados - Laboratorio
+      </a>
+
+      <a class="menu-link {% if vista=='resultados_gabinete' %}active{% endif %}"
+         href="{{ url_for('estudios.estudios_home', vista='resultados_gabinete') }}">
+         Resultados - Gabinete
+      </a>
+
+      <a class="menu-link {% if vista=='resultados_patologia' %}active{% endif %}"
+         href="{{ url_for('estudios.estudios_home', vista='resultados_patologia') }}">
+         Resultados - Patología
+      </a>
+    </div>
+
+    <!-- CONTENIDO DERECHO -->
+    <div class="col-lg-9 col-md-8">
+      <div class="content-right">
+
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h3>Módulo de Estudios</h3>
+        </div>
+
+        {% if not vista %}
+          <p>Selecciona una opción del módulo Estudios</p>
+
+        {% elif vista == 'solicitudes_laboratorio' %}
+          {% include 'estudios/solicitudes/laboratorio.html' %}
+
+        {% elif vista == 'solicitudes_gabinete' %}
+          {% include 'estudios/solicitudes/gabinete.html' %}
+
+        {% elif vista == 'solicitudes_patologia' %}
+          {% include 'estudios/solicitudes/patologia.html' %}
+
+        {% elif vista == 'resultados_laboratorio' %}
+          {% include 'estudios/resultados/laboratorio.html' %}
+
+        {% elif vista == 'resultados_gabinete' %}
+          {% include 'estudios/resultados/gabinete.html' %}
+
+        {% elif vista == 'resultados_patologia' %}
+          {% include 'estudios/resultados/patologia.html' %}
+
+        {% elif vista == 'subir_resultado_laboratorio' %}
+          {% include 'estudios/solicitudes/subir_resultado_laboratorio.html' %}
+
+        {% elif vista == 'subir_resultado_gabinete' %}
+          {% include 'estudios/solicitudes/subir_resultado_gabinete.html' %}
+
+        {% elif vista == 'subir_resultado_patologia' %}
+          {% include 'estudios/solicitudes/subir_resultado_patologia.html' %}
+
+        {% elif vista == 'editar_resultado_laboratorio' %}
+          {% include 'estudios/resultados/editar_resultado_laboratorio.html' %}
+
+        {% elif vista == 'ver_resultado_laboratorio' %}
+          {% include 'estudios/resultados/ver_resultado_laboratorio.html' %}
+
+        {% elif vista == 'editar_resultado_gabinete' %}
+          {% include 'estudios/resultados/editar_resultado_gabinete.html' %}
+
+        {% elif vista == 'ver_resultado_gabinete' %}
+          {% include 'estudios/resultados/ver_resultado_gabinete.html' %}
+
+        {% elif vista == 'editar_resultado_patologia' %}
+          {% include 'estudios/resultados/editar_resultado_patologia.html' %}
+
+        {% elif vista == 'ver_resultado_patologia' %}
+          {% include 'estudios/resultados/ver_resultado_patologia.html' %}
+
+        {% endif %}
+        
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='bootstrap/js/bootstrap.min.js') }}"></cript>
+</body>
+</html>

@@ -1,0 +1,67 @@
+<div>
+
+  <!-- ENCABEZADO -->
+  <div class="mb-3 d-flex justify-content-between align-items-center">
+    <h4><strong>Resultados de Laboratorio</strong></h4>
+    <a href="{{ url_for('estudios.estudios_home', vista='resultados_laboratorio') }}"
+       class="btn btn-sm btn-outline-danger">
+      Regresar
+    </a>
+  </div>
+
+  <div class="row">
+
+    <!-- LISTA DE ARCHIVOS -->
+    <div class="col-md-4">
+      <h6><strong>Archivos disponibles</strong></h6>
+      <ul class="list-group">
+        <li class="list-group-item">
+          <a href="#" class="resultado-link" data-type="pdf">
+            Resultado 1 (PDF)
+          </a>
+        </li>
+        <li class="list-group-item">
+          <a href="#" class="resultado-link" data-type="img">
+            Resultado 2 (Imagen)
+          </a>
+        </li>
+      </ul>
+    </div>
+
+    <!-- VISTA PREVIA -->
+    <div class="col-md-8">
+      <h6><strong>Vista previa</strong></h6>
+      <div id="preview-area"
+           class="border rounded p-2"
+           style="min-height: 400px; background:#f8f9fa;">
+        <p class="text-muted">
+          Selecciona un archivo para visualizarlo
+        </p>
+      </div>
+    </div>
+
+  </div>
+</div>
+<script>
+  document.querySelectorAll('.resultado-link').forEach(link => {
+    link.addEventListener('click', function (e) {
+      e.preventDefault();
+      const type = this.dataset.type;
+      const preview = document.getElementById('preview-area');
+
+      preview.innerHTML = '';
+
+      if (type === 'pdf') {
+        preview.innerHTML = `
+          <img src="#"
+               style="max-width:100%; max-height:400px;">
+        `;
+      } else {
+        preview.innerHTML = `
+          <img src="#"
+               style="max-width:100%; max-height:400px;">
+        `;
+      }
+    });
+  });
+</script>

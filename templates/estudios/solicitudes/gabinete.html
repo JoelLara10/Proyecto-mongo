@@ -1,0 +1,39 @@
+<div>
+  <div class="mb-3">
+    <input id="search-labo" class="form-control" placeholder="Buscar por paciente, habitación, estudio...">
+  </div>
+  <br>
+  <br>
+  <div class="table-responsive">
+    <table class="table table-striped table-hover">
+      <thead class="thead-light">
+        <tr>
+          <th>Habitación</th>
+          <th>Paciente</th>
+          <th>Fecha Solicitud</th>
+          <th>Solicitante</th>
+          <th>Estudio(s)</th>
+          <th>Solicitud</th>
+          <th>Subir Resultado</th>
+        </tr>
+      </thead>
+      <tbody id="tbody-labo">
+        <tr>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td><button class="btn btn-sm btn-outline-primary">Ver PDF</button></td>
+          <td>
+            <a href="{{ url_for('estudios.estudios_home', vista='subir_resultado_gabinete') }}"
+              class="btn btn-sm btn-outline-primary">
+              Subir Resultado
+            </a>
+          </td>
+
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

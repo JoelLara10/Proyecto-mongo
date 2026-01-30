@@ -1,0 +1,50 @@
+<div class="container-fluid">
+
+  <a href="{{ url_for('estudios.estudios_home', vista='solicitudes_patologia') }}"
+     class="btn btn-sm btn-secondary mb-3">
+    ← Regresar a Solicitudes
+  </a>
+
+  <h4 class="mb-3">Subir Resultado de Patología</h4>
+
+  <!-- Información del estudio -->
+  <div class="card mb-3">
+    <div class="card-body">
+      <p><strong>Paciente:</strong> </p>
+      <p><strong>Solicitante:</strong> </p>
+      <p><strong>Tipo de estudio:</strong> </p>
+    </div>
+  </div>
+
+  <!-- Formulario de carga -->
+  <div class="card">
+    <div class="card-body">
+      <form>
+        <div class="mb-3">
+          <label class="form-label">
+            Seleccionar archivo(s) (PDF, PNG, JPG, JPEG)
+          </label>
+          <input type="file"
+                 class="form-control"
+                 multiple
+                 accept=".pdf,.png,.jpg,.jpeg">
+
+          <small class="text-muted">
+            Máximo 25MB por archivo. Puede seleccionar múltiples archivos.
+          </small>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Observaciones</label>
+          <textarea class="form-control" rows="3"
+                    placeholder="Observaciones del estudio..."></textarea>
+        </div>
+        <br><br>
+        <button type="button" class="btn btn-success">
+          Subir Resultados
+        </button>
+      </form>
+    </div>
+  </div>
+
+</div>
