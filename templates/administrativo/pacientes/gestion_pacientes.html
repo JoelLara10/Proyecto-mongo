@@ -88,22 +88,19 @@
             </a>
         </div>
         <div class="col-md-3">
-            <a href="#" class="btn btn-danger action-btn w-100">
-                <i class="fas fa-file-pdf"></i> Imprimir Documentos
-            </a>
+            <a href="{{ url_for('documentos_pacientes') }}"
+   class="btn btn-danger action-btn w-100">
+    <i class="fas fa-file-pdf"></i> Imprimir Documentos
+</a>
+
         </div>
         {% if role == 'admin' %}
         <div class="col-md-3">
-            <a href="#" class="btn btn-warning action-btn w-100 text-white">
+            <a  href="{{ url_for('ver_expedientes') }}" class="btn btn-warning action-btn w-100 text-white">
                 <i class="fas fa-users"></i> Ver Expedientes
             </a>
         </div>
         {% endif %}
-        <div class="col-md-3">
-            <a href="#" class="btn btn-success action-btn w-100">
-                <i class="fas fa-id-card"></i> Subir INE
-            </a>
-        </div>
         <div class="col-md-3">
             <a href="#" class="btn btn-info action-btn w-100 text-white">
                 <i class="fas fa-calendar-alt"></i> Agenda Consulta
@@ -147,7 +144,7 @@
 </a>
                     </td>
                     <td class="text-center">
-                        <a href="#" class="btn btn-sm btn-warning text-white"><i class="fas fa-dollar-sign"></i></a>
+                        <a href="{{ url_for('expediente', id_atencion=f.id_atencion, id_exp=f.Id_exp) }}" class="btn btn-sm btn-warning text-white"><i class="fas fa-dollar-sign"></i></a>
                     </td>
                     <td>{{ f.Id_exp }}</td>
                     <td>{{ f.papell }} {{ f.sapell }} {{ f.nom_pac }}</td>

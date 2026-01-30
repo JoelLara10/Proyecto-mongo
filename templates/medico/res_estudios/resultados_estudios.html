@@ -1,0 +1,111 @@
+{% extends 'medico/header_medico.html' %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+    <!-- ================= PACIENTE ================= -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <i class="fas fa-user-injured"></i> Datos del Paciente
+        </div>
+        <div class="card-body">
+            <p><strong>Expediente:</strong> {{ paciente.Id_exp }}</p>
+            <p><strong>Nombre:</strong>
+                {{ paciente.nom_pac }} {{ paciente.papell }} {{ paciente.sapell }}
+            </p>
+            <p><strong>Área:</strong> {{ paciente.area }}</p>
+            <p><strong>Fecha de Ingreso:</strong> {{ paciente.fecha_ing }}</p>
+        </div>
+    </div>
+
+    <!-- ================= LABORATORIO ================= -->
+    <div class="card mb-4">
+        <div class="card-header bg-success text-white">
+            <i class="fas fa-vials"></i> Resultados de Laboratorio
+        </div>
+        <div class="card-body">
+
+            {% if laboratorio %}
+            <table class="table table-bordered table-striped">
+                <thead class="table-light">
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Estudios</th>
+                        <th>Médico</th>
+                        <th>Observaciones</th>
+                        <th>Resultados</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for l in laboratorio %}
+                    <tr>
+                        <td>{{ l.fecha }}</td>
+                        <td>{{ l.estudios }}</td>
+                        <td>{{ l.medico }}</td>
+                        <td>{{ l.observaciones or '—' }}</td>
+                        <td class="text-center">
+                            <a href="{{ url_for('ver_resultado_laboratorio', id_examen=l.id_examen) }}"
+   class="btn btn-sm btn-primary">
+   <i class="fas fa-eye"></i> Ver
+</a>
+
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p class="text-muted">No hay resultados de laboratorio.</p>
+            {% endif %}
+
+        </div>
+    </div>
+
+    <!-- ================= GABINETE ================= -->
+    <div class="card mb-4">
+        <div class="card-header bg-info text-white">
+            <i class="fas fa-x-ray"></i> Resultados de Gabinete
+        </div>
+        <div class="card-body">
+
+            {% if gabinete %}
+            <table class="table table-bordered table-striped">
+                <thead class="table-light">
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Estudios</th>
+                        <th>Médico</th>
+                        <th>Observaciones</th>
+                        <th>Resultados</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for g in gabinete %}
+<tr>
+    <td>{{ g.fecha }}</td>
+    <td>{{ g.estudios }}</td>
+    <td>{{ g.medico }}</td>
+    <td>{{ g.observaciones or '—' }}</td>
+    <td>
+        <a href="{{ url_for('ver_resultado_gabinete', id_examen=g.id_examen) }}"
+           class="btn btn-sm btn-primary">
+            <i class="fas fa-eye"></i> Ver
+        </a>
+    </td>
+</tr>
+{% endfor %}
+
+
+                </tbody>
+            </table>
+            {% else %}
+            <p class="text-muted">No hay resultados de gabinete.</p>
+            {% endif %}
+
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

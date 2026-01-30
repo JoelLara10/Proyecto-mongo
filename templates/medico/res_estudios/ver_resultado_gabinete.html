@@ -1,0 +1,85 @@
+{% extends 'medico/header_medico.html' %}
+
+{% block content %}
+
+<section class="content-header">
+  <h1 class="text-primary">
+    <i class="fas fa-x-ray"></i> Resultado de Gabinete
+  </h1>
+</section>
+
+<section class="content">
+
+  <!-- ================= PACIENTE ================= -->
+  <div class="card card-primary mb-3">
+    <div class="card-header">
+      <h3 class="card-title">
+        Paciente: {{ paciente.papell }} {{ paciente.sapell }} {{ paciente.nom_pac }}
+      </h3>
+    </div>
+
+    <div class="card-body">
+      <p><strong>Expediente:</strong> {{ paciente.Id_exp }}</p>
+      <p><strong>Fecha solicitud:</strong> {{ encabezado.fecha }}</p>
+      <p><strong>Observaciones generales:</strong>
+        {{ encabezado.observaciones or 'Sin observaciones' }}
+      </p>
+    </div>
+  </div>
+
+  <!-- ================= ESTUDIOS DE GABINETE ================= -->
+  <div class="card card-success mb-3">
+    <div class="card-header">
+      <h3 class="card-title">Estudios realizados</h3>
+    </div>
+
+    <div class="card-body">
+      {% if detalles %}
+        <table class="table table-bordered table-striped">
+          <thead>
+            <tr>
+              <th>Estudio</th>
+              <th>Estado</th>
+              <th>Fecha realizado</th>
+              <th>Resultado</th>
+              <th>Observaciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for d in detalles %}
+            <tr>
+              <td>{{ d.nombre_examen }}</td>
+              <td>{{ d.estado }}</td>
+              <td>{{ d.fecha_realizado or '—' }}</td>
+              <td>
+                {% if d.archivo_resultado %}
+                  <a href="{{ url_for('static', filename='resultados/' ~ d.archivo_resultado) }}"
+                     target="_blank"
+                     class="btn btn-sm btn-primary">
+                    <i class="fas fa-eye"></i> Ver
+                  </a>
+                {% else %}
+                  —
+                {% endif %}
+              </td>
+              <td>{{ d.observaciones or '—' }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="text-muted">No hay estudios de gabinete registrados.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="mt-3">
+    <a href="{{ url_for('resultados_estudios', id_atencion=id_atencion) }}"
+       class="btn btn-secondary">
+      <i class="fas fa-arrow-left"></i> Regresar
+    </a>
+  </div>
+
+</section>
+
+{% endblock %}

@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Expedientes Clínicos - INEO</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://use.fontawesome.com/releases/v5.7.0/css/all.css" rel="stylesheet">
+
+    <style>
+        body {
+            background-color: #f4f6f9;
+        }
+
+        .navbar {
+            background-color: #1e3c72;
+        }
+
+        .section-title {
+            font-size: 26px;
+            font-weight: 600;
+            color: #1e3c72;
+        }
+
+        .card-main {
+            background: rgba(255,255,255,0.35);
+            backdrop-filter: blur(14px);
+            border-radius: 22px;
+        }
+
+        table th {
+            background-color: #1e3c72;
+            color: white;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        table td {
+            vertical-align: middle;
+            font-size: 14px;
+        }
+
+        .search-input {
+            border-radius: 12px;
+        }
+
+        .btn-view {
+            border-radius: 8px;
+        }
+    </style>
+</head>
+
+<body>
+
+<!-- ================= NAVBAR ================= -->
+<nav class="navbar navbar-expand-lg shadow">
+    <div class="container-fluid">
+
+        <a href="{{ url_for('gestion_pacientes') }}"
+           class="btn btn-outline-light btn-sm me-3">
+            <i class="bi bi-arrow-left"></i> Regresar
+        </a>
+
+        <div class="ms-auto">
+            <span class="navbar-text text-white me-3">
+                <i class="bi bi-person-circle"></i> {{ session['username'] }}
+            </span>
+            <a href="{{ url_for('logout') }}"
+               class="btn btn-outline-light btn-sm">
+                <i class="bi bi-box-arrow-right"></i> Cerrar sesión
+            </a>
+        </div>
+
+    </div>
+</nav>
+
+<!-- ================= CONTENIDO ================= -->
+<div class="container mt-4">
+
+    <!-- TÍTULO -->
+    <div class="mb-4">
+        <h4 class="section-title">
+            <i class="fas fa-folder-open me-2"></i> Expedientes Clínicos
+        </h4>
+        <p class="text-muted mb-0">
+            Atenciones cerradas y expedientes históricos de pacientes
+        </p>
+    </div>
+
+    <!-- CARD PRINCIPAL -->
+    <div class="card card-main shadow-lg border-0 mb-4">
+        <div class="card-body p-4">
+
+            <!-- BUSCADOR -->
+            <div class="row mb-3">
+                <div class="col-md-4 ms-auto">
+                    <input type="text"
+                           id="buscar"
+                           class="form-control search-input"
+                           placeholder="🔍 Buscar paciente, área, expediente...">
+                </div>
+            </div>
+
+            <!-- TABLA -->
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped" id="tablaExpedientes">
+                    <thead>
+                        <tr>
+                            <th>Ver</th>
+                            <th>Exp.</th>
+                            <th>No. Atención</th>
+                            <th>Ingreso</th>
+                            <th>Egreso</th>
+                            <th>Paciente</th>
+                            <th>Área</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for e in expedientes %}
+                        <tr>
+                            <td class="text-center">
+                                <a href="{{ url_for('expediente',
+                                    id_exp=e['Id_exp'],
+                                    id_atencion=e['id_atencion']) }}"
+                                   class="btn btn-primary btn-sm btn-view">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </td>
+
+                            <td class="text-center fw-bold">
+                                {{ e['Id_exp'] }}
+                            </td>
+
+                            <td class="text-center">
+                                {{ e['id_atencion'] }}
+                            </td>
+
+                            <td class="text-center">
+                                {{ e['fecha_ing'].strftime('%d/%m/%Y %H:%M') if e['fecha_ing'] else '' }}
+                            </td>
+
+                            <td class="text-center">
+                                {{ e['fecha_alta'].strftime('%d/%m/%Y %H:%M') if e['fecha_alta'] else '—' }}
+                            </td>
+
+                            <td>
+                                {{ e['paciente'] }}
+                            </td>
+
+                            <td class="text-center">
+                                {{ e['area'] }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+<!-- ================= SCRIPTS ================= -->
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+document.getElementById('buscar').addEventListener('keyup', function () {
+    let filtro = this.value.toLowerCase();
+    document.querySelectorAll('#tablaExpedientes tbody tr').forEach(row => {
+        row.style.display = row.innerText.toLowerCase().includes(filtro)
+            ? '' : 'none';
+    });
+});
+</script>
+
+</body>
+</html>

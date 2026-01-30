@@ -1,0 +1,58 @@
+{% extends 'medico/header_medico.html' %}
+
+{% block content %}
+
+<section class="content-header">
+  <h1 class="text-primary">
+    <i class="fas fa-flask"></i> Resultado de Laboratorio
+  </h1>
+</section>
+
+<section class="content">
+
+  <!-- ================= PACIENTE ================= -->
+  <div class="card card-primary mb-3">
+    <div class="card-header">
+      <h3 class="card-title">
+        Paciente: {{ resultado.papell }} {{ resultado.sapell }} {{ resultado.nom_pac }}
+      </h3>
+    </div>
+
+    <div class="card-body">
+      <p><strong>Expediente:</strong> {{ resultado.Id_exp }}</p>
+      <p><strong>Médico solicitante:</strong> {{ resultado.medico }}</p>
+    </div>
+  </div>
+
+  <!-- ================= ESTUDIOS ================= -->
+  <div class="card card-success mb-3">
+    <div class="card-header">
+      <h3 class="card-title">Estudios solicitados</h3>
+    </div>
+
+    <div class="card-body">
+      <p>{{ resultado.estudios }}</p>
+    </div>
+  </div>
+
+  <!-- ================= OBSERVACIONES ================= -->
+  <div class="card card-info">
+    <div class="card-header">
+      <h3 class="card-title">Observaciones</h3>
+    </div>
+
+    <div class="card-body">
+      <p>{{ resultado.observaciones or 'Sin observaciones' }}</p>
+    </div>
+  </div>
+
+  <div class="mt-3">
+    <a href="{{ url_for('resultados_estudios', id_atencion=resultado.id_atencion) }}"
+       class="btn btn-secondary">
+      <i class="fas fa-arrow-left"></i> Regresar
+    </a>
+  </div>
+
+</section>
+
+{% endblock %}

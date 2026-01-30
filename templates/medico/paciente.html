@@ -1,0 +1,37 @@
+{% extends 'medico/header_medico.html' %}
+
+{% block content %}
+
+<section class="content-header">
+  <h1 class="text-primary">
+    <i class="fas fa-user-injured"></i> Detalle del Paciente
+  </h1>
+</section>
+
+<section class="content">
+
+  <div class="card card-primary card-outline">
+    <div class="card-body">
+
+      <div class="row">
+        <div class="col-md-6">
+          <p><strong>Expediente:</strong> {{ paciente.Id_exp }}</p>
+          <p><strong>Nombre:</strong>
+            {{ paciente.papell }} {{ paciente.sapell }} {{ paciente.nom_pac }}
+          </p>
+          <p><strong>Diagnóstico:</strong> {{ diagnostico }}</p>
+        </div>
+
+        <div class="col-md-6">
+          <p><strong>Edad:</strong> {{ paciente.edad }} años</p>
+          <p><strong>Fecha ingreso:</strong> {{ paciente.fecha }}</p>
+          <p><strong>Cama:</strong> {{ cama.num_cama }} {{ cama.tipo }}</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</section>
+
+{% endblock %}

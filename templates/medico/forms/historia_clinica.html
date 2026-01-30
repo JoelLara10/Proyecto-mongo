@@ -1,0 +1,155 @@
+{% extends 'medico/header_medico.html' %}
+
+{% block content %}
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show" role="alert">
+        <i class="fas fa-check-circle"></i>
+        {{ message }}
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
+
+<section class="content-header">
+  <h1 class="text-primary">
+    <i class="fas fa-notes-medical"></i> Historia Clínica
+  </h1>
+</section>
+
+<section class="content">
+
+  <div class="card card-primary">
+    <div class="card-header">
+      <h3 class="card-title">
+        Paciente: {{ paciente.papell }} {{ paciente.sapell }} {{ paciente.nom_pac }}
+      </h3>
+    </div>
+
+    <form method="POST">
+
+      <div class="card-body">
+
+        <!-- MOTIVO -->
+        <div class="form-group">
+          <label>Motivo de consulta</label>
+          <textarea class="form-control"
+                    name="motivo_consulta"
+                    rows="3"
+                    required></textarea>
+        </div>
+
+        <!-- SINTOMATOLOGÍA -->
+        <div class="form-group">
+          <label>Sintomatología ocular</label><br>
+          {% for s in [
+            'Dolor','Ojo rojo','Lagrimeo','Visión borrosa',
+            'Fotofobia','Prurito','Cuerpo extraño'
+          ] %}
+            <div class="form-check form-check-inline">
+              <input class="form-check-input"
+                     type="checkbox"
+                     name="sintomatologia[]"
+                     value="{{ s }}">
+              <label class="form-check-label">{{ s }}</label>
+            </div>
+          {% endfor %}
+        </div>
+
+        <div class="form-group">
+          <label>Otros síntomas</label>
+          <textarea class="form-control"
+                    name="sintomatologia_otros"
+                    rows="2"></textarea>
+        </div>
+
+        <!-- HEREDO -->
+        <div class="form-group">
+          <label>Antecedentes heredofamiliares</label><br>
+          {% for h in ['Diabetes','Hipertensión','Cáncer','Glaucoma','Catarata'] %}
+            <div class="form-check form-check-inline">
+              <input class="form-check-input"
+                     type="checkbox"
+                     name="heredo[]"
+                     value="{{ h }}">
+              <label class="form-check-label">{{ h }}</label>
+            </div>
+          {% endfor %}
+        </div>
+
+        <div class="form-group">
+          <label>Otros heredofamiliares</label>
+          <textarea class="form-control" name="heredo_otros"></textarea>
+        </div>
+
+        <!-- NO PAT -->
+        <div class="form-group">
+          <label>Antecedentes personales no patológicos</label><br>
+          {% for n in ['Tabaquismo','Alcohol','Sedentarismo','Vacunación COVID'] %}
+            <div class="form-check form-check-inline">
+              <input class="form-check-input"
+                     type="checkbox"
+                     name="nopat[]"
+                     value="{{ n }}">
+              <label class="form-check-label">{{ n }}</label>
+            </div>
+          {% endfor %}
+        </div>
+
+        <div class="form-group">
+          <label>Otros no patológicos</label>
+          <textarea class="form-control" name="nopat_otros"></textarea>
+        </div>
+
+        <!-- PATOLÓGICOS -->
+        <div class="form-group">
+          <label>Enfermedades</label>
+          <input class="form-control" name="pat_enfermedades">
+        </div>
+
+        <div class="form-group">
+          <label>Medicamentos</label>
+          <input class="form-control" name="pat_medicamentos">
+        </div>
+
+        <div class="form-group">
+          <label>Alergias</label>
+          <input class="form-control" name="pat_alergias">
+        </div>
+
+        <div class="form-group">
+          <label>Antecedentes oculares</label>
+          <input class="form-control" name="pat_oculares">
+        </div>
+
+        <div class="form-group">
+          <label>Cirugías previas</label>
+          <input class="form-control" name="pat_cirugias">
+        </div>
+
+      </div>
+
+      <div class="card-footer text-center">
+        <button type="submit" class="btn btn-primary">
+          <i class="fas fa-save"></i> Guardar Historia Clínica
+        </button>
+
+        <a href="{{ url_for('paciente',
+                            id_atencion=id_atencion,
+                            Id_exp=paciente.Id_exp) }}"
+           class="btn btn-secondary">
+          Cancelar
+        </a>
+      </div>
+
+    </form>
+  </div>
+
+</section>
+
+{% endblock %}

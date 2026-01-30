@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Corte de Caja - Reportes Financieros</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://use.fontawesome.com/releases/v5.7.0/css/all.css" rel="stylesheet">
+
+  <style>
+    body {
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      min-height: 100vh;
+    }
+    .main-container {
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.1);
+      max-width: 1000px;
+      margin: 20px auto;
+      overflow: hidden;
+    }
+    .header-section {
+      background: linear-gradient(135deg, #2b2d7f, #3949ab);
+      color: white;
+      padding: 25px;
+      text-align: center;
+    }
+    .content-section {
+      padding: 40px;
+    }
+    .report-card {
+      background: #f8f9fa;
+      border-radius: 12px;
+      padding: 30px;
+      border: 2px solid #e9ecef;
+    }
+    .btn-primary-custom {
+      background: linear-gradient(135deg, #2b2d7f, #3949ab);
+      border: none;
+      color: white;
+      font-weight: 600;
+    }
+    .btn-excel {
+      background: linear-gradient(135deg, #28a745, #20c997);
+      border: none;
+      color: white;
+      font-weight: 600;
+    }
+  </style>
+</head>
+
+<body class="p-3">
+
+<a href="{{ url_for('administrativo') }}" class="btn btn-secondary mb-3">
+  <i class="fas fa-arrow-left"></i> Regresar
+</a>
+
+<div class="main-container">
+  <div class="header-section">
+    <h2>
+      <i class="fas fa-cash-register"></i>
+      CORTE DE CAJA
+    </h2>
+  </div>
+
+  <div class="content-section">
+
+    <form method="POST" action="{{ url_for('corte_caja_pdf') }}" target="_blank">
+      <div class="report-card">
+
+        <h5 class="mb-4">
+          <i class="fas fa-calendar-alt"></i>
+          Reporte por Rango de Fechas
+        </h5>
+
+        <div class="row align-items-end">
+          <div class="col-md-3">
+            <label class="form-label">Fecha Inicial</label>
+            <input type="date" name="fecha_inicio" class="form-control" required>
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label">Fecha Final</label>
+            <input type="date" name="fecha_fin" class="form-control" required>
+          </div>
+
+          <div class="col-md-6 d-flex gap-3">
+            <button type="submit" class="btn btn-primary-custom">
+              <i class="fas fa-file-pdf"></i> Generar PDF
+            </button>
+
+            <a href="{{ url_for('corte_caja_excel') }}" class="btn btn-excel">
+              <i class="fas fa-file-excel"></i> Exportar Excel
+            </a>
+          </div>
+        </div>
+
+      </div>
+    </form>
+
+  </div>
+</div>
+
+<script>
+  // Colocar fecha actual por defecto
+  document.addEventListener('DOMContentLoaded', () => {
+    const today = new Date().toISOString().split('T')[0];
+    document.querySelectorAll('input[type="date"]').forEach(i => i.value = today);
+  });
+</script>
+
+</body>
+</html>
+
