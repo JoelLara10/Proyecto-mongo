@@ -78,7 +78,7 @@
 <div class="container mt-5">
   <div class="row">
 
-    <!-- GESTIÓN DE CAMAS -->
+    <!-- GESTIÓN DE CAMAS (SOLO ADMIN) -->
     {% if usuario.role == 'admin' %}
     <div class="col-md-4 mb-4">
       <a href="{{ url_for('menu_camas') }}" class="text-decoration-none">
@@ -96,7 +96,8 @@
 
     <!-- GESTIÓN DE PERSONAL -->
     <div class="col-md-4 mb-4">
-      <a href="#" class="text-decoration-none">
+      <a href="{{ url_for('alta_usuarios') }}" class="text-decoration-none">
+
         <div class="card dashboard-card text-center shadow-sm">
           <div class="card-body">
             <div class="icon-circle" style="background:#C8E6C9;">
@@ -110,7 +111,7 @@
 
     <!-- DIAGNÓSTICOS -->
     <div class="col-md-4 mb-4">
-      <a href="#" class="text-decoration-none">
+      <a href="{{ url_for('cat_diagnostico') }}" class="text-decoration-none">
         <div class="card dashboard-card text-center shadow-sm">
           <div class="card-body">
             <div class="icon-circle" style="background:#FFF3E0;">
@@ -135,20 +136,23 @@
         </div>
       </a>
     </div>
-    <!-- COPIAS DE SEGURIDAD -->
-<div class="col-md-4 mb-4">
-  <a href="{{ url_for('copias_seguridad') }}" class="text-decoration-none">
-    <div class="card dashboard-card text-center shadow-sm">
-      <div class="card-body">
-        <div class="icon-circle" style="background:#C8E6C9;">
-          <i class="bi bi-shield-lock-fill fs-1 text-success"></i>
-        </div>
-        <h5 class="mt-3">Copias de Seguridad</h5>
-      </div>
-    </div>
-  </a>
-</div>
 
+    <!-- COPIAS DE SEGURIDAD -->
+    {% if usuario.role == 'admin' %}
+    <div class="col-md-4 mb-4">
+      <a href="{{ url_for('copias_seguridad_camas') }}" class="text-decoration-none">
+
+        <div class="card dashboard-card text-center shadow-sm">
+          <div class="card-body">
+            <div class="icon-circle" style="background:#E8F5E9;">
+              <i class="bi bi-shield-lock-fill fs-1 text-success"></i>
+            </div>
+            <h5 class="mt-3">Copias de Seguridad</h5>
+          </div>
+        </div>
+      </a>
+    </div>
+    {% endif %}
 
   </div>
 </div>

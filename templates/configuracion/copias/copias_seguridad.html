@@ -18,9 +18,16 @@
             </div>
         {% endif %}
 
-        <a href="{{ url_for('copias_seguridad') }}" class="btn btn-primary">
-            Crear nueva copia
-        </a>
+        <!-- BOTONES -->
+        <div class="d-grid gap-3">
+            <a href="{{ url_for('copias_seguridad') }}" class="btn btn-primary">
+                Crear copia general
+            </a>
+
+            <a href="{{ url_for('copias_seguridad_camas') }}" class="btn btn-success">
+                Copia de seguridad de Camas
+            </a>
+        </div>
     </div>
 </div>
 

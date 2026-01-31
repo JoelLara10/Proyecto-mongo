@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Editar Cama</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.0/css/all.css">
+
+<style>
+body {background:#f8f9fa; font-family:'Segoe UI',Tahoma;}
+.form-container{background:white;border-radius:15px;box-shadow:0 4px 20px rgba(43,45,127,.1);margin:40px auto;max-width:800px;overflow:hidden;animation:fadeIn .5s;}
+.form-header{background:linear-gradient(135deg,#2b2d7f,#3b3f8f);color:white;padding:25px;text-align:center;}
+.form-header h3{margin:0;font-weight:600;display:flex;align-items:center;justify-content:center;gap:10px;}
+.form-body{padding:40px;background:white;}
+.form-label-modern{color:#2b2d7f;font-weight:600;margin-bottom:10px;display:flex;align-items:center;font-size:16px;}
+.form-label-modern i{margin-right:10px;}
+.form-control-modern{border:2px solid #e9ecef;border-radius:10px;padding:15px 20px;font-size:16px;width:100%;height:50px;margin-bottom:15px;}
+.select-modern{border:2px solid #e9ecef;border-radius:10px;padding:15px 20px;font-size:16px;width:100%;height:50px;cursor:pointer;font-weight:600;margin-bottom:15px;}
+.btn-actions{text-align:center;padding:30px 0;margin-top:20px;}
+.btn-save-modern{background:linear-gradient(135deg,#28a745,#20c997);color:white;padding:15px 30px;border-radius:10px;font-weight:600;margin-right:15px;}
+.btn-cancel-modern{background:linear-gradient(135deg,#dc3545,#c82333);color:white;padding:15px 30px;border-radius:10px;font-weight:600;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(20px);} to{opacity:1;transform:none;}}
+</style>
+</head>
+
+<body>
+<div class="form-container">
+  <div class="form-header">
+    <h3><i class="fas fa-edit"></i> EDITAR CAMA</h3>
+  </div>
+  <div class="form-body">
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    <form method="POST">
+      <div class="form-group">
+        <label class="form-label-modern"><i class="fas fa-hashtag"></i> Número de Cama</label>
+        <input type="text" name="numero" class="form-control-modern" value="{{ cama.numero }}" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label-modern"><i class="fas fa-flag"></i> Estatus</label>
+        <input type="text" name="estatus" class="form-control-modern" value="{{ cama.estatus }}" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label-modern"><i class="fas fa-hospital"></i> Área</label>
+        <input type="text" name="area" class="form-control-modern" value="{{ cama.area }}" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label-modern"><i class="fas fa-door-open"></i> Tipo de Habitación</label>
+        <input type="text" name="tipo_habitacion" class="form-control-modern" value="{{ cama.tipo_habitacion }}" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label-modern"><i class="fas fa-layer-group"></i> Piso</label>
+        <input type="number" name="piso" class="form-control-modern" value="{{ cama.piso }}" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label-modern"><i class="fas fa-th-large"></i> Sección</label>
+        <input type="number" name="seccion" class="form-control-modern" value="{{ cama.seccion }}" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label-modern"><i class="fas fa-bed"></i> Ocupada</label>
+        <select name="ocupada" class="select-modern">
+          <option value="0" {% if not cama.ocupada %}selected{% endif %}>No</option>
+          <option value="1" {% if cama.ocupada %}selected{% endif %}>Sí</option>
+        </select>
+      </div>
+
+      <div class="btn-actions">
+        <button type="submit" class="btn-save-modern"><i class="fas fa-save"></i> Guardar</button>
+        <a href="{{ url_for('menu_camas') }}" class="btn-cancel-modern"><i class="fas fa-times"></i> Cancelar</a>
+      </div>
+    </form>
+  </div>
+</div>
+</body>
+</html>

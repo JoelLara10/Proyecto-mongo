@@ -2,7 +2,8 @@
 SQLyog Ultimate v11.11 (64 bit)
 MySQL - 5.5.5-10.4.32-MariaDB : Database - ineo_db
 *********************************************************************
-*/
+*/
+
 
 /*!40101 SET NAMES utf8 */;
 
@@ -228,6 +229,7 @@ LOCK TABLES `users` WRITE;
 insert  into `users`(`id`,`username`,`password`,`role`,`created_at`,`img_perfil`,`papell`) values (1,'admin','$2b$12$m0ZkBHbNEqjZUKsQ4ma8wOg3JHVCncTnycsAEYQ7UlB2teD0zSfDG','admin','2026-01-17 14:16:16','default_profile.jpg','Apellido'),(2,'dr_john_doe','$2b$12$m0ZkBHbNEqjZUKsQ4ma8wOg3JHVCncTnycsAEYQ7UlB2teD0zSfDG','medico','2026-01-18 11:20:59','default_profile.jpg','Doe'),(3,'dr_jane_smith','$2b$12$m0ZkBHbNEqjZUKsQ4ma8wOg3JHVCncTnycsAEYQ7UlB2teD0zSfDG','medico','2026-01-18 11:20:59','default_profile.jpg','Smith'),(4,'dr_michael_johnson','$2b$12$m0ZkBHbNEqjZUKsQ4ma8wOg3JHVCncTnycsAEYQ7UlB2teD0zSfDG','medico','2026-01-18 11:20:59','default_profile.jpg','Johnson'),(5,'dr_emily_davis','$2b$12$m0ZkBHbNEqjZUKsQ4ma8wOg3JHVCncTnycsAEYQ7UlB2teD0zSfDG','medico','2026-01-18 11:20:59','default_profile.jpg','Davis'),(6,'dr_robert_brown','$2b$12$m0ZkBHbNEqjZUKsQ4ma8wOg3JHVCncTnycsAEYQ7UlB2teD0zSfDG','medico','2026-01-18 11:20:59','default_profile.jpg','Brown');
 
 UNLOCK TABLES;
+
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
 /*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
