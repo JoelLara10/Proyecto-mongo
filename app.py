@@ -1,17 +1,19 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from templates.administrativo.pacientes.doc_pacientes import pdf
+from templates.medico.impresiones import pdf_med
 import pymysql
 import bcrypt
 from flask import request, make_response
 from fpdf import FPDF
 from decimal import Decimal
-from datetime import datetime, timedelta
+from datetime import timedelta
 from datetime import datetime, date
 import pymysql.cursors
 
 
 app = Flask(__name__)
 app.register_blueprint(pdf)
+app.register_blueprint(pdf_med)
 app.secret_key = 'tu_clave_secreta_aqui'  # Cambia esto por algo seguro
 
 # Configuración de MySQL
@@ -1672,19 +1674,26 @@ def receta_medica(id_atencion):
 
     # ================= GUARDAR RECETA =================
     if request.method == 'POST':
-        cursor.execute("""
-            INSERT INTO recetas
-            (id_atencion, medicamento, dosis, frecuencia, duracion, indicaciones, id_medico)
-            VALUES (%s,%s,%s,%s,%s,%s,%s)
-        """, (
-            id_atencion,
-            request.form['medicamento'],
-            request.form['dosis'],
-            request.form['frecuencia'],
-            request.form['duracion'],
-            request.form['indicaciones'],
-            session['user_id']
-        ))
+        medicamentos = request.form.getlist('medicamento[]')
+        dosis = request.form.getlist('dosis[]')
+        frecuencia = request.form.getlist('frecuencia[]')
+        duracion = request.form.getlist('duracion[]')
+        indicaciones = request.form.getlist('indicaciones[]')
+
+        for i in range(len(medicamentos)):
+            cursor.execute("""
+                           INSERT INTO recetas
+                           (id_atencion, medicamento, dosis, frecuencia, duracion, indicaciones, id_medico)
+                           VALUES (%s, %s, %s, %s, %s, %s, %s)
+                           """, (
+                               id_atencion,
+                               medicamentos[i],
+                               dosis[i],
+                               frecuencia[i],
+                               duracion[i],
+                               indicaciones[i],
+                               session['user_id']
+                           ))
 
         conn.commit()
         flash('Receta guardada correctamente', 'success')
@@ -1775,6 +1784,262 @@ def signos_vitales(id_atencion):
 
 
 
+@app.route('/medico/imprimir/<int:id_atencion>')
+def imprimir_documentos(id_atencion):
+
+    conn = get_db_connection()
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
+
+    cursor.execute("""
+        SELECT 
+            p.Id_exp,
+            p.papell,
+            p.sapell,
+            p.nom_pac
+        FROM pacientes p
+        JOIN atencion a ON a.Id_exp = p.Id_exp
+        WHERE a.id_atencion = %s
+    """, (id_atencion,))
+
+    paciente = cursor.fetchone()
+
+    cursor.close()
+    conn.close()
+
+    return render_template(
+        'medico/impresiones/imprimir_documentos.html',
+        paciente=paciente,
+        id_atencion=id_atencion
+    )
+
+
+@app.route('/medico/imprimir/signos/<int:id_atencion>')
+def imprimir_signos_vitales(id_atencion):
+
+    conn = get_db_connection()
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
+
+    # PACIENTE
+    cursor.execute("""
+        SELECT 
+            p.Id_exp,
+            p.papell,
+            p.sapell,
+            p.nom_pac
+        FROM pacientes p
+        JOIN atencion a ON a.Id_exp = p.Id_exp
+        WHERE a.id_atencion = %s
+    """, (id_atencion,))
+    paciente = cursor.fetchone()
+
+    # SIGNOS VITALES
+    cursor.execute("""
+        SELECT *
+        FROM signos_vitales
+        WHERE id_atencion = %s
+        ORDER BY fecha_registro DESC
+    """, (id_atencion,))
+    signos = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return render_template(
+        'medico/impresiones/signos_vitales.html',
+        paciente=paciente,
+        signos=signos,
+        id_atencion=id_atencion
+    )
+
+
+@app.route('/medico/imprimir/notas/<int:id_atencion>')
+def imprimir_notas_medicas(id_atencion):
+
+    conn = get_db_connection()
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
+
+    # PACIENTE
+    cursor.execute("""
+        SELECT 
+            p.Id_exp,
+            p.papell,
+            p.sapell,
+            p.nom_pac
+        FROM pacientes p
+        JOIN atencion a ON a.Id_exp = p.Id_exp
+        WHERE a.id_atencion = %s
+    """, (id_atencion,))
+    paciente = cursor.fetchone()
+
+    # NOTAS MÉDICAS (SOAP)
+    cursor.execute("""
+        SELECT *
+        FROM notas_medicas
+        WHERE id_atencion = %s
+        ORDER BY fecha_registro DESC
+    """, (id_atencion,))
+    notas = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return render_template(
+        'medico/impresiones/notas_medicas.html',
+        paciente=paciente,
+        notas=notas,
+        id_atencion=id_atencion
+    )
+
+
+@app.route('/medico/imprimir/diagnostico/<int:id_atencion>')
+def imprimir_diagnostico(id_atencion):
+
+    conn = get_db_connection()
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
+
+    # ===============================
+    # PACIENTE
+    # ===============================
+    cursor.execute("""
+        SELECT 
+            p.Id_exp,
+            p.papell,
+            p.sapell,
+            p.nom_pac
+        FROM pacientes p
+        JOIN atencion a ON a.Id_exp = p.Id_exp
+        WHERE a.id_atencion = %s
+    """, (id_atencion,))
+    paciente = cursor.fetchone()
+
+    # ===============================
+    # DIAGNÓSTICOS
+    # ===============================
+    cursor.execute("""
+        SELECT *
+        FROM diagnosticos
+        WHERE id_atencion = %s
+        ORDER BY fecha_registro DESC
+    """, (id_atencion,))
+    diagnosticos = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return render_template(
+        'medico/impresiones/diagnostico.html',
+        paciente=paciente,
+        diagnosticos=diagnosticos,
+        id_atencion=id_atencion
+    )
+
+
+@app.route('/medico/imprimir/recetas/<int:id_atencion>')
+def imprimir_recetas(id_atencion):
+
+    conn = get_db_connection()
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
+
+    # PACIENTE
+    cursor.execute("""
+        SELECT p.Id_exp, p.papell, p.sapell, p.nom_pac
+        FROM pacientes p
+        JOIN atencion a ON a.Id_exp = p.Id_exp
+        WHERE a.id_atencion = %s
+    """, (id_atencion,))
+    paciente = cursor.fetchone()
+
+    # RECETAS AGRUPADAS POR FECHA
+    cursor.execute("""
+        SELECT 
+            fecha_registro,
+            COUNT(*) AS total_meds
+        FROM recetas
+        WHERE id_atencion = %s
+        GROUP BY fecha_registro
+        ORDER BY fecha_registro DESC
+    """, (id_atencion,))
+    recetas = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return render_template(
+        'medico/impresiones/recetas.html',
+        paciente=paciente,
+        recetas=recetas,
+        id_atencion=id_atencion
+    )
+
+
+@app.route('/medico/imprimir/laboratorio/<int:id_atencion>')
+def imprimir_laboratorio(id_atencion):
+
+    conn = get_db_connection()
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
+
+    # PACIENTE
+    cursor.execute("""
+        SELECT p.Id_exp, p.papell, p.sapell, p.nom_pac
+        FROM pacientes p
+        JOIN atencion a ON a.Id_exp = p.Id_exp
+        WHERE a.id_atencion = %s
+    """, (id_atencion,))
+    paciente = cursor.fetchone()
+
+    # SOLICITUDES DE LABORATORIO
+    cursor.execute("""
+        SELECT *
+        FROM examenes_laboratorio
+        WHERE id_atencion = %s
+        ORDER BY fecha DESC
+    """, (id_atencion,))
+    examenes = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return render_template(
+        'medico/impresiones/examenes_laboratorio.html',
+        paciente=paciente,
+        examenes=examenes,
+        id_atencion=id_atencion
+    )
+
+
+@app.route('/medico/imprimir/gabinete/<int:id_atencion>')
+def imprimir_gabinete(id_atencion):
+
+    conn = get_db_connection()
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
+
+    # PACIENTE
+    cursor.execute("""
+        SELECT p.Id_exp, p.papell, p.sapell, p.nom_pac
+        FROM pacientes p
+        JOIN atencion a ON a.Id_exp = p.Id_exp
+        WHERE a.id_atencion = %s
+    """, (id_atencion,))
+    paciente = cursor.fetchone()
+
+    # SOLICITUDES DE GABINETE
+    cursor.execute("""
+        SELECT *
+        FROM examenes_gabinete
+        WHERE id_atencion = %s
+        ORDER BY fecha DESC
+    """, (id_atencion,))
+    examenes = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return render_template(
+        'medico/impresiones/examenes_gabinete.html',
+        paciente=paciente,
+        examenes=examenes,
+        id_atencion=id_atencion
+    )
 
 
 

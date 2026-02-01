@@ -1,0 +1,180 @@
+{% extends 'medico/header_medico.html' %}
+{% block content %}
+
+<section class="content-header">
+  <h1 class="text-primary">
+    <i class="fas fa-notes-medical"></i> Nota Médica (SOAP)
+  </h1>
+</section>
+
+<section class="content">
+
+<!-- ================= ALERTAS ================= -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show">
+        {{ message }}
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+      </div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
+<div class="card card-primary shadow">
+  <div class="card-header">
+    <h3 class="card-title">
+      <i class="fas fa-user"></i>
+      Paciente: {{ paciente.papell }} {{ paciente.sapell }} {{ paciente.nom_pac }}
+    </h3>
+  </div>
+
+  <form method="POST">
+    <div class="card-body">
+
+      <!-- ================= SUBJETIVO ================= -->
+      <div class="form-group">
+        <label>Subjetivo</label>
+
+        <div class="mb-2">
+          <button type="button" class="btn btn-success btn-sm"
+                  onclick="iniciarDictado('subjetivo')">
+            <i class="fas fa-microphone"></i>
+          </button>
+          <button type="button" class="btn btn-warning btn-sm"
+                  onclick="detenerDictado()">
+            <i class="fas fa-stop"></i>
+          </button>
+          <button type="button" class="btn btn-info btn-sm"
+                  onclick="leerCampo('subjetivo')">
+            <i class="fas fa-volume-up"></i>
+          </button>
+        </div>
+
+        <textarea id="subjetivo" name="subjetivo"
+                  class="form-control" rows="3" required></textarea>
+      </div>
+
+      <!-- ================= OBJETIVO ================= -->
+      <div class="form-group">
+        <label>Objetivo</label>
+
+        <div class="mb-2">
+          <button type="button" class="btn btn-success btn-sm"
+                  onclick="iniciarDictado('objetivo')">
+            <i class="fas fa-microphone"></i>
+          </button>
+          <button type="button" class="btn btn-warning btn-sm"
+                  onclick="detenerDictado()">
+            <i class="fas fa-stop"></i>
+          </button>
+          <button type="button" class="btn btn-info btn-sm"
+                  onclick="leerCampo('objetivo')">
+            <i class="fas fa-volume-up"></i>
+          </button>
+        </div>
+
+        <textarea id="objetivo" name="objetivo"
+                  class="form-control" rows="3"></textarea>
+      </div>
+
+      <!-- ================= ANÁLISIS ================= -->
+      <div class="form-group">
+        <label>Análisis</label>
+
+        <div class="mb-2">
+          <button type="button" class="btn btn-success btn-sm"
+                  onclick="iniciarDictado('analisis')">
+            <i class="fas fa-microphone"></i>
+          </button>
+          <button type="button" class="btn btn-warning btn-sm"
+                  onclick="detenerDictado()">
+            <i class="fas fa-stop"></i>
+          </button>
+          <button type="button" class="btn btn-info btn-sm"
+                  onclick="leerCampo('analisis')">
+            <i class="fas fa-volume-up"></i>
+          </button>
+        </div>
+
+        <textarea id="analisis" name="analisis"
+                  class="form-control" rows="3"></textarea>
+      </div>
+
+      <!-- ================= PLAN ================= -->
+      <div class="form-group">
+        <label>Plan</label>
+
+        <div class="mb-2">
+          <button type="button" class="btn btn-success btn-sm"
+                  onclick="iniciarDictado('plan')">
+            <i class="fas fa-microphone"></i>
+          </button>
+          <button type="button" class="btn btn-warning btn-sm"
+                  onclick="detenerDictado()">
+            <i class="fas fa-stop"></i>
+          </button>
+          <button type="button" class="btn btn-info btn-sm"
+                  onclick="leerCampo('plan')">
+            <i class="fas fa-volume-up"></i>
+          </button>
+        </div>
+
+        <textarea id="plan" name="plan"
+                  class="form-control" rows="3"></textarea>
+      </div>
+
+    </div>
+
+    <div class="card-footer text-center">
+      <button class="btn btn-primary btn-lg">
+        <i class="fas fa-save"></i> Guardar Nota
+      </button>
+    </div>
+  </form>
+</div>
+
+</section>
+
+<!-- ================= JS VOZ ================= -->
+<script>
+let recognition = null;
+let campoActivo = null;
+
+function iniciarDictado(idCampo) {
+  if (!('webkitSpeechRecognition' in window)) {
+    alert('Tu navegador no soporta dictado por voz');
+    return;
+  }
+
+  campoActivo = document.getElementById(idCampo);
+
+  recognition = new webkitSpeechRecognition();
+  recognition.lang = 'es-MX';
+  recognition.continuous = true;
+  recognition.interimResults = false;
+
+  recognition.onresult = function(event) {
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      campoActivo.value += event.results[i][0].transcript + ' ';
+    }
+  };
+
+  recognition.start();
+}
+
+function detenerDictado() {
+  if (recognition) recognition.stop();
+}
+
+function leerCampo(idCampo) {
+  const texto = document.getElementById(idCampo).value;
+  if (!texto) return;
+
+  const voz = new SpeechSynthesisUtterance(texto);
+  voz.lang = 'es-MX';
+  speechSynthesis.speak(voz);
+}
+</script>
+
+{% endblock %}

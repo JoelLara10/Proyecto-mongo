@@ -1,0 +1,52 @@
+{% extends 'medico/header_medico.html' %}
+{% block content %}
+
+<section class="content-header">
+  <h1>
+    <i class="fas fa-x-ray"></i> Exámenes de Gabinete
+  </h1>
+</section>
+
+<section class="content">
+
+<div class="card shadow">
+  <div class="card-header">
+    <h3 class="card-title">
+      Paciente: {{ paciente.papell }} {{ paciente.sapell }} {{ paciente.nom_pac }}
+    </h3>
+  </div>
+
+  <div class="card-body">
+    {% if examenes %}
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Observaciones</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for e in examenes %}
+        <tr>
+          <td>{{ e.fecha.strftime('%d/%m/%Y %H:%M') }}</td>
+          <td>{{ e.observaciones or '—' }}</td>
+          <td>
+            <a href="{{ url_for('pdf_med.gabinete_pdf', id_examen=e.id_examen) }}"
+               class="btn btn-sm btn-primary"
+               target="_blank">
+              <i class="fas fa-print"></i> Imprimir PDF
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+      <p>No hay exámenes de gabinete registrados.</p>
+    {% endif %}
+  </div>
+</div>
+
+</section>
+{% endblock %}
