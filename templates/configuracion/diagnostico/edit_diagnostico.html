@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Editar Diagnóstico</title>
+
+    <!-- Bootstrap -->
+    <link rel="stylesheet"
+          href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+
+    <!-- FontAwesome -->
+    <link rel="stylesheet"
+          href="https://use.fontawesome.com/releases/v5.7.0/css/all.css">
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"></script>
+
+    <style>
+        body {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+        }
+
+        .custom-card {
+            background: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(43,45,127,0.15);
+            margin-top: 40px;
+            padding: 30px;
+        }
+
+        .thead {
+            background-color: #2b2d7f;
+            color: white;
+            font-size: 20px;
+            padding: 12px;
+            border-radius: 10px 10px 0 0;
+        }
+
+        .modern-form-control {
+            border: 4px solid #e9ecef;
+            border-radius: 10px;
+            padding: 15px;
+            font-size: 16px;
+        }
+
+        .modern-form-control:focus {
+            border-color: #2b2d7f;
+            box-shadow: 0 0 0 0.2rem rgba(43,45,127,.25);
+        }
+
+        .modern-btn {
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .modern-btn-success {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+        }
+
+        .modern-btn-danger {
+            background: linear-gradient(135deg, #dc3545, #e74c3c);
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+
+            <div class="custom-card">
+                <div class="thead text-center">
+                    <strong>EDITAR DIAGNÓSTICO</strong>
+                </div>
+
+                <form method="POST" class="mt-4">
+
+                    <div class="form-group">
+                        <label>
+                            <i class="fas fa-stethoscope"></i> Diagnóstico
+                        </label>
+                        <input type="text"
+                               name="diag"
+                               class="form-control modern-form-control"
+                               value="{{ diagnostico.diagnostico }}"
+                               required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>
+                            <i class="fas fa-code"></i> Código CIE-10
+                        </label>
+                        <input type="text"
+                               name="id_cie10"
+                               class="form-control modern-form-control"
+                               value="{{ diagnostico.id_cie10 }}"
+                               required>
+                    </div>
+
+                    <div class="text-center mt-4">
+                        <button type="submit"
+                                class="btn modern-btn modern-btn-success">
+                            <i class="fas fa-save"></i> Guardar
+                        </button>
+
+                        <a href="{{ url_for('cat_diagnostico') }}"
+                           class="btn modern-btn modern-btn-danger">
+                            Cancelar
+                        </a>
+                    </div>
+
+                </form>
+
+            </div>
+
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

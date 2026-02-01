@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Gestión de Camas</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- Bootstrap & FontAwesome -->
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.0/css/all.css">
+
+<style>
+body {background:#f8f9fa; font-family:'Segoe UI',Tahoma;}
+.form-container{
+  background:#fff;
+  border-radius:15px;
+  box-shadow:0 4px 20px rgba(43,45,127,.1);
+  max-width:1200px;
+  margin:40px auto;
+  overflow:hidden;
+  animation:fadeIn .5s;
+}
+.form-header{
+  background:linear-gradient(135deg,#2b2d7f,#1a1d5f);
+  color:#fff;
+  padding:25px;
+  text-align:center;
+}
+.form-header h3{margin:0;font-weight:600;}
+.form-body{padding:35px;}
+.btn-modern{border-radius:25px;font-weight:600;padding:10px 22px;}
+table thead{background:#2b2d7f;color:#fff;}
+table td, table th{vertical-align:middle !important;}
+
+#modalEliminar{
+  display:none;
+  position:fixed;
+  top:0;left:0;
+  width:100%;height:100%;
+  background:rgba(0,0,0,0.5);
+  justify-content:center;
+  align-items:center;
+}
+#modalEliminar .modal-content{
+  background:#fff;
+  padding:30px;
+  border-radius:15px;
+  max-width:400px;
+  text-align:center;
+}
+
+@keyframes fadeIn{
+  from{opacity:0;transform:translateY(20px)}
+  to{opacity:1;transform:none}
+}
+</style>
+</head>
+
+<body>
+
+<section class="content container-fluid">
+  <div class="form-container">
+
+    <!-- HEADER -->
+    <div class="form-header">
+      <h3><i class="fas fa-bed"></i> Gestión de Camas</h3>
+    </div>
+
+    <!-- BODY -->
+    <div class="form-body">
+
+      <!-- BOTONES SUPERIORES -->
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <a href="{{ url_for('menu_configuracion') }}" class="btn btn-outline-secondary btn-modern">
+          <i class="fas fa-arrow-left"></i> Configuración
+        </a>
+
+        <div class="d-flex flex-wrap gap-2">
+          <a href="{{ url_for('alta_camas') }}" class="btn btn-success btn-modern mr-2">
+            <i class="fas fa-plus-circle"></i> Registrar Cama
+          </a>
+
+          <a href="{{ url_for('copias_seguridad') }}" class="btn btn-primary btn-modern mr-2">
+            <i class="fas fa-database"></i> Copia General
+          </a>
+
+          <a href="{{ url_for('copias_seguridad_camas') }}" class="btn btn-info btn-modern text-white">
+            <i class="fas fa-bed"></i> Copia Camas
+          </a>
+        </div>
+      </div>
+
+      <!-- MENSAJES -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show">
+              {{ message }}
+              <button type="button" class="close" data-dismiss="alert">&times;</button>
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <!-- TABLA -->
+      <div class="table-responsive">
+        <table class="table table-bordered table-hover text-center">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Número</th>
+              <th>Estatus</th>
+              <th>Área</th>
+              <th>Habitación</th>
+              <th>Piso</th>
+              <th>Sección</th>
+              <th>Ocupada</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for cama in camas %}
+            <tr data-id="{{ cama.id_cama }}">
+              <td>{{ loop.index }}</td>
+              <td>{{ cama.numero }}</td>
+              <td>{{ cama.estatus }}</td>
+              <td>{{ cama.area }}</td>
+              <td>{{ cama.tipo_habitacion }}</td>
+              <td>{{ cama.piso }}</td>
+              <td>{{ cama.seccion }}</td>
+              <td>
+                {% if cama.ocupada %}
+                  <span class="badge badge-danger">Sí</span>
+                {% else %}
+                  <span class="badge badge-success">No</span>
+                {% endif %}
+              </td>
+              <td>
+                <a href="{{ url_for('editar_cama', id=cama.id_cama) }}" class="btn btn-warning btn-sm">
+                  <i class="fas fa-edit"></i>
+                </a>
+                <button class="btn btn-danger btn-sm eliminar-btn">
+                  <i class="fas fa-trash-alt"></i>
+                </button>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="9">No hay camas registradas</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- MODAL ELIMINAR -->
+<div id="modalEliminar">
+  <div class="modal-content">
+    <h5>¿Eliminar esta cama?</h5>
+    <p class="text-muted">Esta acción no se puede deshacer</p>
+    <div class="mt-3">
+      <button id="confirmEliminar" class="btn btn-warning mr-2">
+        <i class="fas fa-trash"></i> Eliminar
+      </button>
+      <button id="cancelEliminar" class="btn btn-danger">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- SCRIPTS -->
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.bundle.min.js"></script>
+<script>
+let filaSeleccionada = null;
+
+document.querySelectorAll('.eliminar-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    filaSeleccionada = btn.closest('tr');
+    document.getElementById('modalEliminar').style.display = 'flex';
+  });
+});
+
+document.getElementById('cancelEliminar').onclick = () => {
+  document.getElementById('modalEliminar').style.display = 'none';
+  filaSeleccionada = null;
+};
+
+document.getElementById('confirmEliminar').onclick = () => {
+  if (!filaSeleccionada) return;
+
+  const id = filaSeleccionada.dataset.id;
+
+  fetch(`/configuracion/eliminar_cama/${id}`, { method: 'POST' })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        filaSeleccionada.remove();
+      } else {
+        alert(data.error || 'Error al eliminar');
+      }
+    })
+    .catch(() => alert('Error de conexión'));
+
+  document.getElementById('modalEliminar').style.display = 'none';
+  filaSeleccionada = null;
+};
+</script>
+
+</body>
+</html>

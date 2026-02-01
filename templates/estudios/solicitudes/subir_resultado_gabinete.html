@@ -1,0 +1,44 @@
+<div class="container-fluid">
+
+  <a href="{{ url_for('estudios.estudios_home', vista='solicitudes_gabinete') }}"
+     class="btn btn-sm btn-secondary mb-3">
+    ← Regresar a Solicitudes
+  </a>
+
+  <h4 class="mb-3">Subir Resultado de Gabinete</h4>
+
+  <!-- Información del paciente (mock) -->
+  <div class="card mb-3">
+    <div class="card-body">
+      <p><strong>Paciente:</strong> </p>
+      <p><strong>Habitación:</strong> </p>
+      <p><strong>Estudio(s):</strong> </p>
+    </div>
+  </div>
+
+  <!-- Formulario -->
+  <div class="card">
+    <div class="card-body">
+      <form>
+        <div class="mb-3">
+          <label class="form-label">
+            Seleccionar archivo(s) (PDF, PNG, JPG, JPEG)
+          </label>
+          <input type="file"
+                 class="form-control"
+                 multiple
+                 accept=".pdf,.png,.jpg,.jpeg">
+
+          <small class="text-muted">
+            Máximo 25MB por archivo. Puede seleccionar múltiples archivos.
+          </small>
+        </div>
+
+        <button type="button" class="btn btn-success">
+          Subir Resultados
+        </button>
+      </form>
+    </div>
+  </div>
+
+</div>

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Agregar cama</title>
+
+  <!-- Bootstrap & Icons -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.0/css/all.css">
+
+  <!-- ESTILOS MODERNOS -->
+  <style>
+    body { background:#f8f9fa; font-family:'Segoe UI',Tahoma; }
+    .form-container{background:#fff;border-radius:15px;box-shadow:0 4px 20px rgba(43,45,127,.1);max-width:700px;margin:40px auto;overflow:hidden;animation:fadeIn .5s}
+    .form-header{background:linear-gradient(135deg,#2b2d7f,#1a1d5f);color:#fff;padding:25px;text-align:center}
+    .form-header h3{margin:0;font-weight:600}
+    .form-body{padding:40px}
+    .form-section{background:#f8f9fa;border-radius:16px;padding:25px;margin-bottom:25px;border-left:4px solid #2b2d7f}
+    .section-title{color:#2b2d7f;font-weight:700;margin-bottom:20px;font-size:18px;display:flex;align-items:center}
+    .section-title i{margin-right:10px}
+    .form-label-modern{font-weight:600;color:#2b2d7f;margin-bottom:8px}
+    .form-control-modern,.select-modern{width:100%;height:50px;border-radius:10px;border:2px solid #e9ecef;padding:12px 18px;font-size:16px}
+    .form-control-modern:focus,.select-modern:focus{border-color:#2b2d7f;box-shadow:0 0 0 .25rem rgba(43,45,127,.15);outline:none}
+    .btn-actions{text-align:center;background:#f8f9fa;padding:25px}
+    .btn-save-modern{background:linear-gradient(135deg,#28a745,#20c997);border:none;border-radius:25px;padding:12px 35px;color:#fff;font-weight:600;font-size:16px}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1}}
+  </style>
+</head>
+
+<body>
+<section class="content container-fluid">
+  <div class="form-container">
+
+    <div class="form-header">
+      <h3><i class="fas fa-bed"></i> Agregar cama</h3>
+    </div>
+
+    <div class="form-body">
+      <form method="POST">
+
+        <!-- Información básica -->
+        <div class="form-section">
+          <div class="section-title">
+            <i class="fas fa-hashtag"></i> Información básica
+          </div>
+          <label class="form-label-modern">Número de cama</label>
+          <input name="numero" type="text" required class="form-control-modern" placeholder="Ej. H-101">
+
+          <label class="form-label-modern mt-3">Área</label>
+          <select name="area" class="select-modern" required>
+            <option value="Hospitalizado">Hospitalizado</option>
+            <option value="Urgencias">Urgencias</option>
+          </select>
+        </div>
+
+        <!-- Detalles adicionales -->
+        <div class="form-section">
+          <div class="section-title">
+            <i class="fas fa-hospital"></i> Detalles adicionales
+          </div>
+          <label class="form-label-modern">Tipo de habitación</label>
+          <input name="tipo_habitacion" type="text" class="form-control-modern" placeholder="Ej. Individual">
+
+          <label class="form-label-modern mt-3">Piso</label>
+          <input name="piso" type="text" class="form-control-modern" placeholder="Ej. 1">
+
+          <label class="form-label-modern mt-3">Sección</label>
+          <input name="seccion" type="text" class="form-control-modern" placeholder="Ej. A">
+
+          <label class="form-label-modern mt-3">¿Está ocupada?</label>
+          <select name="ocupada" class="select-modern" required>
+            <option value="0">No</option>
+            <option value="1">Sí</option>
+          </select>
+        </div>
+
+        <!-- Botón -->
+        <div class="btn-actions">
+          <button type="submit" class="btn btn-save-modern">
+            <i class="fas fa-save mr-2"></i> Guardar
+          </button>
+        </div>
+      </form>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} mt-3">{{ message }}</div>
+        {% endfor %}
+      {% endwith %}
+    </div>
+  </div>
+</section>
+</body>
+</html>
