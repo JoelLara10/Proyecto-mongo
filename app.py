@@ -977,9 +977,77 @@ def mostrar_usuario(user_id):
 # ====================================================================================
 # ============================       DIAGNOSTICO       ====================================
 # ====================================================================================
-# NOTA: Las rutas de diagnóstico requieren tabla cat_diag que no existe en el schema actual
-# Se comenta esta funcionalidad para permitir el push a GitHub
-# Descomentar cuando se implemente la tabla cat_diag
+
+# ============================ LISTAR DIAGNÓSTICOS ============================
+@app.route('/configuracion/diagnostico')
+def listar_diagnosticos():
+    conexion = get_db_connection()
+    cursor = conexion.cursor(pymysql.cursors.DictCursor)
+
+    cursor.execute("""
+        SELECT id_diag, diagnostico, id_cie10
+        FROM cat_diag
+        ORDER BY id_diag DESC
+    """)
+    diagnosticos = cursor.fetchall()
+    conexion.close()
+
+    return render_template(
+        'configuracion/diagnostico/cat_diagnostico.html',
+        diagnosticos=diagnosticos
+    )
+
+
+# ============================ INSERTAR DIAGNÓSTICO ============================
+@app.route('/configuracion/diagnostico/insertar', methods=['POST'])
+def insertar_diagnostico():
+    diag = request.form.get('diag')
+    id_cie10 = request.form.get('id_cie10')
+
+    if diag and id_cie10:
+        conexion = get_db_connection()
+        cursor = conexion.cursor()
+
+        cursor.execute("""
+            INSERT INTO cat_diag (diagnostico, id_cie10)
+            VALUES (%s, %s)
+        """, (diag, id_cie10))
+
+        conexion.commit()
+        conexion.close()
+
+    return redirect(url_for('listar_diagnosticos'))
+
+
+# ============================ EDITAR DIAGNÓSTICO ============================
+@app.route('/configuracion/diagnostico/editar/<int:id>', methods=['GET', 'POST'])
+def editar_diagnostico(id):
+    conexion = get_db_connection()
+    cursor = conexion.cursor(pymysql.cursors.DictCursor)
+
+    if request.method == 'POST':
+        diag = request.form['diag']
+        id_cie10 = request.form['id_cie10']
+
+        cursor.execute("""
+            UPDATE cat_diag
+            SET diagnostico = %s, id_cie10 = %s
+            WHERE id_diag = %s
+        """, (diag, id_cie10, id))
+
+        conexion.commit()
+        conexion.close()
+        return redirect(url_for('listar_diagnosticos'))
+
+    cursor.execute("SELECT * FROM cat_diag WHERE id_diag = %s", (id,))
+    diagnostico = cursor.fetchone()
+    conexion.close()
+
+    return render_template(
+        'configuracion/diagnostico/edit_diagnostico.html',
+        diagnostico=diagnostico
+    )
+
 
 
 
