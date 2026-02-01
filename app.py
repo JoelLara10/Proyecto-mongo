@@ -1,6 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from templates.administrativo.pacientes.doc_pacientes import pdf
-from templates.medico.impresiones import pdf_med
 import pymysql
 import bcrypt
 from flask import request, make_response
@@ -9,11 +8,12 @@ from decimal import Decimal
 from datetime import datetime, timedelta
 from datetime import datetime, date
 import pymysql.cursors
+from estudios import estudios_bp
 
 
 app = Flask(__name__)
+app.register_blueprint(estudios_bp, url_prefix='/estudios')
 app.register_blueprint(pdf)
-app.register_blueprint(pdf_med)
 app.secret_key = 'tu_clave_secreta_aqui'  # Cambia esto por algo seguro
 
 # Configuración de MySQL
@@ -112,7 +112,7 @@ def dashboard():
         menu_options = [
             {'name': 'Administrativo', 'url': url_for('administrativo')},
             {'name': 'Médico', 'url': url_for('medico')},
-            {'name': 'Estudios', 'url': '#'},
+            {'name': 'Estudios', 'url': url_for('estudios.estudios_home')},
             {'name': 'Configuración', 'url': '#'}
         ]
 
