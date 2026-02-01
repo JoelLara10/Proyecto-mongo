@@ -89,19 +89,90 @@
       </a>
     </div>
 
-    <!-- GESTIÓN DE CUENTAS -->
-    <div class="col-md-4 mb-4">
-      <a href="#" class="text-decoration-none">
-        <div class="card dashboard-card text-center shadow-sm">
-          <div class="card-body">
-            <div class="icon-circle" style="background:#C8E6C9;">
-              <i class="bi bi-credit-card fs-1 text-success"></i>
-            </div>
-            <h5 class="mt-3">Gestión de Cuentas</h5>
-          </div>
+       <!-- GESTIÓN DE CUENTAS -->
+<div class="col-md-4 mb-4">
+  <a href="#"
+     class="text-decoration-none"
+     data-bs-toggle="modal"
+     data-bs-target="#modalGestionCuentas">
+    <div class="card dashboard-card text-center shadow-sm">
+      <div class="card-body">
+        <div class="icon-circle" style="background:#F8BBD0;">
+          <i class="bi bi-wallet2 fs-1 text-danger"></i>
         </div>
-      </a>
+        <h5 class="mt-3">Gestión de Cuentas</h5>
+      </div>
     </div>
+  </a>
+</div>
+
+
+    <!-- MODAL GESTIÓN DE CUENTAS -->
+<div class="modal fade" id="modalGestionCuentas" tabindex="-1">
+  <div class="modal-dialog modal-xl modal-dialog-centered">
+    <div class="modal-content" style="border-radius:20px;">
+
+      <!-- HEADER -->
+      <div class="modal-header text-white" style="background:#d81b60;">
+        <h5 class="modal-title">
+          <i class="bi bi-wallet2"></i> Gestión de Cuentas
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+
+      <!-- BODY -->
+      <div class="modal-body">
+        <div class="row text-center">
+
+          <!-- CUENTA DE PACIENTES -->
+          <div class="col-md-4 mb-3">
+            <a href="{{ url_for('cuenta_pacientes') }}" class="text-decoration-none">
+              <div class="card shadow-sm p-4">
+                <div class="icon-circle mx-auto" style="background:#E3F2FD;">
+                  <i class="bi bi-file-earmark-text fs-1 text-primary"></i>
+                </div>
+                <h6 class="mt-3 text-primary">CUENTA DE PACIENTES</h6>
+              </div>
+            </a>
+          </div>
+
+          <!-- PRESUPUESTOS -->
+          <div class="col-md-4 mb-3">
+            <a href="{{ url_for('presupuestos') }}" class="text-decoration-none">
+              <div class="card shadow-sm p-4">
+                <div class="icon-circle mx-auto" style="background:#FFF3CD;">
+                  <i class="bi bi-cash-stack fs-1 text-warning"></i>
+                </div>
+                <h6 class="mt-3 text-warning">PRESUPUESTOS</h6>
+              </div>
+            </a>
+          </div>
+
+          <!-- CORTE DE CAJA -->
+          <div class="col-md-4 mb-3">
+            <a href="{{ url_for('corte_caja') }}" class="text-decoration-none">
+              <div class="card shadow-sm p-4">
+                <div class="icon-circle mx-auto" style="background:#E8F5E9;">
+                  <i class="bi bi-receipt fs-1 text-success"></i>
+                </div>
+                <h6 class="mt-3 text-success">CORTE DE CAJA</h6>
+              </div>
+            </a>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- FOOTER -->
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">
+          <i class="bi bi-x-circle"></i> Cerrar
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
 
     <!-- CENSO -->
     <div class="col-md-4 mb-4">

@@ -1,17 +1,21 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session, current_app
+from flask import Flask, render_template, request, redirect, url_for, flash, session, current_app, jsonify
 from templates.administrativo.pacientes.doc_pacientes import pdf
+from werkzeug.utils import secure_filename
 import pymysql
 import bcrypt
-from datetime import datetime, date
+from flask import make_response
+from fpdf import FPDF
+from decimal import Decimal
+from datetime import datetime, timedelta, date
 import pymysql.cursors
 import os
 import zipfile
-from datetime import datetime
-from flask import render_template, flash, Blueprint
-from apscheduler.schedulers.background import BackgroundScheduler
+from estudios import estudios_bp
+
 
 
 app = Flask(__name__)
+app.register_blueprint(estudios_bp, url_prefix='/estudios')
 app.register_blueprint(pdf)
 app.secret_key = 'tu_clave_secreta_aqui'  # Cambia esto por algo seguro
 
@@ -88,8 +92,8 @@ def dashboard():
         menu_options = [
             {'name': 'Administrativo', 'url': url_for('administrativo')},
             {'name': 'Médico', 'url': url_for('medico')},
-            {'name': 'Estudios', 'url': '#'},
-            {'name': 'Configuración', 'url': url_for('menu_configuracion')},
+            {'name': 'Estudios', 'url': url_for('estudios.estudios_home')},
+            {'name': 'Configuración', 'url': url_for('menu_configuracion')}
         ]
 
     return render_template('dashboard.html', role=role, menu_options=menu_options)
@@ -680,10 +684,10 @@ def editar_cama(id):
                 WHERE id_cama=%s
             """, (estatus, area, tipo_habitacion, piso, seccion, ocupada, id))
             conn.commit()
-            flash('✅ Cama actualizada correctamente', 'success')
+            flash('Cama actualizada correctamente', 'success')
             return redirect(url_for('menu_camas'))
         except Exception as e:
-            flash(f'❌ Error al actualizar cama: {e}', 'error')
+            flash(f'Error al actualizar cama: {e}', 'error')
         finally:
             cursor.close()
             conn.close()
@@ -695,7 +699,7 @@ def editar_cama(id):
     conn.close()
 
     if not cama:
-        flash('❌ Cama no encontrada', 'error')
+        flash('Cama no encontrada', 'error')
         return redirect(url_for('menu_camas'))
 
     return render_template('configuracion/camas/editar_cama.html', cama=cama)
@@ -809,22 +813,19 @@ def test_backup():
 def alta_usuarios():
 
     conexion = get_db_connection()
-    cursor = conexion.cursor(pymysql.cursors.DictCursor)
+    cursor = conexion.cursor()
 
     cursor.execute("""
         SELECT 
-            u.id,
-            u.username,
-            u.role,
-            p.curp,
-            p.nombre,
-            p.papell,
-            p.sapell
-        FROM users u
-        JOIN personal p ON p.user_id = u.id
-        ORDER BY u.id DESC
+            id,
+            username,
+            role
+        FROM users
+        ORDER BY id DESC
     """)
     personal = cursor.fetchall()
+    cursor.close()
+    conexion.close()
 
     roles = ['admin', 'medico', 'enfermero', 'administrativo']
 
@@ -845,45 +846,38 @@ def insertar_usuario():
     conexion = get_db_connection()
     cursor = conexion.cursor()
 
-    username = request.form['username']
-    password = request.form['password']
-    role = request.form['role']
+    try:
+        username = request.form['username']
+        password = request.form['password']
+        role = request.form['role']
 
-    curp = request.form['curp_u']
-    nombre = request.form['nombre']
-    papell = request.form['papell']
-    sapell = request.form['sapell']
-    fecnac = request.form['fecnac']
+        # VALIDAR USUARIO DUPLICADO
+        cursor.execute(
+            "SELECT id FROM users WHERE username = %s",
+            (username,)
+        )
+        if cursor.fetchone():
+            flash('El usuario ya existe', 'danger')
+            cursor.close()
+            conexion.close()
+            return redirect(url_for('alta_usuarios'))
 
-    # VALIDAR USUARIO DUPLICADO
-    cursor.execute(
-        "SELECT id FROM users WHERE username = %s",
-        (username,)
-    )
-    if cursor.fetchone():
-        flash('❌ El usuario ya existe', 'danger')
-        return redirect(url_for('alta_usuario'))
+        # INSERT USERS
+        cursor.execute("""
+            INSERT INTO users (username, password, role)
+            VALUES (%s, %s, %s)
+        """, (username, password, role))
 
-    # INSERT USERS
-    cursor.execute("""
-        INSERT INTO users (username, password, role)
-        VALUES (%s, %s, %s)
-    """, (username, password, role))
-
-    user_id = cursor.lastrowid
-
-    # INSERT PERSONAL
-    cursor.execute("""
-        INSERT INTO personal (
-            user_id, curp, nombre, papell, sapell, fecnac
-        ) VALUES (%s,%s,%s,%s,%s,%s)
-    """, (
-        user_id, curp, nombre, papell, sapell, fecnac
-    ))
-
-    conexion.commit()
-    flash(' Usuario creado correctamente', 'success')
-    return redirect(url_for('alta_usuario'))
+        conexion.commit()
+        flash('Usuario creado correctamente', 'success')
+        return redirect(url_for('alta_usuarios'))
+    except Exception as e:
+        conexion.rollback()
+        flash(f'Error al crear usuario: {e}', 'danger')
+        return redirect(url_for('alta_usuarios'))
+    finally:
+        cursor.close()
+        conexion.close()
 
 
 # ====================================================================================
@@ -894,62 +888,52 @@ def insertar_usuario():
 def editar_usuario(user_id):
 
     conexion = get_db_connection()
-    cursor = conexion.cursor(pymysql.cursors.DictCursor)
+    cursor = conexion.cursor()
 
     cursor.execute("""
         SELECT 
-            u.id,
-            u.username,
-            u.role,
-            p.curp,
-            p.nombre,
-            p.papell,
-            p.sapell,
-            p.fecnac
-        FROM users u
-        JOIN personal p ON p.user_id = u.id
-        WHERE u.id = %s
+            id,
+            username,
+            role
+        FROM users
+        WHERE id = %s
     """, (user_id,))
     usuario = cursor.fetchone()
 
     if not usuario:
         flash('Usuario no encontrado', 'danger')
+        cursor.close()
+        conexion.close()
         return redirect(url_for('alta_usuarios'))
 
     roles = ['admin', 'medico', 'enfermero', 'administrativo']
 
     if request.method == 'POST':
+        try:
+            cursor.execute("""
+                UPDATE users
+                SET username=%s, role=%s
+                WHERE id=%s
+            """, (
+                request.form['username'],
+                request.form['role'],
+                user_id
+            ))
 
-        cursor.execute("""
-            UPDATE users
-            SET username=%s, role=%s
-            WHERE id=%s
-        """, (
-            request.form['username'],
-            request.form['role'],
-            user_id
-        ))
+            conexion.commit()
+            flash('Usuario actualizado correctamente', 'success')
+            cursor.close()
+            conexion.close()
+            return redirect(url_for('alta_usuarios'))
+        except Exception as e:
+            conexion.rollback()
+            flash(f'Error al actualizar usuario: {e}', 'danger')
+            cursor.close()
+            conexion.close()
+            return redirect(url_for('alta_usuarios'))
 
-        cursor.execute("""
-            UPDATE personal SET
-                curp=%s,
-                nombre=%s,
-                papell=%s,
-                sapell=%s,
-                fecnac=%s
-            WHERE user_id=%s
-        """, (
-            request.form['curp'],
-            request.form['nombre'],
-            request.form['papell'],
-            request.form['sapell'],
-            request.form['fecnac'],
-            user_id
-        ))
-
-        conexion.commit()
-        flash(' Usuario actualizado correctamente', 'success')
-        return redirect(url_for('alta_usuario'))
+    cursor.close()
+    conexion.close()
 
     return render_template(
         'configuracion/personal/editar_usuario.html',
@@ -966,26 +950,23 @@ def editar_usuario(user_id):
 def mostrar_usuario(user_id):
 
     conexion = get_db_connection()
-    cursor = conexion.cursor(pymysql.cursors.DictCursor)
+    cursor = conexion.cursor()
 
     cursor.execute("""
         SELECT 
-            u.username,
-            u.role,
-            p.curp,
-            p.nombre,
-            p.papell,
-            p.sapell,
-            p.fecnac
-        FROM users u
-        JOIN personal p ON p.user_id = u.id
-        WHERE u.id = %s
+            username,
+            role
+        FROM users
+        WHERE id = %s
     """, (user_id,))
     usuario = cursor.fetchone()
 
+    cursor.close()
+    conexion.close()
+
     if not usuario:
         flash('Usuario no encontrado', 'danger')
-        return redirect(url_for('alta_usuario'))
+        return redirect(url_for('alta_usuarios'))
 
     return render_template(
         'configuracion/personal/mostrar_usuario.html',
@@ -996,124 +977,9 @@ def mostrar_usuario(user_id):
 # ====================================================================================
 # ============================       DIAGNOSTICO       ====================================
 # ====================================================================================
-
-@app.route('/configuracion/diagnostico')
-def cat_diagnostico():
-
-    conexion = get_db_connection()
-    cursor = conexion.cursor(pymysql.cursors.DictCursor)
-
-    cursor.execute("""
-        SELECT 
-            id_diag,
-            diagnostico,
-            id_cie10
-        FROM cat_diag
-        ORDER BY id_diag DESC
-    """)
-
-    diagnosticos = cursor.fetchall()
-
-    return render_template(
-        'configuracion/diagnostico/cat_diagnostico.html',
-        diagnosticos=diagnosticos
-    )
-
-
-# ============================ INSERTAR DIAGNÓSTICO ============================
-@app.route('/configuracion/diagnostico/insertar', methods=['GET', 'POST'])
-def insertar_diagnostico():
-
-    # 👉 SI ENVÍAN EL FORMULARIO
-    if request.method == 'POST':
-        diag = request.form.get('diag')
-        id_cie10 = request.form.get('id_cie10')
-
-        if diag and id_cie10:
-            conexion = pymysql.connect(
-                host='localhost',
-                user='root',
-                password='',
-                db='ineo_db',
-                cursorclass=pymysql.cursors.DictCursor
-            )
-
-            cursor = conexion.cursor()
-
-            sql = """
-                INSERT INTO cat_diag (diagnostico, id_cie10)
-                VALUES (%s, %s)
-            """
-            cursor.execute(sql, (diag, id_cie10))
-            conexion.commit()
-            conexion.close()
-
-
-
-# ============================ EDITAR DIAGNÓSTICO ============================
-@app.route('/configuracion/diagnostico/editar/<int:id>', methods=['GET', 'POST'])
-def editar_diagnostico(id):
-    # conexión a la BD
-    conexion = pymysql.connect(
-        host='localhost',
-        user='root',
-        password='',
-        db='ineo_db',
-        cursorclass=pymysql.cursors.DictCursor
-    )
-
-    cursor = conexion.cursor()
-
-    # 👉 SI ENVÍAN EL FORMULARIO
-    if request.method == 'POST':
-        diag = request.form['diag']
-        id_cie10 = request.form['id_cie10']
-
-        sql_update = """
-            UPDATE cat_diag
-            SET diagnostico = %s, id_cie10 = %s
-            WHERE id_diag = %s
-        """
-        cursor.execute(sql_update, (diag, id_cie10, id))
-        conexion.commit()
-        conexion.close()
-
-        # Redirige al listado de diagnósticos después de editar
-        return redirect(url_for('listar_diagnosticos'))
-
-    # 👉 SI SOLO ABREN LA PÁGINA
-    sql = "SELECT * FROM cat_diag WHERE id_diag = %s"
-    cursor.execute(sql, (id,))
-    diagnostico = cursor.fetchone()
-
-    conexion.close()
-
-    return render_template(
-        'configuracion/diagnostico/edit_diagnostico.html',
-        diagnostico=diagnostico
-    )
-
-    
-# ============================ LISTAR DIAGNÓSTICOS ============================
-@app.route('/configuracion/diagnostico')
-def listar_diagnosticos():
-    conexion = pymysql.connect(
-        host='localhost',
-        user='root',
-        password='',
-        db='ineo_db',
-        cursorclass=pymysql.cursors.DictCursor
-    )
-
-    cursor = conexion.cursor()
-    cursor.execute("SELECT * FROM cat_diag")
-    diagnosticos = cursor.fetchall()
-    conexion.close()
-
-    return render_template(
-        'configuracion/diagnostico/cat_diagnostico.html',
-        diagnosticos=diagnosticos
-    )
+# NOTA: Las rutas de diagnóstico requieren tabla cat_diag que no existe en el schema actual
+# Se comenta esta funcionalidad para permitir el push a GitHub
+# Descomentar cuando se implemente la tabla cat_diag
 
 
 
@@ -1448,7 +1314,7 @@ def guardar_examenes_gabinete():
     conn = get_db_connection()
     cursor = conn.cursor(pymysql.cursors.DictCursor)
 
-    # 1️⃣ Insertar encabezado
+    # Insertar encabezado
     cursor.execute("""
         INSERT INTO examenes_gabinete (id_atencion, id_medico, observaciones)
         VALUES (%s, %s, %s)
@@ -1753,6 +1619,265 @@ def ver_resultado_gabinete(id_examen):
             'sapell': encabezado['sapell']
         }
     )
+# ==================== GESTIÓN DE CUENTAS ====================
+
+@app.route('/admin/cuenta_pacientes')
+def cuenta_pacientes():
+    if 'user_id' not in session or session['role'] != 'admin':
+        flash('Acceso denegado.', 'error')
+        return redirect(url_for('dashboard'))
+
+    return render_template('administrativo/gestion_cuentas/cuenta_pacientes.html')
+
+
+@app.route('/admin/presupuestos', methods=['GET', 'POST'])
+def presupuestos():
+    if 'user_id' not in session or session.get('role') != 'admin':
+        flash('Acceso denegado.', 'error')
+        return redirect(url_for('dashboard'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
+
+    # ⚠️ Temporal
+    id_pac = 1
+    nombre = 'PRUEBA'
+
+    IVA = Decimal('1.16')
+
+    # ======================
+    # INSERTAR SERVICIO
+    # ======================
+    if request.method == 'POST' and 'btnserv' in request.form:
+        serv_id = request.form.get('serv')
+        cantidad = int(request.form.get('cantidad'))
+
+        cursor.execute(
+            "SELECT serv_desc FROM cat_servicios WHERE id_serv = %s",
+            (serv_id,)
+        )
+        serv = cursor.fetchone()
+
+        if serv:
+            cursor.execute("""
+                INSERT INTO presupuesto
+                (fecha, id_pac, nombre, id_serv, servicio, cantidad)
+                VALUES (NOW(), %s, %s, %s, %s, %s)
+            """, (id_pac, nombre, serv_id, serv['serv_desc'], cantidad))
+            conn.commit()
+
+        return redirect(url_for('presupuestos'))
+
+    # ======================
+    # INSERTAR MEDICAMENTO
+    # ======================
+    if request.method == 'POST' and 'btnmed' in request.form:
+        item_id = request.form.get('med')
+        cantidad = int(request.form.get('cantidad'))
+
+        cursor.execute(
+            "SELECT item_code, item_name FROM item WHERE item_id = %s",
+            (item_id,)
+        )
+        item = cursor.fetchone()
+
+        if item:
+            cursor.execute("""
+                INSERT INTO presupuesto
+                (fecha, id_pac, nombre, id_serv, servicio, cantidad)
+                VALUES (NOW(), %s, %s, %s, %s, %s)
+            """, (id_pac, nombre, item['item_code'], item['item_name'], cantidad))
+            conn.commit()
+
+        return redirect(url_for('presupuestos'))
+
+    # ======================
+    # SELECTS PARA FORMULARIOS
+    # ======================
+    cursor.execute("""
+        SELECT id_serv, serv_desc, serv_costo
+        FROM cat_servicios
+        WHERE serv_activo = 'SI'
+    """)
+    servicios = cursor.fetchall()
+
+    cursor.execute("""
+        SELECT item_id, item_code, item_name, item_price
+        FROM item
+    """)
+    items = cursor.fetchall()
+
+    # ======================
+    # TABLA PRESUPUESTO - SERVICIOS
+    # ======================
+    cursor.execute("""
+        SELECT p.*, c.serv_costo
+        FROM presupuesto p
+        JOIN cat_servicios c ON c.id_serv = p.id_serv
+        WHERE p.id_pac = %s
+    """, (id_pac,))
+    lista_serv = cursor.fetchall()
+
+    for p in lista_serv:
+        costo = Decimal(p['serv_costo'])
+        cantidad = Decimal(p['cantidad'])
+        p['subtotal'] = costo * cantidad
+        p['total'] = p['subtotal'] * IVA
+
+    # ======================
+    # TABLA PRESUPUESTO - ITEMS
+    # ======================
+    cursor.execute("""
+        SELECT p.*, i.item_price
+        FROM presupuesto p
+        JOIN item i ON i.item_code = p.id_serv
+        WHERE p.id_pac = %s
+    """, (id_pac,))
+    lista_items = cursor.fetchall()
+
+    for p in lista_items:
+        precio = Decimal(p['item_price'])
+        cantidad = Decimal(p['cantidad'])
+        p['subtotal'] = precio * cantidad
+        p['total'] = p['subtotal'] * IVA
+
+    conn.close()
+
+    return render_template(
+        'administrativo/gestion_cuentas/presupuestos.html',
+        servicios=servicios,
+        items=items,
+        lista_serv=lista_serv,
+        lista_items=lista_items,
+        IVA=IVA
+    )
+
+
+@app.route('/admin/presupuestos/eliminar/<int:id_presupuesto>', methods=['POST'])
+def eliminar_presupuesto(id_presupuesto):
+    if 'user_id' not in session or session.get('role') != 'admin':
+        flash('Acceso denegado.', 'error')
+        return redirect(url_for('dashboard'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        "DELETE FROM presupuesto WHERE id_presupuesto = %s",
+        (id_presupuesto,)
+    )
+
+    conn.commit()
+    conn.close()
+
+    flash('Registro eliminado correctamente', 'success')
+    return redirect(url_for('presupuestos'))
+
+
+
+@app.route('/admin/corte_caja')
+def corte_caja():
+    if 'user_id' not in session or session['role'] != 'admin':
+        flash('Acceso denegado.', 'error')
+        return redirect(url_for('dashboard'))
+    
+    return render_template('administrativo/gestion_cuentas/corte_caja.html')
+
+@app.route('/corte_caja/pdf', methods=['POST'])
+def corte_caja_pdf():
+
+    fecha_inicio = request.form['fecha_inicio']
+    fecha_fin = request.form['fecha_fin']
+
+    # Sumar 1 día a fecha final
+    fecha_fin_real = (
+        datetime.strptime(fecha_fin, "%Y-%m-%d") + timedelta(days=1)
+    ).strftime("%Y-%m-%d")
+
+    conexion = get_db_connection()
+
+    pdf = FPDF()
+    pdf.alias_nb_pages()
+    pdf.add_page()
+
+    # =============================
+    # ENCABEZADO
+    # =============================
+    pdf.set_font('Arial', 'B', 12)
+    pdf.set_text_color(43, 45, 127)
+    pdf.cell(0, 10, 'REPORTE CORTE DE CAJA', border=1, ln=1, align='C')
+    pdf.ln(5)
+
+    pdf.set_font('Arial', '', 10)
+    pdf.cell(
+        0, 8,
+        f"Periodo del {fecha_inicio} al {fecha_fin}",
+        ln=1
+    )
+
+    # =============================
+    # TABLA
+    # =============================
+    pdf.ln(5)
+    pdf.set_font('Arial', 'B', 9)
+
+    headers = ['#', 'Fecha', 'Paciente', 'Monto', 'Tipo', 'Metodo']
+    widths = [8, 25, 80, 20, 15, 30]
+
+    for h, w in zip(headers, widths):
+        pdf.cell(w, 8, h, 1)
+    pdf.ln()
+
+    pdf.set_font('Arial', '', 8)
+
+    total_efectivo = 0
+    contador = 1
+
+    with conexion.cursor() as cursor:
+        sql = """
+        SELECT p.nombre, m.fecha, m.deposito, m.tipo_pago
+        FROM pago_serv p
+        JOIN depositos_pserv m ON p.id_pac = m.id_pac
+        WHERE m.fecha BETWEEN %s AND %s
+          AND m.tipo_pago NOT IN ('DESCUENTO','ASEGURADORA')
+        ORDER BY p.nombre
+        """
+        cursor.execute(sql, (fecha_inicio, fecha_fin_real))
+        rows = cursor.fetchall()
+
+        for r in rows:
+            pdf.cell(8, 8, str(contador), 1)
+            pdf.cell(25, 8, str(r['fecha']), 1)
+            pdf.cell(80, 8, r['nombre'], 1)
+            pdf.cell(20, 8, f"${float(r['deposito']):.2f}", 1)
+            pdf.cell(15, 8, 'SERV', 1)
+            pdf.cell(30, 8, r['tipo_pago'], 1)
+            pdf.ln()
+
+            total_efectivo += float(r['deposito'])
+            contador += 1
+
+    conexion.close()
+
+    # =============================
+    # TOTAL
+    # =============================
+    pdf.set_font('Arial', 'B', 10)
+    pdf.cell(0, 10, f"TOTAL EFECTIVO: ${total_efectivo:,.2f}", 1, ln=1)
+
+    response = make_response(pdf.output(dest='S').encode('latin-1'))
+    response.headers['Content-Type'] = 'application/pdf'
+    response.headers['Content-Disposition'] = 'inline; filename=corte_caja.pdf'
+
+    return response
+
+
+
+@app.route('/corte_caja/excel')
+def corte_caja_excel():
+    # Consulta SQL
+    # Generar Excel
+    return "Generar Excel"
 
 
 @app.route('/logout')
@@ -1762,5 +1887,6 @@ def logout():
     return redirect(url_for('login'))
 
 
+#-------------------------------------------------------------------------------------------------------
 if __name__ == '__main__':
     app.run(debug=True)
