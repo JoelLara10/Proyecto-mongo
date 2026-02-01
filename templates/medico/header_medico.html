@@ -92,15 +92,23 @@
     <p>Historia Clínica</p>
   </a>
 </li>
+          <li class="nav-item">
+  <a href="{{ url_for('imprimir_documentos', id_atencion=id_atencion) }}"
+     class="nav-link {% if request.endpoint == 'imprimir_documentos' %}active{% endif %}">
+    <i class="nav-icon fas fa-print"></i>
+    <p>Imprimir documentos</p>
+  </a>
+</li>
+
+
 
 {% endif %}
 
 
-</li>
 
 
-          <li class="nav-item has-treeview">
-  <a href="#" class="nav-link">
+          <li class="nav-item has-treeview {% if request.endpoint in ['signos_vitales', 'nota_medica', 'diagnostico', 'receta_medica', 'examenes_laboratorio', 'examenes_gabinete'] %}menu-open{% endif %}">
+  <a href="#" class="nav-link {% if request.endpoint in ['signos_vitales', 'nota_medica', 'diagnostico', 'receta_medica', 'examenes_laboratorio', 'examenes_gabinete'] %}active{% endif %}">
     <i class="nav-icon fas fa-file-medical"></i>
     <p>
       Notas Médicas
@@ -111,17 +119,49 @@
   <ul class="nav nav-treeview">
 
     <li class="nav-item">
+      <a href="{{ url_for('signos_vitales', id_atencion=id_atencion) }}"
+         class="nav-link {% if request.endpoint == 'signos_vitales' %}active{% endif %}">
+        <i class="nav-icon fas fa-heartbeat"></i>
+        <p>Signos vitales</p>
+      </a>
+    </li>
+
+    <li class="nav-item">
+      <a href="{{ url_for('nota_medica', id_atencion=id_atencion) }}"
+         class="nav-link {% if request.endpoint == 'nota_medica' %}active{% endif %}">
+        <i class="nav-icon fas fa-notes-medical"></i>
+        <p>Nota médica (SOAP)</p>
+      </a>
+    </li>
+
+    <li class="nav-item">
+      <a href="{{ url_for('diagnostico', id_atencion=id_atencion) }}"
+         class="nav-link {% if request.endpoint == 'diagnostico' %}active{% endif %}">
+        <i class="nav-icon fas fa-clipboard-list text-warning"></i>
+        <p>Diagnóstico</p>
+      </a>
+    </li>
+
+    <li class="nav-item">
+      <a href="{{ url_for('receta_medica', id_atencion=id_atencion) }}"
+         class="nav-link {% if request.endpoint == 'receta_medica' %}active{% endif %}">
+        <i class="nav-icon fas fa-prescription-bottle-alt"></i>
+        <p>Receta</p>
+      </a>
+    </li>
+
+    <li class="nav-item">
       <a href="{{ url_for('examenes_laboratorio', id_atencion=id_atencion) }}"
-         class="nav-link">
-        <i class="fas fa-vials nav-icon"></i>
+         class="nav-link {% if request.endpoint == 'examenes_laboratorio' %}active{% endif %}">
+        <i class="nav-icon fas fa-vials"></i>
         <p>Exámenes de Laboratorio</p>
       </a>
     </li>
 
     <li class="nav-item">
       <a href="{{ url_for('examenes_gabinete', id_atencion=id_atencion) }}"
-         class="nav-link">
-        <i class="fas fa-x-ray nav-icon"></i>
+         class="nav-link {% if request.endpoint == 'examenes_gabinete' %}active{% endif %}">
+        <i class="nav-icon fas fa-x-ray"></i>
         <p>Exámenes de Gabinete</p>
       </a>
     </li>
@@ -132,8 +172,8 @@
 
 <li class="nav-item">
   <a href="{{ url_for('resultados_estudios', id_atencion=id_atencion) }}"
-     class="nav-link">
-    <i class="fas fa-file-medical-alt nav-icon text-info"></i>
+     class="nav-link {% if request.endpoint == 'resultados_estudios' %}active{% endif %}">
+    <i class="nav-icon fas fa-file-medical-alt text-info"></i>
     <p>Resultados de Estudios</p>
   </a>
 </li>

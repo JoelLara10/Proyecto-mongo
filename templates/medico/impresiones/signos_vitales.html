@@ -1,0 +1,62 @@
+{% extends 'medico/header_medico.html' %}
+{% block content %}
+
+<section class="content-header">
+  <h1>
+    <i class="fas fa-heartbeat"></i> Signos Vitales
+  </h1>
+</section>
+
+<section class="content">
+
+<div class="card shadow">
+  <div class="card-header">
+    <h3 class="card-title">
+      Paciente: {{ paciente.papell }} {{ paciente.sapell }} {{ paciente.nom_pac }}
+    </h3>
+  </div>
+
+  <div class="card-body">
+    {% if signos %}
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>TA</th>
+          <th>FC</th>
+          <th>FR</th>
+          <th>Temp</th>
+          <th>SpO2</th>
+          <th>Peso</th>
+          <th>Talla</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for signo in signos %}
+        <tr>
+          <td>{{ signo.fecha_registro.strftime('%d/%m/%Y %H:%M') }}</td>
+          <td>{{ signo.ta }}</td>
+          <td>{{ signo.fc }}</td>
+          <td>{{ signo.fr }}</td>
+          <td>{{ signo.temp }}</td>
+          <td>{{ signo.spo2 }}</td>
+          <td>{{ signo.peso }}</td>
+          <td>{{ signo.talla }}</td>
+          <td>
+            <a href="{{ url_for('pdf_med.signos_vitales_pdf', id_signos=signo.id_signos) }}" class="btn btn-sm btn-primary" target="_blank">
+              <i class="fas fa-print"></i> Imprimir PDF
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p>No hay signos vitales registrados para esta atención.</p>
+    {% endif %}
+  </div>
+</div>
+
+</section>
+{% endblock %}

@@ -1,0 +1,220 @@
+{% extends 'medico/header_medico.html' %}
+{% block content %}
+
+<section class="content-header">
+  <h1 class="text-success">
+    <i class="fas fa-prescription-bottle-alt"></i> Receta Médica
+  </h1>
+</section>
+
+<section class="content">
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show">
+        {{ message }}
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+      </div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
+<div class="card card-success shadow">
+  <div class="card-header">
+    <h3 class="card-title">
+      <i class="fas fa-user"></i>
+      Paciente: {{ paciente.papell }} {{ paciente.sapell }} {{ paciente.nom_pac }}
+    </h3>
+  </div>
+
+  <form method="POST">
+    <div class="card-body" id="contenedor-medicamentos">
+
+      <div class="medicamento border rounded p-3 mb-4 shadow-sm bg-light">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h5 class="text-success text-bold">Medicamento #1</h5>
+        </div>
+
+        <label>Medicamento</label>
+        <div class="mb-2">
+            <button type="button" class="btn btn-success btn-sm" onclick="iniciarDictado('med_0')"><i class="fas fa-microphone"></i></button>
+            <button type="button" class="btn btn-warning btn-sm" onclick="detenerDictado()"><i class="fas fa-stop"></i></button>
+            <button type="button" class="btn btn-info btn-sm" onclick="leerCampo('med_0')"><i class="fas fa-volume-up"></i></button>
+        </div>
+        <div class="input-group mb-2">
+          <input name="medicamento[]" id="med_0" class="form-control" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group col-md-4">
+            <label>Dosis</label>
+            <div class="mb-2">
+                <button type="button" class="btn btn-success btn-sm" onclick="iniciarDictado('dosis_0')"><i class="fas fa-microphone"></i></button>
+                <button type="button" class="btn btn-warning btn-sm" onclick="detenerDictado()"><i class="fas fa-stop"></i></button>
+                <button type="button" class="btn btn-info btn-sm" onclick="leerCampo('dosis_0')"><i class="fas fa-volume-up"></i></button>
+              </div>
+            <div class="input-group">
+              <input name="dosis[]" id="dosis_0" class="form-control">
+            </div>
+          </div>
+
+          <div class="form-group col-md-4">
+            <label>Frecuencia</label>
+            <div class="mb-2">
+                <button type="button" class="btn btn-success btn-sm" onclick="iniciarDictado('freq_0')"><i class="fas fa-microphone"></i></button>
+                <button type="button" class="btn btn-warning btn-sm" onclick="detenerDictado()"><i class="fas fa-stop"></i></button>
+                <button type="button" class="btn btn-info btn-sm" onclick="leerCampo('freq_0')"><i class="fas fa-volume-up"></i></button>
+              </div>
+            <div class="input-group">
+              <input name="frecuencia[]" id="freq_0" class="form-control">
+            </div>
+          </div>
+
+          <div class="form-group col-md-4">
+            <label>Duración</label>
+            <div class="mb-2">
+                <button type="button" class="btn btn-success btn-sm" onclick="iniciarDictado('dur_0')"><i class="fas fa-microphone"></i></button>
+                <button type="button" class="btn btn-warning btn-sm" onclick="detenerDictado()"><i class="fas fa-stop"></i></button>
+                <button type="button" class="btn btn-info btn-sm" onclick="leerCampo('dur_0')"><i class="fas fa-volume-up"></i></button>
+              </div>
+            <div class="input-group">
+              <input name="duracion[]" id="dur_0" class="form-control">
+            </div>
+          </div>
+        </div>
+
+        <label>Indicaciones</label>
+        <div class="mb-2">
+            <button type="button" class="btn btn-success btn-sm" onclick="iniciarDictado('ind_0')"><i class="fas fa-microphone"></i></button>
+            <button type="button" class="btn btn-warning btn-sm" onclick="detenerDictado()"><i class="fas fa-stop"></i></button>
+            <button type="button" class="btn btn-info btn-sm" onclick="leerCampo('ind_0')"><i class="fas fa-volume-up"></i></button>
+          </div>
+        <div class="input-group">
+          <textarea name="indicaciones[]" id="ind_0" class="form-control" rows="2"></textarea>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="card-footer">
+        <button type="button" class="btn btn-outline-primary mb-3" onclick="agregarMedicamento()">
+            <i class="fas fa-plus"></i> Agregar otro Medicamento
+        </button>
+        <hr>
+        <div class="text-center">
+            <button type="submit" class="btn btn-success btn-lg">
+                <i class="fas fa-save"></i> Guardar Receta
+            </button>
+        </div>
+    </div>
+  </form>
+</div>
+
+</section>
+
+<script>
+let recognition;
+let campoActivo = null;
+let contador = 1;
+
+function agregarMedicamento() {
+  const contenedor = document.getElementById('contenedor-medicamentos');
+  const idActual = contador;
+
+  const div = document.createElement('div');
+  div.className = 'medicamento border rounded p-3 mb-4 shadow-sm bg-light';
+  div.innerHTML = `
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <h5 class="text-success text-bold">Medicamento #${idActual + 1}</h5>
+        <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('.medicamento').remove()">
+            <i class="fas fa-trash"></i> Eliminar
+        </button>
+    </div>
+
+    <label>Medicamento</label>
+    <div class="mb-2">
+        <button type="button" class="btn btn-success btn-sm" onclick="iniciarDictado('med_${idActual}')"><i class="fas fa-microphone"></i></button>
+        <button type="button" class="btn btn-warning btn-sm" onclick="detenerDictado()"><i class="fas fa-stop"></i></button>
+        <button type="button" class="btn btn-info btn-sm" onclick="leerCampo('med_${idActual}')"><i class="fas fa-volume-up"></i></button>
+    </div>
+    <div class="input-group mb-2">
+      <input name="medicamento[]" id="med_${idActual}" class="form-control" required>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group col-md-4">
+        <label>Dosis</label>
+        <div class="mb-2">
+            <button type="button" class="btn btn-success btn-sm" onclick="iniciarDictado('dosis_${idActual}')"><i class="fas fa-microphone"></i></button>
+            <button type="button" class="btn btn-warning btn-sm" onclick="detenerDictado()"><i class="fas fa-stop"></i></button>
+            <button type="button" class="btn btn-info btn-sm" onclick="leerCampo('dosis_${idActual}')"><i class="fas fa-volume-up"></i></button>
+        </div>
+        <input name="dosis[]" id="dosis_${idActual}" class="form-control">
+      </div>
+
+      <div class="form-group col-md-4">
+        <label>Frecuencia</label>
+        <div class="mb-2">
+            <button type="button" class="btn btn-success btn-sm" onclick="iniciarDictado('freq_${idActual}')"><i class="fas fa-microphone"></i></button>
+            <button type="button" class="btn btn-warning btn-sm" onclick="detenerDictado()"><i class="fas fa-stop"></i></button>
+            <button type="button" class="btn btn-info btn-sm" onclick="leerCampo('freq_${idActual}')"><i class="fas fa-volume-up"></i></button>
+        </div>
+        <input name="frecuencia[]" id="freq_${idActual}" class="form-control">
+      </div>
+
+      <div class="form-group col-md-4">
+        <label>Duración</label>
+        <div class="mb-2">
+            <button type="button" class="btn btn-success btn-sm" onclick="iniciarDictado('dur_${idActual}')"><i class="fas fa-microphone"></i></button>
+            <button type="button" class="btn btn-warning btn-sm" onclick="detenerDictado()"><i class="fas fa-stop"></i></button>
+            <button type="button" class="btn btn-info btn-sm" onclick="leerCampo('dur_${idActual}')"><i class="fas fa-volume-up"></i></button>
+        </div>
+        <input name="duracion[]" id="dur_${idActual}" class="form-control">
+      </div>
+    </div>
+
+    <label>Indicaciones</label>
+    <div class="mb-2">
+        <button type="button" class="btn btn-success btn-sm" onclick="iniciarDictado('ind_${idActual}')"><i class="fas fa-microphone"></i></button>
+        <button type="button" class="btn btn-warning btn-sm" onclick="detenerDictado()"><i class="fas fa-stop"></i></button>
+        <button type="button" class="btn btn-info btn-sm" onclick="leerCampo('ind_${idActual}')"><i class="fas fa-volume-up"></i></button>
+    </div>
+    <div class="input-group">
+      <textarea name="indicaciones[]" id="ind_${idActual}" class="form-control" rows="2"></textarea>
+    </div>
+  `;
+  contenedor.appendChild(div);
+  contador++;
+}
+
+function iniciarDictado(idCampo) {
+  if (!('webkitSpeechRecognition' in window)) {
+    alert('El navegador no soporta dictado por voz');
+    return;
+  }
+  campoActivo = document.getElementById(idCampo);
+  recognition = new webkitSpeechRecognition();
+  recognition.lang = 'es-MX';
+  recognition.continuous = true;
+  recognition.interimResults = false;
+  recognition.onresult = function(event) {
+    campoActivo.value += event.results[event.results.length - 1][0].transcript + ' ';
+  };
+  recognition.start();
+}
+
+function detenerDictado() {
+  if (recognition) recognition.stop();
+}
+
+function leerCampo(idCampo) {
+  const texto = document.getElementById(idCampo).value;
+  if (!texto) return;
+  const voz = new SpeechSynthesisUtterance(texto);
+  voz.lang = 'es-MX';
+  speechSynthesis.speak(voz);
+}
+</script>
+
+{% endblock %}

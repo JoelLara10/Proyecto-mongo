@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+
+  <!-- Bootstrap & Icons -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.0/css/all.css">
+
+  <!-- jQuery -->
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+
+  <!-- Buscador -->
+  <script>
+    $(document).ready(function () {
+      $("#search").keyup(function () {
+        let value = $(this).val().toLowerCase();
+        $("#mytable tbody tr").filter(function () {
+          $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+        });
+      });
+    });
+  </script>
+
+  <!-- ===== ESTILOS (MISMO DISEÑO PHP) ===== -->
+  <style>
+    body {
+      background: #f8f9fa;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .camas-container {
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 4px 20px rgba(43,45,127,0.1);
+      margin: 20px auto;
+      max-width: 1400px;
+      overflow: hidden;
+    }
+
+    .btn-add-modern {
+      background: linear-gradient(135deg, #2b2d7f, #1a1d5f);
+      border: none;
+      border-radius: 25px;
+      padding: 12px 30px;
+      color: white;
+      font-weight: 600;
+      font-size: 16px;
+      box-shadow: 0 4px 15px rgba(43,45,127,0.3);
+      width: 100%;
+      margin-bottom: 25px;
+      transition: all .3s ease;
+    }
+
+    .btn-add-modern:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(43,45,127,0.4);
+      color: white;
+      text-decoration: none;
+    }
+
+    .search-container {
+      position: relative;
+      margin-bottom: 25px;
+    }
+
+    .search-input {
+      border: 2px solid #e9ecef;
+      border-radius: 25px;
+      padding: 12px 20px 12px 45px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 15px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #6c757d;
+    }
+
+    .table-modern thead th {
+      background: #2b2d7f;
+      color: white;
+      text-align: center;
+      padding: 18px;
+      font-size: 14px;
+    }
+
+    .table-modern tbody td {
+      text-align: center;
+      padding: 15px;
+      border-bottom: 1px solid #e9ecef;
+      font-weight: 500;
+    }
+
+    .table-modern tbody tr {
+      transition: all .3s ease;
+      animation: fadeIn .3s ease-in-out;
+    }
+
+    .table-modern tbody tr:hover {
+      background: #f8f9fa;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    /* ESTATUS */
+    .status-libre { background: #d4edda; border-left: 4px solid #28a745; }
+    .status-ocupada { background: #f8d7da; border-left: 4px solid #dc3545; }
+    .status-mantenimiento { background: #fff3cd; border-left: 4px solid #ffc107; }
+    .status-por-liberar { background: #ffeaa7; border-left: 4px solid #fd79a8; }
+
+    .badge-status {
+      font-size: 12px;
+      padding: 6px 12px;
+      border-radius: 15px;
+      font-weight: 600;
+    }
+
+    .badge-libre { background: #28a745; color: white; }
+    .badge-ocupada { background: #dc3545; color: white; }
+    .badge-mantenimiento { background: #ffc107; color: #212529; }
+    .badge-por-liberar { background: #fd7e14; color: white; }
+
+    .btn-action {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      color: white;
+      transition: all .3s ease;
+    }
+
+    .btn-edit-modern {
+      background: linear-gradient(135deg, #28a745, #20c997);
+    }
+
+    .btn-delete-modern {
+      background: linear-gradient(135deg, #dc3545, #c82333);
+    }
+
+    .btn-action:hover {
+      transform: translateY(-2px);
+      color: white;
+    }
+
+    .status-text {
+      font-weight: 600;
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+
+    .text-ocupada { color: #dc3545; }
+    .text-no-disponible { color: #ffc107; }
+    .text-por-liberar { color: #fd7e14; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(15px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+
+<body>
+
+<section class="content container-fluid">
+  <div class="camas-container">
+    <div class="container-fluid p-4">
+
+      <a href="{{ url_for('alta_cama') }}" class="btn btn-add-modern">
+        <i class="fas fa-plus mr-2"></i>Agregar habitación
+      </a>
+
+      <div class="search-container">
+        <i class="fas fa-search search-icon"></i>
+        <input type="text" class="form-control search-input" id="search"
+               placeholder="Buscar habitación, estatus, área...">
+      </div>
+
+      <div class="table-responsive">
+        <table class="table table-modern" id="mytable">
+          <thead>
+          <tr>
+            <th>Habitación</th>
+            <th>Estatus</th>
+            <th>Área</th>
+            <th>Piso</th>
+            <th>Sección</th>
+            <th>Editar</th>
+            <th>Eliminar</th>
+          </tr>
+          </thead>
+
+          <tbody>
+          {% for cama in camas %}
+            {% if cama.id_atencion == 0 and cama.estatus == 'LIBRE' %}
+              <tr class="status-libre">
+                <td><strong>{{ cama.num_cama }}</strong></td>
+                <td><span class="badge badge-status badge-libre">LIBRE</span></td>
+                <td>{{ cama.tipo }}</td>
+                <td>{{ cama.piso }}</td>
+                <td>{{ cama.seccion }}</td>
+                <td>
+                  <a class="btn btn-action btn-edit-modern"
+                     href="/admin/configuracion/camas/editar/{{ cama.id }}">
+                    <i class="fa fa-edit"></i>
+                  </a>
+                </td>
+                <td>
+                  <a class="btn btn-action btn-delete-modern"
+                     href="/admin/configuracion/camas/eliminar/{{ cama.id }}">
+                    <i class="fa fa-trash-alt"></i>
+                  </a>
+                </td>
+              </tr>
+
+            {% elif cama.id_atencion != 0 and cama.estatus == 'OCUPADA' %}
+              <tr class="status-ocupada">
+                <td><strong>{{ cama.num_cama }}</strong></td>
+                <td><span class="badge badge-status badge-ocupada">OCUPADA</span></td>
+                <td>{{ cama.tipo }}</td>
+                <td>{{ cama.piso }}</td>
+                <td>{{ cama.seccion }}</td>
+                <td colspan="2">
+                  <span class="status-text text-ocupada">
+                    <i class="fas fa-user-injured mr-1"></i>OCUPADA
+                  </span>
+                </td>
+              </tr>
+
+            {% elif cama.estatus == 'MANTENIMIENTO' %}
+              <tr class="status-mantenimiento">
+                <td><strong>{{ cama.num_cama }}</strong></td>
+                <td><span class="badge badge-status badge-mantenimiento">NO DISPONIBLE</span></td>
+                <td>{{ cama.tipo }}</td>
+                <td>{{ cama.piso }}</td>
+                <td>{{ cama.seccion }}</td>
+                <td>
+                  <a class="btn btn-action btn-edit-modern"
+                     href="/admin/configuracion/camas/editar/{{ cama.id }}">
+                    <i class="fa fa-edit"></i>
+                  </a>
+                </td>
+                <td>
+                  <span class="status-text text-no-disponible">
+                    <i class="fas fa-tools mr-1"></i>NO DISPONIBLE
+                  </span>
+                </td>
+              </tr>
+
+            {% else %}
+              <tr class="status-por-liberar">
+                <td><strong>{{ cama.num_cama }}</strong></td>
+                <td><span class="badge badge-status badge-por-liberar">POR LIBERAR</span></td>
+                <td>{{ cama.tipo }}</td>
+                <td>{{ cama.piso }}</td>
+                <td>{{ cama.seccion }}</td>
+                <td>
+                  <a class="btn btn-action btn-edit-modern"
+                     href="/admin/configuracion/camas/editar/{{ cama.id }}">
+                    <i class="fa fa-edit"></i>
+                  </a>
+                </td>
+                <td>
+                  <span class="status-text text-por-liberar">
+                    <i class="fas fa-clock mr-1"></i>POR LIBERAR
+                  </span>
+                </td>
+              </tr>
+            {% endif %}
+          {% endfor %}
+          </tbody>
+
+        </table>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<script>
+  document.oncontextmenu = function () {
+    return false;
+  }
+</script>
+
+</body>
+</html>

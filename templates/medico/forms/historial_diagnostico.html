@@ -1,0 +1,62 @@
+{% extends 'medico/header_medico.html' %}
+
+{% block content %}
+
+<section class="content-header">
+  <h1 class="text-primary">
+    <i class="fas fa-history"></i> Historial de Diagnósticos
+  </h1>
+</section>
+
+<section class="content">
+
+<div class="card card-info">
+  <div class="card-header">
+    <h3 class="card-title">
+      <i class="fas fa-user"></i>
+      Paciente: {{ paciente.papell }} {{ paciente.sapell }} {{ paciente.nom_pac }}
+    </h3>
+  </div>
+
+  <div class="card-body table-responsive">
+    <table class="table table-bordered table-striped">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Diagnóstico</th>
+          <th>Secundarios</th>
+          <th>Observaciones</th>
+          <th>Médico</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for d in historial %}
+        <tr>
+          <td>{{ d.fecha_registro }}</td>
+          <td>{{ d.diagnostico_principal }}</td>
+          <td>{{ d.diagnosticos_secundarios }}</td>
+          <td>{{ d.observaciones }}</td>
+          <td>{{ d.medico_papell }}</td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="5" class="text-center text-muted">
+            No hay historial registrado
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card-footer text-center">
+    <a href="{{ url_for('diagnostico', id_atencion=id_atencion) }}"
+       class="btn btn-secondary">
+      <i class="fas fa-arrow-left"></i> Volver
+    </a>
+  </div>
+</div>
+
+</section>
+
+{% endblock %}

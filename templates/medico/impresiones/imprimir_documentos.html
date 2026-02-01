@@ -1,0 +1,71 @@
+{% extends 'medico/header_medico.html' %}
+{% block content %}
+
+<section class="content-header">
+  <h1>
+    <i class="fas fa-print"></i> Imprimir documentos
+  </h1>
+</section>
+
+<section class="content">
+
+<div class="card shadow">
+  <div class="card-header">
+    <h3 class="card-title">
+      Paciente: {{ paciente.papell }} {{ paciente.sapell }} {{ paciente.nom_pac }}
+    </h3>
+  </div>
+
+  <div class="card-body">
+
+    <div class="row">
+
+      <div class="col-md-4 mb-3">
+        <a href="{{ url_for('imprimir_signos_vitales', id_atencion=id_atencion) }}"
+           class="btn btn-outline-danger btn-block">
+          <i class="fas fa-heartbeat"></i> Signos vitales
+        </a>
+      </div>
+
+      <div class="col-md-4 mb-3">
+        <a href="{{ url_for('imprimir_notas_medicas', id_atencion=id_atencion) }}"
+           class="btn btn-outline-primary btn-block">
+          <i class="fas fa-notes-medical"></i> Nota médica (SOAP)
+        </a>
+      </div>
+
+      <div class="col-md-4 mb-3">
+        <a href="{{ url_for('imprimir_diagnostico', id_atencion=id_atencion) }}"
+           class="btn btn-outline-info btn-block">
+          <i class="fas fa-stethoscope"></i> Diagnóstico
+        </a>
+      </div>
+
+      <div class="col-md-4 mb-3">
+        <a href="{{ url_for('imprimir_recetas', id_atencion=id_atencion) }}"
+           class="btn btn-outline-success btn-block">
+          <i class="fas fa-prescription-bottle-alt"></i> Receta médica
+        </a>
+      </div>
+
+      <div class="col-md-4 mb-3">
+        <a href="{{ url_for('imprimir_laboratorio', id_atencion=id_atencion) }}"
+           class="btn btn-outline-warning btn-block">
+          <i class="fas fa-vials"></i> Exámenes de laboratorio
+        </a>
+      </div>
+
+      <div class="col-md-4 mb-3">
+        <a href="{{ url_for('imprimir_gabinete', id_atencion=id_atencion) }}"
+           class="btn btn-outline-secondary btn-block">
+          <i class="fas fa-x-ray"></i> Exámenes de gabinete
+        </a>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+</section>
+{% endblock %}
