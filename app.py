@@ -76,7 +76,6 @@ def login():
 
     return render_template('login.html')
 
-
 @app.route('/dashboard')
 def dashboard():
     if 'user_id' not in session:
@@ -84,6 +83,30 @@ def dashboard():
 
     role = session['role']
     menu_options = []
+
+    # Contar solicitudes pendientes
+    conn = get_db_connection()
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
+    
+    # Contar solicitudes pendientes de laboratorio (id_examen únicos)
+    cursor.execute("""
+        SELECT COUNT(DISTINCT id_examen) as count 
+        FROM examenes_laboratorio 
+        WHERE LOWER(estado) = 'pendiente'
+    """)
+    lab_pendientes = cursor.fetchone()['count']
+    
+    # Contar solicitudes pendientes de gabinete (id_examen únicos)
+    cursor.execute("""
+        SELECT COUNT(DISTINCT id_examen) as count 
+        FROM examenes_gabinete_det 
+        WHERE UPPER(estado) = 'PENDIENTE'
+    """)
+    gab_pendientes = cursor.fetchone()['count']
+    
+    total_pendientes = lab_pendientes + gab_pendientes
+    cursor.close()
+    conn.close()
 
     if role == 'admin':
         menu_options = [
@@ -93,7 +116,12 @@ def dashboard():
             {'name': 'Configuración', 'url': '#'}
         ]
 
-    return render_template('dashboard.html', role=role, menu_options=menu_options)
+    return render_template('dashboard.html', 
+                         role=role, 
+                         menu_options=menu_options,
+                         lab_pendientes=lab_pendientes,
+                         gab_pendientes=gab_pendientes,
+                         total_pendientes=total_pendientes)
 
 
 # ====================================================================================
@@ -1472,7 +1500,13 @@ def logout():
     flash('Sesión cerrada.', 'info')
     return redirect(url_for('login'))
 
-
+#---------------------------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------------------------------
+#ALERTAS DE ESTUDIOS
+
+
 if __name__ == '__main__':
     app.run(debug=True)
+

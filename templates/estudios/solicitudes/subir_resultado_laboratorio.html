@@ -1,43 +1,340 @@
 <div class="container-fluid">
+  <div class="d-flex align-items-center mb-3">
+    <a href="{{ url_for('estudios.estudios_home', vista='solicitudes_laboratorio') }}"
+       class="btn btn-outline-primary btn-sm d-flex align-items-center back-btn">
+      <i class="bi bi-arrow-left me-1"></i>Regresar
+    </a>
+  </div>
 
-  <a href="{{ url_for('estudios.estudios_home', vista='solicitudes_laboratorio') }}"
-     class="btn btn-sm btn-secondary mb-3">
-    ← Regresar a Solicitudes
-  </a>
-
-  <h4 class="mb-3">Subir Resultado de Estudio</h4>
-
-  <!-- Info del paciente (mock por ahora) -->
-  <div class="card mb-3">
-    <div class="card-body">
-      <p><strong>Paciente:</strong> </p>
-      <p><strong>Habitación:</strong> </p>
-      <p><strong>Estudio(s):</strong> </p>
+  <div class="card border-0 shadow rounded-2 mb-3">
+    <div class="card-header bg-primary text-white py-2 rounded-top">
+      <h5 class="mb-0">
+        <i class="bi bi-cloud-upload me-1"></i>Subir Resultado de Estudio
+      </h5>
+    </div>
+    
+    <!-- Información del paciente -->
+    <div class="card-body bg-light-blue py-3">
+      <div class="row g-2">
+        <div class="col-md-4">
+          <div class="info-card p-2 rounded bg-white shadow-sm">
+            <div class="d-flex align-items-center mb-1">
+              <i class="bi bi-person-circle me-1 text-primary fs-5"></i>
+              <h6 class="mb-0 text-primary small fw-bold">Paciente</h6>
+            </div>
+            <p class="fw-medium text-dark mb-0 small">{{ solicitud.paciente or '-' }}</p>
+          </div>
+        </div>
+        
+        <div class="col-md-4">
+          <div class="info-card p-2 rounded bg-white shadow-sm">
+            <div class="d-flex align-items-center mb-1">
+              <i class="bi bi-door-closed me-1 text-primary fs-5"></i>
+              <h6 class="mb-0 text-primary small fw-bold">Habitación</h6>
+            </div>
+            <p class="fw-medium text-dark mb-0 small">{{ solicitud.habitacion or '-' }}</p>
+          </div>
+        </div>
+        
+        <div class="col-md-4">
+          <div class="info-card p-2 rounded bg-white shadow-sm">
+            <div class="d-flex align-items-center mb-1">
+              <i class="bi bi-clipboard-check me-1 text-primary fs-5"></i>
+              <h6 class="mb-0 text-primary small fw-bold">Estudio(s)</h6>
+            </div>
+            {% if solicitud.estudios %}
+              {% set estudios_lista = solicitud.estudios.split(', ') %}
+              <div class="d-flex flex-wrap gap-1">
+                {% for estudio in estudios_lista %}
+                  <span class="badge bg-light-blue text-primary border border-primary rounded-pill px-2 py-0 small">
+                    {{ estudio }}
+                  </span>
+                {% endfor %}
+              </div>
+            {% else %}
+              <span class="text-muted small">-</span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- Formulario -->
-  <div class="card">
-    <div class="card-body">
-      <form>
+  <!-- Formulario para subir archivos -->
+  <div class="card border-0 shadow rounded-2">
+    <div class="card-body p-3">
+      <form method="POST" enctype="multipart/form-data">
+        <!-- Campo de archivos -->
         <div class="mb-3">
-          <label class="form-label">
-            Seleccionar archivo(s) (PDF, PNG, JPG, JPEG)
+          <label class="form-label fw-bold text-primary small mb-2">
+            <i class="bi bi-paperclip me-1"></i>Archivos de resultado
           </label>
-          <input type="file"
-                 class="form-control"
-                 multiple
-                 accept=".pdf,.png,.jpg,.jpeg">
-          <small class="text-muted">
-            Máximo 25MB por archivo. Puede seleccionar múltiples archivos.
-          </small>
+          
+          <div class="file-upload-area p-3 border-2 border-dashed border-primary rounded-2 bg-light-blue text-center">
+            <i class="bi bi-cloud-upload text-primary mb-2" style="font-size: 2rem;"></i>
+            <h6 class="text-primary mb-1">Arrastra y suelta archivos aquí</h6>
+            <p class="text-muted small mb-3">o haz clic para buscar</p>
+            
+            <div class="input-group mb-2">
+              <input type="file"
+                     name="archivos"
+                     class="form-control form-control-sm"
+                     multiple
+                     accept=".pdf,.png,.jpg,.jpeg"
+                     required
+                     id="fileInput">
+            </div>
+            
+            <div class="selected-files mt-2" id="fileList" style="max-height: 150px; overflow-y: auto;">
+              <!-- Aquí se mostrarán los archivos seleccionados -->
+            </div>
+            
+            <small class="text-muted small d-block mt-2">
+              <i class="bi bi-info-circle me-1"></i>
+              PDF, PNG, JPG, JPEG. Máx 25MB por archivo.
+            </small>
+          </div>
         </div>
 
-        <button type="button" class="btn btn-success">
-          Subir Resultados
-        </button>
+        <!-- Campo de observaciones -->
+        <div class="mb-3">
+          <label class="form-label fw-bold text-primary small">
+            <i class="bi bi-chat-text me-1"></i>Observaciones
+          </label>
+          <textarea name="observaciones" 
+                    class="form-control form-control-sm border-primary" 
+                    rows="3"
+                    placeholder="Observaciones relevantes sobre los resultados..."></textarea>
+        </div>
+
+        <!-- Botón de envío -->
+        <div class="d-flex justify-content-end">
+          <button type="submit" class="btn btn-primary btn-sm d-flex align-items-center">
+            <i class="bi bi-cloud-check me-1"></i>
+            Subir Resultados
+          </button>
+        </div>
       </form>
     </div>
   </div>
-
 </div>
+
+<style>
+  .bg-light-blue {
+    background-color: #e8f4fd !important;
+  }
+  
+  .back-btn {
+    border: 1px solid #4dabf7;
+    color: #4dabf7;
+    font-weight: 500;
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+  }
+  
+  .back-btn:hover {
+    background-color: #4dabf7;
+    color: white;
+    transform: translateX(-3px);
+  }
+  
+  .info-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    height: 100%;
+    font-size: 0.875rem;
+  }
+  
+  .info-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08) !important;
+  }
+  
+  .file-upload-area {
+    transition: all 0.2s ease;
+    cursor: pointer;
+    font-size: 0.875rem;
+  }
+  
+  .file-upload-area:hover {
+    background-color: #d9edfd !important;
+    border-color: #1971c2 !important;
+  }
+  
+  .border-2 {
+    border-width: 2px !important;
+  }
+  
+  .border-dashed {
+    border-style: dashed !important;
+  }
+  
+  .btn-primary {
+    background: linear-gradient(135deg, #4dabf7 0%, #1971c2 100%);
+    border: none;
+    font-weight: 500;
+    padding: 6px 20px;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+  }
+  
+  .btn-primary:hover {
+    background: linear-gradient(135deg, #1971c2 0%, #4dabf7 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(77, 171, 247, 0.2);
+  }
+  
+  .form-control:focus {
+    border-color: #4dabf7;
+    box-shadow: 0 0 0 0.2rem rgba(77, 171, 247, 0.15);
+  }
+  
+  .form-control.border-primary {
+    border-color: #4dabf7 !important;
+  }
+  
+  .form-control-sm {
+    font-size: 0.875rem;
+  }
+  
+  .card {
+    border: none;
+    font-size: 0.875rem;
+  }
+  
+  .card-header {
+    border-radius: 8px 8px 0 0 !important;
+    font-size: 0.875rem;
+  }
+  
+  .file-item {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 4px 8px;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.75rem;
+  }
+  
+  .file-item:last-child {
+    margin-bottom: 0;
+  }
+  
+  .badge.small {
+    font-size: 0.75rem;
+    padding: 1px 6px;
+  }
+  
+  h5, h6 {
+    font-size: 0.875rem;
+  }
+  
+  .small {
+    font-size: 0.75rem;
+  }
+  
+  /* Scroll personalizado */
+  #fileList::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  #fileList::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+  }
+  
+  #fileList::-webkit-scrollbar-thumb {
+    background: #4dabf7;
+    border-radius: 3px;
+  }
+</style>
+
+<script>
+  // Mostrar archivos seleccionados
+  document.getElementById('fileInput').addEventListener('change', function(e) {
+    const fileList = document.getElementById('fileList');
+    fileList.innerHTML = '';
+    
+    if (this.files.length > 0) {
+      const title = document.createElement('div');
+      title.className = 'fw-bold text-primary mb-1 small';
+      title.innerHTML = `<i class="bi bi-files me-1"></i>Archivos (${this.files.length}):`;
+      fileList.appendChild(title);
+      
+      for (let i = 0; i < this.files.length; i++) {
+        const file = this.files[i];
+        const fileItem = document.createElement('div');
+        fileItem.className = 'file-item';
+        
+        const fileSize = (file.size / (1024 * 1024)).toFixed(2); // Convertir a MB
+        
+        fileItem.innerHTML = `
+          <div class="d-flex align-items-center">
+            <i class="bi bi-file-earmark me-1 text-primary small"></i>
+            <div class="text-truncate" style="max-width: 180px;">
+              <div class="fw-medium small">${file.name}</div>
+              <small class="text-muted">${fileSize} MB</small>
+            </div>
+          </div>
+          <span class="badge bg-light-blue text-primary small">${file.type.split('/')[1].toUpperCase()}</span>
+        `;
+        
+        fileList.appendChild(fileItem);
+      }
+    }
+  });
+  
+  // Efecto drag and drop visual
+  const fileUploadArea = document.querySelector('.file-upload-area');
+  const fileInput = document.getElementById('fileInput');
+  
+  ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+    fileUploadArea.addEventListener(eventName, preventDefaults, false);
+  });
+  
+  function preventDefaults(e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+  
+  ['dragenter', 'dragover'].forEach(eventName => {
+    fileUploadArea.addEventListener(eventName, highlight, false);
+  });
+  
+  ['dragleave', 'drop'].forEach(eventName => {
+    fileUploadArea.addEventListener(eventName, unhighlight, false);
+  });
+  
+  function highlight() {
+    fileUploadArea.style.backgroundColor = '#d9edfd';
+    fileUploadArea.style.borderColor = '#1971c2';
+  }
+  
+  function unhighlight() {
+    fileUploadArea.style.backgroundColor = '#e8f4fd';
+    fileUploadArea.style.borderColor = '#4dabf7';
+  }
+  
+  fileUploadArea.addEventListener('drop', handleDrop, false);
+  
+  function handleDrop(e) {
+    const dt = e.dataTransfer;
+    const files = dt.files;
+    
+    fileInput.files = files;
+    
+    // Disparar el evento change para actualizar la lista
+    const event = new Event('change');
+    fileInput.dispatchEvent(event);
+  }
+  
+  // Hacer que el área sea clicable
+  fileUploadArea.addEventListener('click', () => {
+    fileInput.click();
+  });
+</script>
