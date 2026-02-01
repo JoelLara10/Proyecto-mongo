@@ -1,67 +1,334 @@
-<div>
-
-  <!-- ENCABEZADO -->
-  <div class="mb-3 d-flex justify-content-between align-items-center">
-    <h4><strong>Resultados de Laboratorio</strong></h4>
+<div class="container-fluid">
+  <!-- ENCABEZADO MEJORADO -->
+  <div class="d-flex align-items-center mb-3">
     <a href="{{ url_for('estudios.estudios_home', vista='resultados_laboratorio') }}"
-       class="btn btn-sm btn-outline-danger">
-      Regresar
+       class="btn btn-outline-primary btn-sm d-flex align-items-center back-btn">
+      <i class="bi bi-arrow-left me-1"></i>Regresar
     </a>
   </div>
 
   <div class="row">
-
-    <!-- LISTA DE ARCHIVOS -->
-    <div class="col-md-4">
-      <h6><strong>Archivos disponibles</strong></h6>
-      <ul class="list-group">
-        <li class="list-group-item">
-          <a href="#" class="resultado-link" data-type="pdf">
-            Resultado 1 (PDF)
-          </a>
-        </li>
-        <li class="list-group-item">
-          <a href="#" class="resultado-link" data-type="img">
-            Resultado 2 (Imagen)
-          </a>
-        </li>
-      </ul>
-    </div>
-
-    <!-- VISTA PREVIA -->
-    <div class="col-md-8">
-      <h6><strong>Vista previa</strong></h6>
-      <div id="preview-area"
-           class="border rounded p-2"
-           style="min-height: 400px; background:#f8f9fa;">
-        <p class="text-muted">
-          Selecciona un archivo para visualizarlo
-        </p>
+    <!-- LISTA DE ARCHIVOS MEJORADA -->
+    <div class="col-md-5">
+      <div class="card border-0 shadow rounded-2 h-100">
+        <div class="card-header bg-primary text-white py-2 rounded-top">
+          <h6 class="mb-0">
+            <i class="bi bi-files me-1"></i>Archivos Disponibles
+          </h6>
+        </div>
+        <div class="card-body p-0">
+          <div class="list-group list-group-flush">
+            {% for archivo in archivos %}
+            <a href="#"
+               class="list-group-item list-group-item-action resultado-link py-2"
+               data-file="{{ archivo }}"
+               data-ext="{{ archivo.split('.')[-1].lower() }}">
+              <div class="d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center">
+                  {% set ext = archivo.split('.')[-1].lower() %}
+                  {% if ext == 'pdf' %}
+                    <i class="bi bi-file-earmark-pdf text-danger me-2"></i>
+                  {% elif ext in ['png', 'jpg', 'jpeg'] %}
+                    <i class="bi bi-file-earmark-image text-success me-2"></i>
+                  {% else %}
+                    <i class="bi bi-file-earmark me-2 text-primary"></i>
+                  {% endif %}
+                  <span class="small">{{ archivo }}</span>
+                </div>
+                <span class="badge bg-light-blue text-primary border border-primary rounded-pill px-2 py-0 small">
+                  {{ ext.upper() }}
+                </span>
+              </div>
+            </a>
+            {% else %}
+            <div class="text-center py-4">
+              <i class="bi bi-folder-x text-muted" style="font-size: 1.5rem;"></i>
+              <p class="text-muted small mt-2 mb-0">No hay archivos disponibles</p>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
       </div>
     </div>
 
+    <!-- VISTA PREVIA MEJORADA -->
+    <div class="col-md-7">
+      <div class="card border-0 shadow rounded-2 h-100">
+        <div class="card-header bg-primary text-white py-2 rounded-top">
+          <h6 class="mb-0">
+            <i class="bi bi-eye me-1"></i>Vista Previa
+          </h6>
+        </div>
+        <div class="card-body p-0">
+          <div id="preview-area"
+               class="border rounded m-3 p-3 d-flex align-items-center justify-content-center"
+               style="min-height: 450px; background:#f8f9fa;">
+            <div class="text-center">
+              <i class="bi bi-file-earmark-text text-muted" style="font-size: 3rem;"></i>
+              <p class="text-muted mt-2">
+                Selecciona un archivo para visualizarlo
+              </p>
+              <small class="text-muted">
+                Formatos soportados: PDF, PNG, JPG, JPEG
+              </small>
+            </div>
+          </div>
+          
+          <!-- Controles de vista -->
+          <div class="d-flex justify-content-between align-items-center border-top p-3 bg-light">
+            <div class="small text-muted">
+              <i class="bi bi-info-circle me-1"></i>
+              La vista previa se mostrará aquí
+            </div>
+            <div class="d-flex gap-2">
+              
+              <button id="download-btn" class="btn btn-sm btn-outline-primary d-none">
+                <i class="bi bi-download me-1"></i>Descargar
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
+
+<style>
+  .bg-light-blue {
+    background-color: #e8f4fd !important;
+  }
+  
+  .back-btn {
+    border: 1px solid #4dabf7;
+    color: #4dabf7;
+    font-weight: 500;
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+  }
+  
+  .back-btn:hover {
+    background-color: #4dabf7;
+    color: white;
+    transform: translateX(-3px);
+  }
+  
+  .info-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    height: 100%;
+  }
+  
+  .info-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08) !important;
+  }
+  
+  .card {
+    border: none;
+  }
+  
+  .card-header {
+    border-radius: 8px 8px 0 0 !important;
+    font-size: 0.875rem;
+  }
+  
+  .list-group-item {
+    border-left: none;
+    border-right: none;
+    transition: all 0.2s ease;
+  }
+  
+  .list-group-item:first-child {
+    border-top: none;
+  }
+  
+  .list-group-item:hover {
+    background-color: #e8f4fd;
+    border-color: #dee2e6;
+  }
+  
+  .list-group-item.active {
+    background-color: #4dabf7 !important;
+    border-color: #4dabf7 !important;
+  }
+  
+  .badge.small {
+    font-size: 0.75rem;
+    padding: 1px 6px;
+  }
+  
+  .btn-outline-primary {
+    border: 1px solid #4dabf7;
+    color: #4dabf7;
+    font-weight: 500;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    transition: all 0.2s ease;
+  }
+  
+  .btn-outline-primary:hover {
+    background-color: #4dabf7;
+    color: white;
+  }
+  
+  h5, h6 {
+    font-size: 0.875rem;
+  }
+  
+  .small {
+    font-size: 0.75rem;
+  }
+  
+  #preview-area {
+    transition: all 0.3s ease;
+  }
+  
+  /* Estilos para la vista previa de archivos */
+  .pdf-viewer {
+    width: 100%;
+    height: 100%;
+    min-height: 450px;
+    border: none;
+  }
+  
+  .image-viewer {
+    max-width: 100%;
+    max-height: 450px;
+    object-fit: contain;
+    transition: transform 0.3s ease;
+  }
+  
+  .unsupported-format {
+    padding: 2rem;
+    text-align: center;
+  }
+</style>
+
 <script>
-  document.querySelectorAll('.resultado-link').forEach(link => {
-    link.addEventListener('click', function (e) {
-      e.preventDefault();
-      const type = this.dataset.type;
-      const preview = document.getElementById('preview-area');
-
-      preview.innerHTML = '';
-
-      if (type === 'pdf') {
-        preview.innerHTML = `
-          <img src="#"
-               style="max-width:100%; max-height:400px;">
-        `;
-      } else {
-        preview.innerHTML = `
-          <img src="#"
-               style="max-width:100%; max-height:400px;">
-        `;
+  document.addEventListener('DOMContentLoaded', function() {
+    const previewArea = document.getElementById('preview-area');
+    const downloadBtn = document.getElementById('download-btn');
+    const zoomInBtn = document.getElementById('zoom-in');
+    const zoomOutBtn = document.getElementById('zoom-out');
+    let currentFile = null;
+    let currentScale = 1;
+    const maxScale = 3;
+    const minScale = 0.5;
+    const scaleStep = 0.1;
+    
+    // Manejar clics en los enlaces de archivos
+    document.querySelectorAll('.resultado-link').forEach(link => {
+      link.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        // Remover clase activa de todos los enlaces
+        document.querySelectorAll('.resultado-link').forEach(item => {
+          item.classList.remove('active');
+        });
+        
+        // Agregar clase activa al enlace seleccionado
+        this.classList.add('active');
+        
+        const archivo = this.dataset.file;
+        const ext = this.dataset.ext;
+        currentFile = archivo;
+        currentScale = 1; // Resetear escala
+        
+        // Actualizar el botón de descarga
+        if (archivo) {
+          downloadBtn.classList.remove('d-none');
+          downloadBtn.onclick = function() {
+            window.open(`/static/resultados/laboratorio/${archivo}`, '_blank');
+          };
+        }
+        
+        // Limpiar área de vista previa
+        previewArea.innerHTML = '';
+        
+        if (ext === 'pdf') {
+          previewArea.innerHTML = `
+            <iframe src="/static/resultados/laboratorio/${archivo}#toolbar=0"
+                    class="pdf-viewer"
+                    width="100%"
+                    height="450px"
+                    style="border:none;"></iframe>
+          `;
+        } else if (['png', 'jpg', 'jpeg'].includes(ext)) {
+          const imgContainer = document.createElement('div');
+          imgContainer.className = 'text-center';
+          
+          const img = document.createElement('img');
+          img.src = `/static/resultados/laboratorio/${archivo}`;
+          img.className = 'image-viewer';
+          img.id = 'preview-image';
+          img.style.transform = `scale(${currentScale})`;
+          img.style.transition = 'transform 0.3s ease';
+          
+          imgContainer.appendChild(img);
+          previewArea.appendChild(imgContainer);
+        } else {
+          previewArea.innerHTML = `
+            <div class="unsupported-format">
+              <i class="bi bi-exclamation-triangle text-danger" style="font-size: 2rem;"></i>
+              <p class="text-danger mt-2">Formato no soportado para vista previa</p>
+              <p class="text-muted small">Este tipo de archivo no puede mostrarse en el navegador.</p>
+              <a href="/static/resultados/laboratorio/${archivo}" 
+                 class="btn btn-sm btn-outline-primary mt-2"
+                 target="_blank">
+                <i class="bi bi-download me-1"></i>Descargar archivo
+              </a>
+            </div>
+          `;
+        }
+      });
+    });
+    
+    // Funcionalidad de zoom (solo para imágenes)
+    zoomInBtn.addEventListener('click', function() {
+      const img = document.getElementById('preview-image');
+      if (img && currentScale < maxScale) {
+        currentScale += scaleStep;
+        img.style.transform = `scale(${currentScale})`;
+        updateZoomIndicator();
       }
     });
+    
+    zoomOutBtn.addEventListener('click', function() {
+      const img = document.getElementById('preview-image');
+      if (img && currentScale > minScale) {
+        currentScale -= scaleStep;
+        img.style.transform = `scale(${currentScale})`;
+        updateZoomIndicator();
+      }
+    });
+    
+    function updateZoomIndicator() {
+      // Podríamos agregar un indicador de zoom si es necesario
+      console.log(`Escala actual: ${Math.round(currentScale * 100)}%`);
+    }
+    
+    // Efecto visual para las tarjetas de información al cargar
+    document.querySelectorAll('.info-card').forEach((card, index) => {
+      setTimeout(() => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(10px)';
+        card.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+        
+        setTimeout(() => {
+          card.style.opacity = '1';
+          card.style.transform = 'translateY(0)';
+        }, 50);
+      }, index * 100);
+    });
+    
+    // Seleccionar automáticamente el primer archivo si existe
+    const firstFileLink = document.querySelector('.resultado-link');
+    if (firstFileLink) {
+      setTimeout(() => {
+        firstFileLink.click();
+      }, 300);
+    }
   });
 </script>

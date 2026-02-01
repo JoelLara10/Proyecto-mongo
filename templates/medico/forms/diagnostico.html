@@ -1,0 +1,128 @@
+{% extends 'medico/header_medico.html' %}
+{% set bloqueado = status_atencion == 'CERRADA' %}
+
+{% block content %}
+
+<section class="content-header">
+  <h1 class="text-primary">
+    <i class="fas fa-clipboard-list"></i> Diagnóstico Médico
+    <small>Registro clínico</small>
+  </h1>
+</section>
+
+<section class="content">
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% for category, message in messages %}
+    <div class="alert alert-{{ 'success' if category=='success' else 'danger' }} alert-dismissible fade show">
+      {{ message }}
+      <button type="button" class="close" data-dismiss="alert">&times;</button>
+    </div>
+  {% endfor %}
+{% endwith %}
+
+<div class="card card-primary">
+  <div class="card-header">
+    <h3 class="card-title">
+      <i class="fas fa-user"></i>
+      Paciente: {{ paciente.papell }} {{ paciente.sapell }} {{ paciente.nom_pac }}
+    </h3>
+  </div>
+
+<form method="POST">
+<div class="card-body">
+
+<!-- DIAGNÓSTICO PRINCIPAL -->
+<label>Diagnóstico principal</label>
+  <div class="mb-2">
+    <button type="button" class="btn btn-success btn-sm" onclick="iniciarDictado('diagnostico_principal')"><i class="fas fa-microphone"></i></button>
+    <button type="button" class="btn btn-warning btn-sm" onclick="detenerDictado()"><i class="fas fa-stop"></i></button>
+    <button type="button" class="btn btn-info btn-sm" onclick="leerCampo('diagnostico_principal')"><i class="fas fa-volume-up"></i></button>
+  </div>
+  <br>
+<div class="input-group mb-3">
+  <input type="text" id="diagnostico_principal" name="diagnostico_principal"
+         class="form-control"
+         {% if bloqueado %}disabled{% endif %}
+         value="{{ diagnostico.diagnostico_principal if diagnostico }}">
+</div>
+
+<!-- SECUNDARIOS -->
+<label>Diagnósticos secundarios</label>
+  <div class="mb-2">
+    <button type="button" class="btn btn-success btn-sm" onclick="iniciarDictado('diagnosticos_secundarios')"><i class="fas fa-microphone"></i></button>
+    <button type="button" class="btn btn-warning btn-sm" onclick="detenerDictado()"><i class="fas fa-stop"></i></button>
+    <button type="button" class="btn btn-info btn-sm" onclick="leerCampo('diagnosticos_secundarios')"><i class="fas fa-volume-up"></i></button>
+  </div>
+  <br>
+<div class="input-group mb-3">
+  <textarea id="diagnosticos_secundarios" name="diagnosticos_secundarios"
+            class="form-control"
+            {% if bloqueado %}disabled{% endif %}>{{ diagnostico.diagnosticos_secundarios if diagnostico }}</textarea>
+</div>
+
+<!-- OBSERVACIONES -->
+<label>Observaciones</label>
+  <div class="mb-2">
+    <button type="button" class="btn btn-success btn-sm" onclick="iniciarDictado('observaciones')"><i class="fas fa-microphone"></i></button>
+    <button type="button" class="btn btn-warning btn-sm" onclick="detenerDictado()"><i class="fas fa-stop"></i></button>
+    <button type="button" class="btn btn-info btn-sm" onclick="leerCampo('observaciones')"><i class="fas fa-volume-up"></i></button>
+  </div>
+  <br>
+<div class="input-group mb-3">
+  <textarea id="observaciones" name="observaciones"
+            class="form-control"
+            {% if bloqueado %}disabled{% endif %}>{{ diagnostico.observaciones if diagnostico }}</textarea>
+</div>
+
+</div>
+
+<div class="card-footer text-center">
+
+{% if not bloqueado %}
+<button type="submit" class="btn btn-primary">
+  <i class="fas fa-save"></i> Guardar Diagnostico
+</button>
+{% else %}
+<div class="alert alert-warning">
+  <i class="fas fa-lock"></i> Atención cerrada. Solo lectura.
+</div>
+{% endif %}
+
+<a href="{{ url_for('historial_diagnostico', id_atencion=id_atencion) }}" class="btn btn-info">
+  <i class="fas fa-history"></i> Historial
+</a>
+
+<a href="{{ url_for('resultados_estudios', id_atencion=id_atencion) }}" class="btn btn-secondary">
+  <i class="fas fa-arrow-left"></i> Cancelar
+</a>
+
+</div>
+</form>
+</div>
+</section>
+
+<script>
+let recognition;
+function iniciarDictado(id){
+  recognition=new webkitSpeechRecognition();
+  recognition.lang='es-MX';
+  recognition.continuous=true;
+  recognition.onresult=e=>{
+    for(let i=e.resultIndex;i<e.results.length;i++){
+      document.getElementById(id).value+=e.results[i][0].transcript+' ';
+    }
+  }
+  recognition.start();
+}
+function detenerDictado(){ if(recognition) recognition.stop(); }
+function leerCampo(id){
+  let t=document.getElementById(id).value;
+  if(!t)return;
+  let s=new SpeechSynthesisUtterance(t);
+  s.lang='es-MX';
+  speechSynthesis.speak(s);
+}
+</script>
+
+{% endblock %}

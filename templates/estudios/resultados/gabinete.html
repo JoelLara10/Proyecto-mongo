@@ -1,52 +1,229 @@
 <div>
-  <div class="mb-3">
-    <input id="search-labo" class="form-control" placeholder="Buscar por paciente, habitación, solicitante...">
+  <div class="mb-4">
+    <div class="input-group">
+      <span class="input-group-text bg-primary text-white border-primary">
+        <i class="bi bi-search"></i>
+      </span>
+      <input id="search-resultados-gab" class="form-control border-primary" 
+             placeholder="Buscar por paciente, habitación, estudio...">
+    </div>
   </div>
-  <br>
-  <br>
-  <div class="table-responsive">
-    <table class="table table-striped table-hover">
-      <thead class="thead-light">
+  
+  <div class="table-responsive rounded-3 shadow-sm">
+    <table class="table table-hover mb-0">
+      <thead class="bg-primary text-white">
         <tr>
-          <th>Habitación</th>
-          <th>Paciente</th>
-          <th>Fecha Solicitud</th>
-          <th>Solicitante</th>
-          <th>Estudio(s)</th>
-          <th>Solicitud</th>
-          <th>Editar</th>
-          <th>Ver</th>
-          <th>Eliminar</th>
-          <th>Fecha Resultados</th>
-          <th>Atendío Solicitud</th>
+          <th class="border-0 py-3">Habitación</th>
+          <th class="border-0 py-3">Paciente</th>
+          <th class="border-0 py-3">Fecha Solicitud</th>
+          <th class="border-0 py-3">Solicitante</th>
+          <th class="border-0 py-3">Estudio(s)</th>
+          <th class="border-0 py-3">Solicitud</th>
+          <th class="border-0 py-3">Acciones</th>
+          <th class="border-0 py-3">Fecha Resultado</th>
+          <th class="border-0 py-3">Atendió</th>
         </tr>
       </thead>
-      <tbody id="tbody-labo">
-        <tr>
-          <td></td>
-          <td></td>
-          <td></td>
-          <td></td>
-          <td></td>
-          <td><button class="btn btn-sm btn-outline-primary">PDF</button></td>
-          <td>
-            <a href="{{ url_for('estudios.estudios_home', vista='editar_resultado_gabinete') }}"
-              class="btn btn-sm btn-outline-primary">
-              Editar
-            </a>
-          </td>
-
-          <td>
-            <a href="{{ url_for('estudios.estudios_home', vista='ver_resultado_gabinete') }}"
-              class="btn btn-sm btn-outline-primary">
-              Ver
-            </a>
-          </td>
-          <td><button class="btn btn-sm btn-outline-primary">Eliminar</button></td>
-          <td></td>
-          <td></td>
-        </tr>
+      <tbody class="bg-white">
+        {% if solicitudes %}
+          {% for s in solicitudes %}
+          <tr class="border-bottom align-middle">
+            <td class="py-3">
+              <span class="badge bg-light text-primary border border-primary rounded-pill px-3 py-2">
+                {{ s.habitacion or '-' }}
+              </span>
+            </td>
+            <td class="py-3">
+              <div class="fw-medium text-dark">{{ s.paciente }}</div>
+            </td>
+            <td class="py-3 text-muted">
+              <i class="bi bi-calendar3 me-2"></i>{{ s.fecha }}
+            </td>
+            <td class="py-3">
+              <div class="d-flex align-items-center">
+                <i class="bi bi-person-circle me-2 text-primary"></i>
+                <span>{{ s.medico }}</span>
+              </div>
+            </td>
+            <td class="py-3">
+              {% if s.estudios %}
+                {% set estudios_lista = s.estudios.split(', ') %}
+                <div class="d-flex flex-column gap-1">
+                  {% for estudio in estudios_lista %}
+                    <span class="badge bg-light-blue text-primary border border-primary rounded-pill px-3 py-1 w-auto">
+                      {{ estudio }}
+                    </span>
+                  {% endfor %}
+                </div>
+              {% else %}
+                <span class="text-muted small">-</span>
+              {% endif %}
+            </td>
+            <td class="py-3">
+              <button class="btn btn-sm btn-outline-primary d-flex align-items-center">
+                <i class="bi bi-file-pdf me-1"></i>
+                PDF
+              </button>
+            </td>
+            <td class="py-3">
+              <div class="d-flex gap-2">
+                <a href="{{ url_for('estudios.editar_resultado_gabinete', id_examen=s.id_examen) }}"
+                  class="btn btn-sm btn-outline-primary d-flex align-items-center" 
+                  title="Editar resultado">
+                  <i class="bi bi-pencil"></i>
+                </a>
+                <a href="{{ url_for('estudios.ver_resultado_gabinete', id_examen=s.id_examen) }}"
+                  class="btn btn-sm btn-outline-info d-flex align-items-center"
+                  title="Ver resultado">
+                  <i class="bi bi-eye"></i>
+                </a>
+                <button class="btn btn-sm btn-outline-danger d-flex align-items-center"
+                        onclick="confirmarEliminacionGabinete({{ s.id_examen }})"
+                        title="Eliminar solicitud">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+            </td>
+            <td class="py-3">
+              {% if s.fecha_realizado %}
+              <span class="badge bg-success text-white rounded-pill px-3 py-2">
+                <i class="bi bi-calendar-check me-1"></i>{{ s.fecha_realizado }}
+              </span>
+              {% else %}
+              <span class="badge bg-light text-muted border rounded-pill px-3 py-2">
+                Pendiente
+              </span>
+              {% endif %}
+            </td>
+            <td class="py-3">
+              <div class="d-flex align-items-center">
+                <i class="bi bi-person-check me-2 text-success"></i>
+                <span>{{ s.medico }}</span>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="9" class="text-center py-5">
+              <div class="py-4">
+                <i class="bi bi-camera text-muted" style="font-size: 3rem;"></i>
+                <h5 class="mt-3 text-muted">No hay resultados de gabinete</h5>
+                <p class="text-muted small">No se han registrado resultados de gabinete</p>
+              </div>
+            </td>
+          </tr>
+        {% endif %}
       </tbody>
     </table>
   </div>
 </div>
+
+<style>
+  .bg-light-blue {
+    background-color: #e8f4fd !important;
+  }
+  
+  .table tbody tr:hover {
+    background-color: #f8f9fa;
+    transition: background-color 0.2s ease;
+  }
+  
+  .btn-outline-primary {
+    border: 2px solid #4dabf7;
+    color: #4dabf7;
+    font-weight: 500;
+  }
+  
+  .btn-outline-primary:hover {
+    background-color: #4dabf7;
+    color: white;
+    border-color: #4dabf7;
+  }
+  
+  .btn-outline-info {
+    border: 2px solid #17a2b8;
+    color: #17a2b8;
+    font-weight: 500;
+  }
+  
+  .btn-outline-info:hover {
+    background-color: #17a2b8;
+    color: white;
+    border-color: #17a2b8;
+  }
+  
+  .btn-outline-danger {
+    border: 2px solid #dc3545;
+    color: #dc3545;
+    font-weight: 500;
+  }
+  
+  .btn-outline-danger:hover {
+    background-color: #dc3545;
+    color: white;
+    border-color: #dc3545;
+  }
+  
+  .input-group-text {
+    border-right: none;
+  }
+  
+  .form-control:focus {
+    border-color: #4dabf7;
+    box-shadow: 0 0 0 0.2rem rgba(77, 171, 247, 0.25);
+  }
+  
+  .table-responsive {
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  
+  .badge.bg-success {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%) !important;
+  }
+</style>
+
+<script>
+  document.getElementById('search-resultados-gab').addEventListener('keyup', function () {
+    const filtro = this.value.toLowerCase();
+    const filas = document.querySelectorAll('tbody tr');
+    let resultados = 0;
+
+    filas.forEach(fila => {
+      const textoFila = fila.innerText.toLowerCase();
+      if (textoFila.includes(filtro)) {
+        fila.style.display = '';
+        resultados++;
+      } else {
+        fila.style.display = 'none';
+      }
+    });
+
+    // Mostrar mensaje si no hay resultados
+    const mensajeNoResultados = document.getElementById('no-results-gab');
+    if (!mensajeNoResultados && resultados === 0 && filtro !== '' && filas.length > 1) {
+      const tabla = document.querySelector('tbody');
+      const filaMensaje = document.createElement('tr');
+      filaMensaje.id = 'no-results-gab';
+      filaMensaje.innerHTML = `
+        <td colspan="9" class="text-center py-5">
+          <div class="py-4">
+            <i class="bi bi-search text-muted" style="font-size: 3rem;"></i>
+            <h5 class="mt-3 text-muted">No se encontraron resultados</h5>
+            <p class="text-muted small">Intenta con otros términos de búsqueda</p>
+          </div>
+        </td>
+      `;
+      tabla.appendChild(filaMensaje);
+    } else if (mensajeNoResultados && resultados > 0) {
+      mensajeNoResultados.remove();
+    }
+  });
+
+  function confirmarEliminacionGabinete(idExamen) {
+    if (confirm('¿Estás seguro de eliminar esta solicitud de gabinete?\nEsta acción no se puede deshacer.')) {
+      window.location.href = `/estudios/eliminar_resultado_gabinete/${idExamen}`;
+    }
+  }
+</script>

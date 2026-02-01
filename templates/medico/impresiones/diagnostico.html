@@ -1,0 +1,52 @@
+{% extends 'medico/header_medico.html' %}
+{% block content %}
+
+<section class="content-header">
+  <h1>
+    <i class="fas fa-file-medical-alt"></i> Diagnósticos
+  </h1>
+</section>
+
+<section class="content">
+
+<div class="card shadow">
+  <div class="card-header">
+    <h3 class="card-title">
+      Paciente: {{ paciente.papell }} {{ paciente.sapell }} {{ paciente.nom_pac }}
+    </h3>
+  </div>
+
+  <div class="card-body">
+    {% if diagnosticos %}
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Diagnóstico principal</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for diag in diagnosticos %}
+        <tr>
+          <td>{{ diag.fecha_registro.strftime('%d/%m/%Y %H:%M') }}</td>
+          <td>{{ diag.diagnostico_principal|truncate(100) }}</td>
+          <td>
+            <a href="{{ url_for('pdf_med.diagnostico_pdf', id_diagnostico=diag.id_diagnostico) }}"
+               class="btn btn-sm btn-primary"
+               target="_blank">
+              <i class="fas fa-print"></i> Imprimir PDF
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p>No hay diagnósticos registrados para esta atención.</p>
+    {% endif %}
+  </div>
+</div>
+
+</section>
+{% endblock %}

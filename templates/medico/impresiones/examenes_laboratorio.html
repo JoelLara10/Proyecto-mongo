@@ -1,0 +1,56 @@
+{% extends 'medico/header_medico.html' %}
+{% block content %}
+
+<section class="content-header">
+  <h1>
+    <i class="fas fa-vials"></i> Exámenes de Laboratorio
+  </h1>
+</section>
+
+<section class="content">
+
+<div class="card shadow">
+  <div class="card-header">
+    <h3 class="card-title">
+      Paciente: {{ paciente.papell }} {{ paciente.sapell }} {{ paciente.nom_pac }}
+    </h3>
+  </div>
+
+  <div class="card-body">
+    {% if examenes %}
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for e in examenes %}
+        <tr>
+          <td>{{ e.fecha.strftime('%d/%m/%Y %H:%M') }}</td>
+          <td>
+            <span class="badge badge-{{ 'success' if e.estado == 'realizado' else 'warning' }}">
+              {{ e.estado|capitalize }}
+            </span>
+          </td>
+          <td>
+            <a href="{{ url_for('pdf_med.laboratorio_pdf', id_examen=e.id_examen) }}"
+               class="btn btn-sm btn-primary"
+               target="_blank">
+              <i class="fas fa-print"></i> Imprimir PDF
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+      <p>No hay exámenes de laboratorio registrados.</p>
+    {% endif %}
+  </div>
+</div>
+
+</section>
+{% endblock %}

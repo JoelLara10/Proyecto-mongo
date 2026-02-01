@@ -1,66 +1,305 @@
-<div>
-
-  <!-- ENCABEZADO -->
-  <div class="mb-3 d-flex justify-content-between align-items-center">
-    <h4><strong>Resultados de Gabinete</strong></h4>
+<div class="container-fluid">
+  <!-- ENCABEZADO MEJORADO -->
+  <div class="d-flex align-items-center mb-3">
     <a href="{{ url_for('estudios.estudios_home', vista='resultados_gabinete') }}"
-       class="btn btn-sm btn-outline-danger">
-      Regresar
+       class="btn btn-outline-primary btn-sm d-flex align-items-center back-btn">
+      <i class="bi bi-arrow-left me-1"></i>Regresar
     </a>
   </div>
 
   <div class="row">
-
-    <!-- LISTA DE ARCHIVOS -->
-    <div class="col-md-4">
-      <h6><strong>Archivos disponibles</strong></h6>
-      <ul class="list-group">
-        <li class="list-group-item">
-          <a href="#" class="gabinete-file" data-type="pdf">
-            Resultado 1
-          </a>
-        </li>
-        <li class="list-group-item">
-          <a href="#" class="gabinete-file" data-type="img">
-            Resultado 2
-          </a>
-        </li>
-      </ul>
-    </div>
-
-    <!-- PREVIEW -->
-    <div class="col-md-8">
-      <h6><strong>Vista previa</strong></h6>
-      <div id="preview-gabinete"
-           class="border rounded p-2"
-           style="min-height:400px; background:#f8f9fa;">
-        <p class="text-muted">
-          Selecciona un archivo para visualizarlo
-        </p>
+    <!-- LISTA DE ARCHIVOS MEJORADA -->
+    <div class="col-md-5">
+      <div class="card border-0 shadow rounded-2 h-100">
+        <div class="card-header bg-primary text-white py-2 rounded-top">
+          <h6 class="mb-0">
+            <i class="bi bi-files me-1"></i>Archivos Disponibles
+          </h6>
+        </div>
+        <div class="card-body p-0">
+          <div class="list-group list-group-flush">
+            {% for a in archivos %}
+            <a href="#"
+               class="list-group-item list-group-item-action gabinete-file py-2"
+               data-url="{{ a.url }}"
+               data-type="{{ a.tipo }}"
+               data-nombre="{{ a.nombre }}">
+              <div class="d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center">
+                  {% if a.tipo == 'pdf' %}
+                    <i class="bi bi-file-earmark-pdf text-danger me-2"></i>
+                  {% elif a.tipo in ['png', 'jpg', 'jpeg', 'image'] %}
+                    <i class="bi bi-file-earmark-image text-success me-2"></i>
+                  {% else %}
+                    <i class="bi bi-file-earmark me-2 text-primary"></i>
+                  {% endif %}
+                  <span class="small">{{ a.nombre }}</span>
+                </div>
+                <span class="badge bg-light-blue text-primary border border-primary rounded-pill px-2 py-0 small">
+                  {{ a.tipo.upper() }}
+                </span>
+              </div>
+            </a>
+            {% else %}
+            <div class="text-center py-4">
+              <i class="bi bi-folder-x text-muted" style="font-size: 1.5rem;"></i>
+              <p class="text-muted small mt-2 mb-0">No hay archivos disponibles</p>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
       </div>
     </div>
 
+    <!-- VISTA PREVIA MEJORADA -->
+    <div class="col-md-7">
+      <div class="card border-0 shadow rounded-2 h-100">
+        <div class="card-header bg-primary text-white py-2 rounded-top">
+          <h6 class="mb-0">
+            <i class="bi bi-eye me-1"></i>Vista Previa
+          </h6>
+        </div>
+        <div class="card-body p-0">
+          <div id="preview-gabinete"
+               class="border rounded m-3 p-3 d-flex align-items-center justify-content-center"
+               style="min-height: 450px; background:#f8f9fa;">
+            <div class="text-center">
+              <i class="bi bi-file-earmark-text text-muted" style="font-size: 3rem;"></i>
+              <p class="text-muted mt-2">
+                Selecciona un archivo para visualizarlo
+              </p>
+              <small class="text-muted">
+                Formatos soportados: PDF, PNG, JPG, JPEG
+              </small>
+            </div>
+          </div>
+          
+          <!-- Controles de vista -->
+          <div class="d-flex justify-content-between align-items-center border-top p-3 bg-light">
+            <div class="small text-muted">
+              <i class="bi bi-info-circle me-1"></i>
+              La vista previa se mostrará aquí
+            </div>
+            <div class="d-flex gap-2">
+              <button id="download-gabinete-btn" class="btn btn-sm btn-outline-primary d-none">
+                <i class="bi bi-download me-1"></i>Descargar
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
-
 </div>
+
+<style>
+  .bg-light-blue {
+    background-color: #e8f4fd !important;
+  }
+  
+  .back-btn {
+    border: 1px solid #4dabf7;
+    color: #4dabf7;
+    font-weight: 500;
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+  }
+  
+  .back-btn:hover {
+    background-color: #4dabf7;
+    color: white;
+    transform: translateX(-3px);
+  }
+  
+  .card {
+    border: none;
+  }
+  
+  .card-header {
+    border-radius: 8px 8px 0 0 !important;
+    font-size: 0.875rem;
+  }
+  
+  .list-group-item {
+    border-left: none;
+    border-right: none;
+    transition: all 0.2s ease;
+  }
+  
+  .list-group-item:first-child {
+    border-top: none;
+  }
+  
+  .list-group-item:hover {
+    background-color: #e8f4fd;
+    border-color: #dee2e6;
+  }
+  
+  .list-group-item.active {
+    background-color: #4dabf7 !important;
+    border-color: #4dabf7 !important;
+    color: white !important;
+  }
+  
+  .list-group-item.active .badge {
+    background-color: white !important;
+    color: #4dabf7 !important;
+  }
+  
+  .list-group-item.active i {
+    color: white !important;
+  }
+  
+  .badge.small {
+    font-size: 0.75rem;
+    padding: 1px 6px;
+  }
+  
+  .btn-outline-primary {
+    border: 1px solid #4dabf7;
+    color: #4dabf7;
+    font-weight: 500;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    transition: all 0.2s ease;
+  }
+  
+  .btn-outline-primary:hover {
+    background-color: #4dabf7;
+    color: white;
+  }
+  
+  h6 {
+    font-size: 0.875rem;
+  }
+  
+  .small {
+    font-size: 0.75rem;
+  }
+  
+  #preview-gabinete {
+    transition: all 0.3s ease;
+  }
+  
+  /* Estilos para la vista previa de archivos */
+  .pdf-viewer {
+    width: 100%;
+    height: 100%;
+    min-height: 450px;
+    border: none;
+  }
+  
+  .image-viewer {
+    max-width: 100%;
+    max-height: 450px;
+    object-fit: contain;
+  }
+  
+  .unsupported-format {
+    padding: 2rem;
+    text-align: center;
+  }
+</style>
+
 <script>
-  document.querySelectorAll('.gabinete-file').forEach(link => {
-    link.addEventListener('click', function(e) {
-      e.preventDefault();
-      const type = this.dataset.type;
-      const preview = document.getElementById('preview-gabinete');
-
-      preview.innerHTML = '';
-
-      if (type === 'pdf') {
-        preview.innerHTML = `
-          <img style="max-width:100%; max-height:400px;">
-        `;
-      } else {
-        preview.innerHTML = `
-          <img style="max-width:100%; max-height:400px;">
-        `;
-      }
+  document.addEventListener('DOMContentLoaded', function() {
+    const previewArea = document.getElementById('preview-gabinete');
+    const downloadBtn = document.getElementById('download-gabinete-btn');
+    let currentFile = null;
+    let currentUrl = null;
+    
+    // Manejar clics en los enlaces de archivos
+    document.querySelectorAll('.gabinete-file').forEach(link => {
+      link.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        // Remover clase activa de todos los enlaces
+        document.querySelectorAll('.gabinete-file').forEach(item => {
+          item.classList.remove('active');
+        });
+        
+        // Agregar clase activa al enlace seleccionado
+        this.classList.add('active');
+        
+        const url = this.dataset.url;
+        const tipo = this.dataset.type;
+        const nombre = this.dataset.nombre;
+        currentUrl = url;
+        currentFile = nombre;
+        
+        // Actualizar el botón de descarga
+        if (url) {
+          downloadBtn.classList.remove('d-none');
+          downloadBtn.onclick = function() {
+            window.open(url, '_blank');
+          };
+        }
+        
+        // Limpiar área de vista previa
+        previewArea.innerHTML = '';
+        
+        if (tipo === 'pdf') {
+          previewArea.innerHTML = `
+            <iframe src="${url}"
+                    class="pdf-viewer"
+                    width="100%"
+                    height="450px"
+                    style="border:none;"></iframe>
+          `;
+        } else if (tipo === 'image' || ['png', 'jpg', 'jpeg'].includes(tipo)) {
+          const imgContainer = document.createElement('div');
+          imgContainer.className = 'text-center';
+          
+          const img = document.createElement('img');
+          img.src = url;
+          img.className = 'image-viewer';
+          img.alt = nombre;
+          img.style.maxWidth = '100%';
+          img.style.maxHeight = '450px';
+          img.style.objectFit = 'contain';
+          
+          imgContainer.appendChild(img);
+          previewArea.appendChild(imgContainer);
+        } else {
+          previewArea.innerHTML = `
+            <div class="unsupported-format">
+              <i class="bi bi-exclamation-triangle text-danger" style="font-size: 2rem;"></i>
+              <p class="text-danger mt-2">Formato no soportado para vista previa</p>
+              <p class="text-muted small">Este tipo de archivo no puede mostrarse en el navegador.</p>
+              <a href="${url}" 
+                 class="btn btn-sm btn-outline-primary mt-2"
+                 target="_blank">
+                <i class="bi bi-download me-1"></i>Descargar archivo
+              </a>
+            </div>
+          `;
+        }
+      });
     });
+    
+    // Efecto visual para los elementos de la lista al cargar
+    document.querySelectorAll('.gabinete-file').forEach((item, index) => {
+      setTimeout(() => {
+        item.style.opacity = '0';
+        item.style.transform = 'translateY(10px)';
+        item.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+        
+        setTimeout(() => {
+          item.style.opacity = '1';
+          item.style.transform = 'translateY(0)';
+        }, 50);
+      }, index * 100);
+    });
+    
+    // Seleccionar automáticamente el primer archivo si existe
+    const firstFileLink = document.querySelector('.gabinete-file');
+    if (firstFileLink) {
+      setTimeout(() => {
+        firstFileLink.click();
+      }, 300);
+    }
   });
 </script>
