@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from bd import get_db_connection
 from werkzeug.utils import secure_filename
 from datetime import datetime
@@ -42,6 +42,20 @@ def contar_solicitudes_pendientes(cursor):
     return lab_pendientes, gab_pendientes, total_pendientes
 #------------------------------------------------------------------------------------------------------------
 estudios_bp = Blueprint('estudios', __name__)
+
+def obtener_rol_usuario(cursor):
+    if 'user_id' not in session:
+        return None
+
+    cursor.execute("""
+        SELECT role
+        FROM users
+        WHERE id = %s
+    """, (session['user_id'],))
+
+    row = cursor.fetchone()
+    return row['role'] if isinstance(row, dict) else row[0] if row else None
+
 
 # =========================
 # HOME / LISTADOS
@@ -717,8 +731,13 @@ def ver_resultado_laboratorio(id_examen):
     """, (id_examen,))
 
     row = cursor.fetchone()
-    # Obtener conteo de solicitudes pendientes
+
+    # Rol del usuario
+    rol = obtener_rol_usuario(cursor)
+
+    # Contadores
     lab_pendientes, gab_pendientes, total_pendientes = contar_solicitudes_pendientes(cursor)
+
     cursor.close()
     conn.close()
 
@@ -726,25 +745,16 @@ def ver_resultado_laboratorio(id_examen):
         flash('Resultados no encontrados', 'danger')
         return redirect(url_for('estudios.estudios_home', vista='resultados_laboratorio'))
 
-    # Compatibilidad tuple / dict
-    if isinstance(row, dict):
-        paciente = row.get('paciente')
-        archivos_db = row.get('archivo_resultado') or ''
-    else:
-        _, paciente, archivos_db = row
-
     archivos = []
-    if archivos_db:
-        archivos = [a.strip() for a in archivos_db.split(',') if a.strip()]
-
-    
-    
+    if row['archivo_resultado']:
+        archivos = [a.strip() for a in row['archivo_resultado'].split(',') if a.strip()]
 
     return render_template(
         'estudios/index.html',
         vista='ver_resultado_laboratorio',
-        paciente=paciente,
+        paciente=row['paciente'],
         archivos=archivos,
+        rol=rol,  # 🔥 CLAVE
         lab_pendientes=lab_pendientes,
         gab_pendientes=gab_pendientes,
         total_pendientes=total_pendientes
@@ -766,24 +776,22 @@ def ver_resultado_gabinete(id_examen):
           AND estado = 'REALIZADO'
     """, (id_examen,))
 
-    row = cursor.fetchone()
-    # Obtener conteo de solicitudes pendientes
+    rows = cursor.fetchall()
+
+    # Rol del usuario
+    rol = obtener_rol_usuario(cursor)
+
+    # Contadores
     lab_pendientes, gab_pendientes, total_pendientes = contar_solicitudes_pendientes(cursor)
+
     cursor.close()
     conn.close()
 
     archivos = []
 
-    if row:
-        # soporta tuple o dict
-        archivo_resultado = (
-            row['archivo_resultado']
-            if isinstance(row, dict)
-            else row[0]
-        )
-
-        if archivo_resultado:
-            for nombre in archivo_resultado.split(','):
+    for row in rows:
+        if row['archivo_resultado']:
+            for nombre in row['archivo_resultado'].split(','):
                 nombre = nombre.strip()
                 if nombre:
                     archivos.append({
@@ -799,6 +807,7 @@ def ver_resultado_gabinete(id_examen):
         'estudios/index.html',
         vista='ver_resultado_gabinete',
         archivos=archivos,
+        rol=rol,  # 🔥 CLAVE
         lab_pendientes=lab_pendientes,
         gab_pendientes=gab_pendientes,
         total_pendientes=total_pendientes

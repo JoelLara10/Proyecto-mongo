@@ -45,7 +45,7 @@
                         <td>{{ l.medico }}</td>
                         <td>{{ l.observaciones or '—' }}</td>
                         <td class="text-center">
-                            <a href="{{ url_for('ver_resultado_laboratorio', id_examen=l.id_examen) }}"
+                            <a href="{{ url_for('estudios.ver_resultado_laboratorio', id_examen=l.id_examen) }}"
    class="btn btn-sm btn-primary">
    <i class="fas fa-eye"></i> Ver
 </a>
@@ -88,7 +88,7 @@
     <td>{{ g.medico }}</td>
     <td>{{ g.observaciones or '—' }}</td>
     <td>
-        <a href="{{ url_for('ver_resultado_gabinete', id_examen=g.id_examen) }}"
+        <a href="{{ url_for('estudios.ver_resultado_gabinete', id_examen=g.id_examen) }}"
            class="btn btn-sm btn-primary">
             <i class="fas fa-eye"></i> Ver
         </a>

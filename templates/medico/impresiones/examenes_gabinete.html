@@ -22,7 +22,7 @@
       <thead>
         <tr>
           <th>Fecha</th>
-          <th>Observaciones</th>
+          <th>Estado</th>
           <th>Acciones</th>
         </tr>
       </thead>
@@ -30,7 +30,19 @@
         {% for e in examenes %}
         <tr>
           <td>{{ e.fecha.strftime('%d/%m/%Y %H:%M') }}</td>
-          <td>{{ e.observaciones or '—' }}</td>
+          <td>
+            <span class="badge
+              {% if e.estado_general == 'REALIZADO' %}
+                badge-success
+              {% elif e.estado_general == 'CANCELADO' %}
+                badge-danger
+              {% else %}
+                badge-warning
+              {% endif %}
+            ">
+              {{ e.estado_general|capitalize }}
+            </span>
+          </td>
           <td>
             <a href="{{ url_for('pdf_med.gabinete_pdf', id_examen=e.id_examen) }}"
                class="btn btn-sm btn-primary"

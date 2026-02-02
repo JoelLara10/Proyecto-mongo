@@ -58,10 +58,12 @@
               {% endif %}
             </td>
             <td class="py-3">
-              <button class="btn btn-sm btn-outline-primary d-flex align-items-center">
+              <a href="{{ url_for('pdf_med.laboratorio_pdf', id_examen=s.id_examen) }}"
+                 target="_blank"
+                 class="btn btn-sm btn-outline-primary d-flex align-items-center">
                 <i class="bi bi-eye me-1"></i>
                 Ver PDF
-              </button>
+              </a>
             </td>
             <td class="py-3">
               <a href="{{ url_for('estudios.subir_resultado_laboratorio', id_examen=s.id_examen) }}"

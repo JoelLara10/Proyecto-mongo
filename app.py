@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from templates.administrativo.pacientes.doc_pacientes import pdf
+from templates.medico.impresiones import pdf_med
 import pymysql
 import bcrypt
 from flask import request, make_response
@@ -14,6 +15,7 @@ from estudios import estudios_bp
 app = Flask(__name__)
 app.register_blueprint(estudios_bp, url_prefix='/estudios')
 app.register_blueprint(pdf)
+app.register_blueprint(pdf_med)
 app.secret_key = 'tu_clave_secreta_aqui'  # Cambia esto por algo seguro
 
 # Configuración de MySQL
@@ -113,7 +115,7 @@ def dashboard():
             {'name': 'Administrativo', 'url': url_for('administrativo')},
             {'name': 'Médico', 'url': url_for('medico')},
             {'name': 'Estudios', 'url': url_for('estudios.estudios_home')},
-            {'name': 'Configuración', 'url': '#'}
+            {'name': 'Configuración', 'url': url_for('menu_configuracion')}
         ]
 
     return render_template('dashboard.html', 
@@ -1072,7 +1074,7 @@ def resultados_estudios(id_atencion):
         SELECT p.Id_exp, p.papell, p.sapell, p.nom_pac,
                a.area, a.fecha_ing
         FROM pacientes p
-        INNER JOIN atencion a ON p.Id_exp = a.Id_exp
+        JOIN atencion a ON p.Id_exp = a.Id_exp
         WHERE a.id_atencion = %s
     """, (id_atencion,))
     paciente = cursor.fetchone()
@@ -1081,39 +1083,53 @@ def resultados_estudios(id_atencion):
         flash('Paciente no encontrado.', 'error')
         return redirect(url_for('dashboard'))
 
-    # ================= LABORATORIO =================
+    # ================= LABORATORIO (SOLO REALIZADOS) =================
     cursor.execute("""
-        SELECT el.id_examen, 
-               GROUP_CONCAT(c.nombre SEPARATOR ', ') AS estudios,
-               u.papell AS medico,
-               el.observaciones, 
-               el.fecha
+        SELECT 
+            el.id_examen,
+            GROUP_CONCAT(c.nombre SEPARATOR ', ') AS estudios,
+            u.papell AS medico,
+            el.observaciones,
+            el.fecha
         FROM examenes_laboratorio el
-        JOIN examenes_laboratorio_det eld ON el.id_examen = eld.id_examen
-        JOIN catalogo_examenes_laboratorio c ON eld.id_catalogo = c.id_catalogo
-        JOIN users u ON el.id_medico = u.id
+        JOIN examenes_laboratorio_det eld 
+            ON el.id_examen = eld.id_examen
+        JOIN catalogo_examenes_laboratorio c 
+            ON eld.id_catalogo = c.id_catalogo
+        JOIN users u 
+            ON el.id_medico = u.id
         WHERE el.id_atencion = %s
+          AND (
+              el.estado = 'realizado'
+              OR el.archivo_resultado IS NOT NULL
+              OR el.fecha_realizado IS NOT NULL
+          )
         GROUP BY el.id_examen
-        ORDER BY el.id_examen DESC
+        ORDER BY el.fecha DESC
     """, (id_atencion,))
     laboratorio = cursor.fetchall()
 
-    # ================= GABINETE =================
+    # ================= GABINETE (SOLO REALIZADOS) =================
     cursor.execute("""
-                   SELECT eg.id_examen,
-                          eg.fecha,
-                          eg.observaciones,
-                          eg.id_atencion,
-                          u.papell                                       AS medico,
-                          GROUP_CONCAT(egd.nombre_examen SEPARATOR ', ') AS estudios
-                   FROM examenes_gabinete eg
-                            JOIN examenes_gabinete_det egd
-                                 ON eg.id_examen = egd.id_examen
-                            JOIN users u
-                                 ON eg.id_medico = u.id
-                   WHERE eg.id_atencion = %s
-                   GROUP BY eg.id_examen
-                   """, (id_atencion,))
+        SELECT 
+            eg.id_examen,
+            eg.fecha,
+            eg.observaciones,
+            u.papell AS medico,
+            GROUP_CONCAT(egd.nombre_examen SEPARATOR ', ') AS estudios
+        FROM examenes_gabinete eg
+        JOIN examenes_gabinete_det egd 
+            ON eg.id_examen = egd.id_examen
+        JOIN users u 
+            ON eg.id_medico = u.id
+        WHERE eg.id_atencion = %s
+          AND (
+              egd.estado = 'REALIZADO'
+              OR egd.archivo_resultado IS NOT NULL
+          )
+        GROUP BY eg.id_examen
+        ORDER BY eg.fecha DESC
+    """, (id_atencion,))
     gabinete = cursor.fetchall()
 
     cursor.close()
@@ -1126,6 +1142,7 @@ def resultados_estudios(id_atencion):
         laboratorio=laboratorio,
         gabinete=gabinete
     )
+
 
 
 @app.route('/medico/resultados-laboratorio/<int:id_examen>')
@@ -1722,7 +1739,9 @@ def imprimir_gabinete(id_atencion):
     conn = get_db_connection()
     cursor = conn.cursor(pymysql.cursors.DictCursor)
 
+    # =========================
     # PACIENTE
+    # =========================
     cursor.execute("""
         SELECT p.Id_exp, p.papell, p.sapell, p.nom_pac
         FROM pacientes p
@@ -1731,12 +1750,24 @@ def imprimir_gabinete(id_atencion):
     """, (id_atencion,))
     paciente = cursor.fetchone()
 
-    # SOLICITUDES DE GABINETE
+    # =========================
+    # GABINETE + ESTADO GENERAL
+    # =========================
     cursor.execute("""
-        SELECT *
-        FROM examenes_gabinete
-        WHERE id_atencion = %s
-        ORDER BY fecha DESC
+        SELECT 
+            eg.id_examen,
+            eg.fecha,
+            CASE
+                WHEN SUM(d.estado = 'CANCELADO') > 0 THEN 'CANCELADO'
+                WHEN SUM(d.estado = 'PENDIENTE') > 0 THEN 'PENDIENTE'
+                ELSE 'REALIZADO'
+            END AS estado_general
+        FROM examenes_gabinete eg
+        JOIN examenes_gabinete_det d 
+            ON d.id_examen = eg.id_examen
+        WHERE eg.id_atencion = %s
+        GROUP BY eg.id_examen
+        ORDER BY eg.fecha DESC
     """, (id_atencion,))
     examenes = cursor.fetchall()
 
@@ -2066,6 +2097,488 @@ def historial_diagnostico(id_atencion):
         id_atencion=id_atencion
     )
 
+
+# ====================================================================================
+# ============================       CONFIGURACION      ===============================
+# ====================================================================================
+
+
+# ==================== MENÚ CONFIGURACION ====================
+@app.route('/configuracion/configuracion')
+def menu_configuracion():
+    if 'user_id' not in session:
+        flash('Debes iniciar sesión', 'error')
+        return redirect(url_for('login'))
+
+    usuario = {
+        'username': session.get('username'),
+        'role': session.get('role')
+    }
+
+    return render_template(
+        'configuracion/menu_configuracion.html',
+        usuario=usuario
+    )
+
+
+# ==================== MENÚ CAMAS ====================
+@app.route('/configuracion/menu_camas')
+def menu_camas():
+    if 'user_id' not in session:
+        flash('Debes iniciar sesión', 'error')
+        return redirect(url_for('login'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM camas ORDER BY numero ASC")
+    camas = cursor.fetchall()
+    cursor.close()
+    conn.close()
+
+    return render_template(
+        'configuracion/camas/menu_camas.html',
+        camas=camas
+    )
+
+
+# ==================== ALTA DE CAMAS ====================
+@app.route('/configuracion/alta_camas', methods=['GET', 'POST'])
+def alta_camas():
+    if 'user_id' not in session or session.get('role') != 'admin':
+        flash('Acceso denegado.', 'error')
+        return redirect(url_for('dashboard'))
+
+    if request.method == 'POST':
+        numero = request.form['numero']
+        area = request.form['area']
+        tipo_habitacion = request.form.get('tipo_habitacion')
+        piso = request.form.get('piso')
+        seccion = request.form.get('seccion')
+        ocupada = int(request.form.get('ocupada', 0))  # 0 o 1
+
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+
+            # Validar duplicado
+            cursor.execute("SELECT id_cama FROM camas WHERE numero = %s", (numero,))
+            if cursor.fetchone():
+                flash('Ya existe una cama con ese número.', 'warning')
+                return redirect(url_for('alta_camas'))
+
+            # Insertar todos los campos
+            cursor.execute("""
+                           INSERT INTO camas (numero, area, tipo_habitacion, piso, seccion, ocupada)
+                           VALUES (%s, %s, %s, %s, %s, %s)
+                           """, (numero, area, tipo_habitacion, piso, seccion, ocupada))
+
+            conn.commit()
+            flash('Cama registrada correctamente', 'success')
+            return redirect(url_for('menu_camas'))
+
+        except Exception as e:
+            flash(f'Error al registrar cama: {e}', 'error')
+
+        finally:
+            cursor.close()
+            conn.close()
+
+    return render_template('configuracion/camas/alta_camas.html')
+
+
+# ==================== EDITAR CAMA ====================
+@app.route('/configuracion/editar_cama/<int:id>', methods=['GET', 'POST'])
+def editar_cama(id):
+    if 'user_id' not in session:
+        flash('Debes iniciar sesión', 'error')
+        return redirect(url_for('login'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor(pymysql.cursors.DictCursor)  # <-- CORREGIDO
+
+    if request.method == 'POST':
+        estatus = request.form['estatus']
+        area = request.form['area']
+        tipo_habitacion = request.form['tipo_habitacion']
+        piso = request.form.get('piso')
+        seccion = request.form.get('seccion')
+        ocupada = int(request.form.get('ocupada', 0))
+
+        try:
+            cursor.execute("""
+                           UPDATE camas
+                           SET estatus=%s,
+                               area=%s,
+                               tipo_habitacion=%s,
+                               piso=%s,
+                               seccion=%s,
+                               ocupada=%s
+                           WHERE id_cama = %s
+                           """, (estatus, area, tipo_habitacion, piso, seccion, ocupada, id))
+            conn.commit()
+            flash('Cama actualizada correctamente', 'success')
+            return redirect(url_for('menu_camas'))
+        except Exception as e:
+            flash(f'Error al actualizar cama: {e}', 'error')
+        finally:
+            cursor.close()
+            conn.close()
+
+    # GET → mostrar datos actuales
+    cursor.execute("SELECT * FROM camas WHERE id_cama = %s", (id,))
+    cama = cursor.fetchone()  # ahora es un diccionario
+    cursor.close()
+    conn.close()
+
+    if not cama:
+        flash('Cama no encontrada', 'error')
+        return redirect(url_for('menu_camas'))
+
+    return render_template('configuracion/camas/editar_cama.html', cama=cama)
+
+
+# ==================== ELIMINAR CAMA ====================
+@app.route('/configuracion/eliminar_cama/<int:id>', methods=['POST'])
+def eliminar_cama(id):
+    if 'user_id' not in session:
+        return jsonify({"success": False, "error": "No autorizado"}), 403
+
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM camas WHERE id_cama = %s", (id,))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+
+# ==================== COPIA GENERAL ====================
+@app.route('/configuracion/copias')
+def copias_seguridad():
+    if 'user_id' not in session or session.get('role') != 'admin':
+        flash('Acceso denegado.', 'error')
+        return redirect(url_for('dashboard'))
+
+    ruta_proyecto = current_app.root_path
+    carpeta_copias = os.path.join(ruta_proyecto, 'configuracion', 'copias')
+    os.makedirs(carpeta_copias, exist_ok=True)
+
+    fecha = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+    nombre_zip = f'respaldo_general_{fecha}.zip'
+    ruta_zip = os.path.join(carpeta_copias, nombre_zip)
+
+    with zipfile.ZipFile(ruta_zip, 'w', zipfile.ZIP_DEFLATED) as zipf:
+        for carpeta, _, archivos in os.walk(ruta_proyecto):
+            if 'venv' in carpeta or 'copias' in carpeta:
+                continue
+            for archivo in archivos:
+                ruta_completa = os.path.join(carpeta, archivo)
+                ruta_relativa = os.path.relpath(ruta_completa, ruta_proyecto)
+                zipf.write(ruta_completa, ruta_relativa)
+
+    flash('Copia de seguridad general creada correctamente', 'success')
+    return render_template(
+        'configuracion/copias/copias_seguridad.html',
+        archivo=nombre_zip
+    )
+
+
+# ==================== COPIA SOLO CAMAS ====================
+@app.route('/copias/camas')
+def copias_seguridad_camas():
+    ruta_proyecto = current_app.root_path
+    ruta_camas = os.path.join(ruta_proyecto, 'gestion_camas')
+
+    carpeta_copias = os.path.join(ruta_proyecto, 'configuracion', 'copias')
+    os.makedirs(carpeta_copias, exist_ok=True)
+
+    fecha = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+    nombre_zip = f'backup_camas_{fecha}.zip'
+    ruta_zip = os.path.join(carpeta_copias, nombre_zip)
+
+    with zipfile.ZipFile(ruta_zip, 'w', zipfile.ZIP_DEFLATED) as zipf:
+        for carpeta, _, archivos in os.walk(ruta_camas):
+            for archivo in archivos:
+                ruta_completa = os.path.join(carpeta, archivo)
+                ruta_relativa = os.path.relpath(ruta_completa, ruta_camas)
+                zipf.write(ruta_completa, ruta_relativa)
+
+    return render_template(
+        'configuracion/copias/copias_seguridad.html',
+        archivo=nombre_zip
+    )
+
+
+# ==================== COPIA AUTOMATICA ====================
+def crear_copia_general():
+    ruta_proyecto = current_app.root_path
+
+    carpeta_copias = os.path.join(ruta_proyecto, 'respaldos', 'general')
+    os.makedirs(carpeta_copias, exist_ok=True)
+
+    fecha = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+    nombre_zip = f'respaldo_general_{fecha}.zip'
+    ruta_zip = os.path.join(carpeta_copias, nombre_zip)
+
+    with zipfile.ZipFile(ruta_zip, 'w', zipfile.ZIP_DEFLATED) as zipf:
+        for carpeta, _, archivos in os.walk(ruta_proyecto):
+            if 'venv' in carpeta or 'respaldos' in carpeta:
+                continue
+            for archivo in archivos:
+                ruta_completa = os.path.join(carpeta, archivo)
+                ruta_relativa = os.path.relpath(ruta_completa, ruta_proyecto)
+                zipf.write(ruta_completa, ruta_relativa)
+
+    print("✅ Copia automática creada:", ruta_zip)
+
+
+# ==================== COPIA AUTo ====================
+@app.route('/test-backup')
+def test_backup():
+    crear_copia_general()
+    return "Backup creado"
+
+
+# ====================================================================================
+# ============================       PERSONAL       ====================================
+# ====================================================================================
+
+@app.route('/configuracion/personal')
+def alta_usuarios():
+    conexion = get_db_connection()
+    cursor = conexion.cursor()
+
+    cursor.execute("""
+                   SELECT id,
+                          username,
+                          role
+                   FROM users
+                   ORDER BY id DESC
+                   """)
+    personal = cursor.fetchall()
+    cursor.close()
+    conexion.close()
+
+    roles = ['admin', 'medico', 'enfermero', 'administrativo']
+
+    return render_template(
+        'configuracion/personal/alta_usuario.html',
+        personal=personal,
+        roles=roles
+    )
+
+
+# ====================================================================================
+# ============================     INSERTAR USUARIO     ===============================
+# ====================================================================================
+
+@app.route('/configuracion/personal/insertar', methods=['POST'])
+def insertar_usuario():
+    conexion = get_db_connection()
+    cursor = conexion.cursor()
+
+    try:
+        username = request.form['username']
+        password = request.form['password']
+        role = request.form['role']
+
+        # VALIDAR USUARIO DUPLICADO
+        cursor.execute(
+            "SELECT id FROM users WHERE username = %s",
+            (username,)
+        )
+        if cursor.fetchone():
+            flash('El usuario ya existe', 'danger')
+            cursor.close()
+            conexion.close()
+            return redirect(url_for('alta_usuarios'))
+
+        # INSERT USERS
+        cursor.execute("""
+                       INSERT INTO users (username, password, role)
+                       VALUES (%s, %s, %s)
+                       """, (username, password, role))
+
+        conexion.commit()
+        flash('Usuario creado correctamente', 'success')
+        return redirect(url_for('alta_usuarios'))
+    except Exception as e:
+        conexion.rollback()
+        flash(f'Error al crear usuario: {e}', 'danger')
+        return redirect(url_for('alta_usuarios'))
+    finally:
+        cursor.close()
+        conexion.close()
+
+
+# ====================================================================================
+# ============================        EDITAR USUARIO     ===============================
+# ====================================================================================
+
+@app.route('/configuracion/personal/editar/<int:user_id>', methods=['GET', 'POST'])
+def editar_usuario(user_id):
+    conexion = get_db_connection()
+    cursor = conexion.cursor()
+
+    cursor.execute("""
+                   SELECT id,
+                          username,
+                          role
+                   FROM users
+                   WHERE id = %s
+                   """, (user_id,))
+    usuario = cursor.fetchone()
+
+    if not usuario:
+        flash('Usuario no encontrado', 'danger')
+        cursor.close()
+        conexion.close()
+        return redirect(url_for('alta_usuarios'))
+
+    roles = ['admin', 'medico', 'enfermero', 'administrativo']
+
+    if request.method == 'POST':
+        try:
+            cursor.execute("""
+                           UPDATE users
+                           SET username=%s,
+                               role=%s
+                           WHERE id = %s
+                           """, (
+                               request.form['username'],
+                               request.form['role'],
+                               user_id
+                           ))
+
+            conexion.commit()
+            flash('Usuario actualizado correctamente', 'success')
+            cursor.close()
+            conexion.close()
+            return redirect(url_for('alta_usuarios'))
+        except Exception as e:
+            conexion.rollback()
+            flash(f'Error al actualizar usuario: {e}', 'danger')
+            cursor.close()
+            conexion.close()
+            return redirect(url_for('alta_usuarios'))
+
+    cursor.close()
+    conexion.close()
+
+    return render_template(
+        'configuracion/personal/editar_usuario.html',
+        usuario=usuario,
+        roles=roles
+    )
+
+
+# ====================================================================================
+# ============================       MOSTRAR USUARIO     ===============================
+# ====================================================================================
+
+@app.route('/configuracion/personal/mostrar/<int:user_id>')
+def mostrar_usuario(user_id):
+    conexion = get_db_connection()
+    cursor = conexion.cursor()
+
+    cursor.execute("""
+                   SELECT username,
+                          role
+                   FROM users
+                   WHERE id = %s
+                   """, (user_id,))
+    usuario = cursor.fetchone()
+
+    cursor.close()
+    conexion.close()
+
+    if not usuario:
+        flash('Usuario no encontrado', 'danger')
+        return redirect(url_for('alta_usuarios'))
+
+    return render_template(
+        'configuracion/personal/mostrar_usuario.html',
+        usuario=usuario
+    )
+
+
+# ====================================================================================
+# ============================       DIAGNOSTICO       ====================================
+# ====================================================================================
+
+# ============================ LISTAR DIAGNÓSTICOS ============================
+@app.route('/configuracion/diagnostico')
+def listar_diagnosticos():
+    conexion = get_db_connection()
+    cursor = conexion.cursor(pymysql.cursors.DictCursor)
+
+    cursor.execute("""
+                   SELECT id_diag, diagnostico, id_cie10
+                   FROM cat_diag
+                   ORDER BY id_diag DESC
+                   """)
+    diagnosticos = cursor.fetchall()
+    conexion.close()
+
+    return render_template(
+        'configuracion/diagnostico/cat_diagnostico.html',
+        diagnosticos=diagnosticos
+    )
+
+
+# ============================ INSERTAR DIAGNÓSTICO ============================
+@app.route('/configuracion/diagnostico/insertar', methods=['POST'])
+def insertar_diagnostico():
+    diag = request.form.get('diag')
+    id_cie10 = request.form.get('id_cie10')
+
+    if diag and id_cie10:
+        conexion = get_db_connection()
+        cursor = conexion.cursor()
+
+        cursor.execute("""
+                       INSERT INTO cat_diag (diagnostico, id_cie10)
+                       VALUES (%s, %s)
+                       """, (diag, id_cie10))
+
+        conexion.commit()
+        conexion.close()
+
+    return redirect(url_for('listar_diagnosticos'))
+
+
+# ============================ EDITAR DIAGNÓSTICO ============================
+@app.route('/configuracion/diagnostico/editar/<int:id>', methods=['GET', 'POST'])
+def editar_diagnostico(id):
+    conexion = get_db_connection()
+    cursor = conexion.cursor(pymysql.cursors.DictCursor)
+
+    if request.method == 'POST':
+        diag = request.form['diag']
+        id_cie10 = request.form['id_cie10']
+
+        cursor.execute("""
+                       UPDATE cat_diag
+                       SET diagnostico = %s,
+                           id_cie10    = %s
+                       WHERE id_diag = %s
+                       """, (diag, id_cie10, id))
+
+        conexion.commit()
+        conexion.close()
+        return redirect(url_for('listar_diagnosticos'))
+
+    cursor.execute("SELECT * FROM cat_diag WHERE id_diag = %s", (id,))
+    diagnostico = cursor.fetchone()
+    conexion.close()
+
+    return render_template(
+        'configuracion/diagnostico/edit_diagnostico.html',
+        diagnostico=diagnostico
+    )
 
 
 @app.route('/logout')

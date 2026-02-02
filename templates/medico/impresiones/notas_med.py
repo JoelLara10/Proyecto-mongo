@@ -299,11 +299,14 @@ def laboratorio_pdf(id_examen):
     conn = get_db_connection()
     cur = conn.cursor(pymysql.cursors.DictCursor)
 
+    # ===============================
     # ENCABEZADO + PACIENTE
+    # ===============================
     cur.execute("""
         SELECT 
             el.fecha,
             el.estado,
+            el.fecha_realizado,
             el.observaciones,
             p.papell,
             p.sapell,
@@ -315,9 +318,12 @@ def laboratorio_pdf(id_examen):
     """, (id_examen,))
     encabezado = cur.fetchone()
 
+    # ===============================
     # DETALLE DE EXÁMENES
+    # ===============================
     cur.execute("""
-        SELECT c.nombre
+        SELECT 
+            c.nombre
         FROM examenes_laboratorio_det d
         JOIN catalogo_examenes_laboratorio c
             ON c.id_catalogo = d.id_catalogo
@@ -328,16 +334,20 @@ def laboratorio_pdf(id_examen):
     conn.close()
 
     if not encabezado:
-        return "Examen no encontrado", 404
+        return "Examen de laboratorio no encontrado", 404
 
+    # ===============================
     # PDF
+    # ===============================
     pdf_doc = FPDF('P', 'mm', 'Letter')
     pdf_doc.set_auto_page_break(True, 20)
     pdf_doc.add_page()
 
+    # TÍTULO
     pdf_doc.set_font('Arial', 'B', 14)
     pdf_doc.cell(0, 10, 'SOLICITUD DE EXÁMENES DE LABORATORIO', ln=True, align='C')
 
+    # PACIENTE
     pdf_doc.ln(5)
     pdf_doc.set_font('Arial', '', 10)
     pdf_doc.cell(
@@ -350,25 +360,41 @@ def laboratorio_pdf(id_examen):
     pdf_doc.cell(0, 7, f"Fecha: {fecha}", ln=True)
     pdf_doc.cell(0, 7, f"Estado: {encabezado['estado'].capitalize()}", ln=True)
 
-    pdf_doc.ln(10)
+    fecha_realizado = (
+        encabezado['fecha_realizado'].strftime('%d/%m/%Y')
+        if encabezado['fecha_realizado'] else 'No especificado'
+    )
+    pdf_doc.cell(0, 7, f"Fecha realizado: {fecha_realizado}", ln=True)
+
+    # OBSERVACIONES GENERALES
+    if encabezado['observaciones']:
+        pdf_doc.ln(3)
+        pdf_doc.multi_cell(
+            0, 7,
+            f"Observaciones generales:\n{encabezado['observaciones']}"
+        )
+
+    # DETALLE
+    pdf_doc.ln(8)
     pdf_doc.set_font('Arial', 'B', 12)
     pdf_doc.cell(0, 8, 'Exámenes solicitados:', ln=True)
 
     pdf_doc.set_font('Arial', '', 10)
     for i, d in enumerate(detalles, 1):
-        pdf_doc.cell(0, 7, f"{i}. {d['nombre']}", ln=True)
+        pdf_doc.multi_cell(
+            0, 7,
+            f"{i}. {d['nombre']}\n"
+            f"   Estado: {encabezado['estado'].capitalize()}\n"
+            f"   Fecha realizado: {fecha_realizado}"
+        )
+        pdf_doc.ln(2)
 
-    if encabezado['observaciones']:
-        pdf_doc.ln(5)
-        pdf_doc.set_font('Arial', 'B', 11)
-        pdf_doc.cell(0, 8, 'Observaciones:', ln=True)
-        pdf_doc.set_font('Arial', '', 10)
-        pdf_doc.multi_cell(0, 7, encabezado['observaciones'])
-
+    # RESPUESTA
     response = make_response(pdf_doc.output(dest='S').encode('latin-1'))
     response.headers['Content-Type'] = 'application/pdf'
     response.headers['Content-Disposition'] = 'inline; filename=examenes_laboratorio.pdf'
     return response
+
 
 
 @pdf_med.route('/pdf/gabinete/<int:id_examen>')
