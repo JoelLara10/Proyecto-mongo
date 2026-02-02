@@ -2,15 +2,203 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Cuenta de Pacientes</title>
+  <title>Cuenta de Pacientes Activos</title>
+
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://use.fontawesome.com/releases/v5.7.0/css/all.css" rel="stylesheet">
+
+  <style>
+    body { background:#f4f6f9; }
+    .page-header{
+      background: linear-gradient(135deg, #2b2d7f 0%, #667eea 100%);
+      color:#fff; padding:18px; border-radius:14px;
+      box-shadow:0 10px 25px rgba(43,45,127,.25);
+      margin-bottom:18px;
+    }
+    .content-card{
+      background:#fff; border-radius:14px; padding:18px;
+      box-shadow:0 10px 25px rgba(0,0,0,.08);
+      margin-bottom:18px;
+    }
+    #search{
+      border-radius: 25px;
+      border: 2px solid #e9ecef;
+      padding: 10px 16px;
+    }
+    #search:focus{
+      border-color:#2b2d7f;
+      box-shadow:0 0 0 .2rem rgba(43,45,127,.20);
+      outline:none;
+    }
+    .table-responsive{
+      border-radius:14px; overflow:hidden;
+      box-shadow:0 10px 25px rgba(0,0,0,.08);
+      background:#fff;
+    }
+    thead th{
+      background: linear-gradient(135deg, #2b2d7f 0%, #3c3f8f 100%);
+      color:#fff; border:none; text-align:center; vertical-align:middle;
+      padding:14px 10px; font-size:13px;
+    }
+    tbody td{ vertical-align:middle; font-size:13px; }
+    tbody tr:hover{ background:#f8f9fa; }
+    .pill{
+      background: linear-gradient(135deg, #27ae60, #2ecc71);
+      color:#fff; border-radius:8px; padding:6px 10px; font-weight:700;
+      display:inline-block; min-width:64px; text-align:center;
+    }
+    .pill-gray{
+      background: linear-gradient(135deg, #6c757d, #95a5a6);
+      color:#fff; border-radius:8px; padding:6px 10px; font-weight:700;
+      display:inline-block; min-width:64px; text-align:center;
+    }
+    .money-total{
+      font-weight:800; color:#e74c3c; font-size:15px;
+    }
+    .btn{
+      border-radius:10px;
+      box-shadow:0 2px 10px rgba(0,0,0,.08);
+      border:none;
+    }
+  </style>
 </head>
-<body class="p-4">
 
-<h2>Cuenta de Pacientes</h2>
-<p>Pantalla de gestión de cuentas de pacientes.</p>
+<body class="p-3 p-md-4">
 
-<a href="{{ url_for('administrativo') }}" class="btn btn-secondary">Volver</a>
+  <div class="container-fluid">
+
+    <div class="page-header text-center">
+      <h4 class="m-0"><i class="fas fa-file-invoice-dollar"></i> CUENTA DE PACIENTES ACTIVOS</h4>
+    </div>
+
+    <div class="content-card">
+      <div class="row g-2 align-items-center">
+        <div class="col-12 col-md-3">
+          <a href="{{ url_for('administrativo') }}" class="btn btn-danger w-100">
+            <i class="fas fa-arrow-left"></i> Regresar
+          </a>
+        </div>
+
+        <div class="col-12 col-md-6 text-md-center">
+          <!-- Si luego haces "pagadas", aquí pones el botón -->
+          <!-- <a href="#" class="btn btn-primary">Cuentas Pagadas</a> -->
+        </div>
+
+        <div class="col-12 col-md-3 text-md-end">
+          <!-- Si luego haces export excel, aquí pones el botón -->
+          <!-- <a href="#" class="btn btn-success w-100"><i class="fas fa-file-excel"></i> Exportar Excel</a> -->
+        </div>
+      </div>
+    </div>
+
+    <div class="content-card">
+      <div class="row g-2 align-items-center">
+        <div class="col-12 col-md-5">
+          <h6 class="m-0"><i class="fas fa-search"></i> Buscar en la tabla</h6>
+          <small class="text-muted">Filtra por paciente, expediente, cama, médico, etc.</small>
+        </div>
+        <div class="col-12 col-md-7">
+          <input id="search" type="text" class="form-control"
+                 placeholder="🔍 Buscar por nombre, expediente, cama, atención...">
+        </div>
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table table-striped table-hover mb-0" id="mytable">
+        <thead>
+          <tr>
+            <th><i class="fas fa-cogs"></i> Acciones</th>
+            <th><i class="fas fa-file-medical"></i> Exp</th>
+            <th><i class="fas fa-hashtag"></i> ID Atención</th>
+            <th><i class="fas fa-bed"></i> Cama</th>
+            <th><i class="fas fa-user"></i> Paciente</th>
+            <th><i class="fas fa-user-md"></i> Médico</th>
+            <th><i class="fas fa-stethoscope"></i> Especialidad</th>
+            <th><i class="fas fa-building"></i> Área</th>
+            <th><i class="fas fa-calculator"></i> Subtotal</th>
+            <th><i class="fas fa-percent"></i> IVA</th>
+            <th style="background:linear-gradient(135deg,#27ae60,#2ecc71);color:#fff;">
+              <i class="fas fa-dollar-sign"></i> Total
+            </th>
+            <th><i class="fas fa-money-bill"></i> Anticipos</th>
+            <th><i class="fas fa-calendar"></i> Fecha Ingreso</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {% for c in cuentas %}
+          <tr>
+            <td class="text-center">
+              <div class="btn-group">
+                <a class="btn btn-warning btn-sm"
+                   title="Ver Detalle"
+                   href="{{ url_for('expediente', id_atencion=c.id_atencion, id_exp=c.Id_exp) }}">
+                  <i class="fas fa-eye"></i>
+                </a>
+
+                <a class="btn btn-danger btn-sm"
+                   title="Generar PDF"
+                   target="_blank"
+                   href="{{ url_for('cuenta_pdf', id_atencion=c.id_atencion) }}">
+                  <i class="fas fa-file-pdf"></i>
+                </a>
+              </div>
+            </td>
+
+            <td><strong>{{ c.Id_exp }}</strong></td>
+
+            <td class="text-center">
+              <span class="pill-gray">{{ c.id_atencion }}</span>
+            </td>
+
+            <td class="text-center">
+              <span class="pill">{{ c.num_cama }}</span>
+            </td>
+
+            <td><strong>{{ c.paciente }}</strong></td>
+            <td><strong>{{ c.medico }}</strong></td>
+            <td><strong>{{ c.especialidad }}</strong></td>
+            <td><strong>{{ c.area }}</strong></td>
+
+            <td class="text-end"><strong>${{ '%.2f'|format(c.subtotal) }}</strong></td>
+            <td class="text-end"><strong>${{ '%.2f'|format(c.iva) }}</strong></td>
+
+            <td class="text-center">
+              <span class="money-total">${{ '%.2f'|format(c.total) }}</span>
+            </td>
+
+            <td class="text-end"><strong>${{ '%.2f'|format(c.anticipos) }}</strong></td>
+
+            <td><strong>{{ c.fecha_ing|strftime('%d/%m/%Y %H:%M') }}</strong></td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="13" class="text-center text-muted p-4">
+              No hay cuentas activas (atenciones ABIERTAS).
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+
+      </table>
+    </div>
+  </div>
+
+  <script>
+    // filtro tipo tu PHP
+    document.addEventListener("DOMContentLoaded", function() {
+      const input = document.getElementById("search");
+      const rows = document.querySelectorAll("#mytable tbody tr");
+
+      input.addEventListener("keyup", function() {
+        const q = input.value.toLowerCase();
+        rows.forEach(tr => {
+          tr.style.display = tr.innerText.toLowerCase().includes(q) ? "" : "none";
+        });
+      });
+    });
+  </script>
 
 </body>
 </html>
