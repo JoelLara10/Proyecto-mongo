@@ -1,28 +1,82 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
+import os
+import zipfile
+from datetime import datetime, date, timedelta
+from decimal import Decimal
+
+from flask import (
+    Flask, render_template, request, redirect,
+    url_for, session, flash, jsonify
+)
+
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.interval import IntervalTrigger
+
+import pymysql
+import pymysql.cursors
+import bcrypt
+from fpdf import FPDF
+
+from estudios import estudios_bp
 from templates.administrativo.pacientes.doc_pacientes import pdf
 from templates.medico.impresiones import pdf_med
-import pymysql
-import bcrypt
-from flask import request, make_response
-from fpdf import FPDF
-from decimal import Decimal
-from datetime import datetime, timedelta
-from datetime import datetime, date
-import pymysql.cursors
-from estudios import estudios_bp
 
+from utils.backups import (
+    automatizacion_tareas,
+    realizar_backup_automatico,
+    check_db_health,
+    job_backup_auto,
+    backup_bd
+)
 
+# ===============================
+# Inicializar Flask
+# ===============================
 app = Flask(__name__)
+app.secret_key = 'tu_clave_secreta_aqui'  # ⚠️ usa una clave segura en producción
+
+# ===============================
+# Registrar Blueprints
+# ===============================
 app.register_blueprint(estudios_bp, url_prefix='/estudios')
 app.register_blueprint(pdf)
 app.register_blueprint(pdf_med)
-app.secret_key = 'tu_clave_secreta_aqui'  # Cambia esto por algo seguro
 
-# Configuración de MySQL
+# ===============================
+# Configuración MySQL
+# ===============================
 DB_HOST = 'localhost'
 DB_USER = 'root'
 DB_PASS = ''
 DB_NAME = 'ineo_db'
+
+# ===============================
+# Inicializar Scheduler
+# ===============================
+scheduler = BackgroundScheduler()
+scheduler.start()
+
+# Guardar scheduler en la app (MUY IMPORTANTE)
+app.config['SCHEDULER'] = scheduler
+
+# ===============================
+# Programar backup automático
+# ===============================
+with app.app_context():
+    from utils.backups import cargar_config_auto
+
+    config = cargar_config_auto()
+
+    scheduler.remove_all_jobs()
+
+    trigger = IntervalTrigger(minutes=config.get('intervalo', 60))
+
+    scheduler.add_job(
+        func=job_backup_auto,
+        trigger=trigger,
+        args=[app],   # 👈 se pasa la app real
+        id='backup_automatico',
+        replace_existing=True
+    )
 
 
 def get_db_connection():
@@ -52,6 +106,23 @@ def _jinja2_filter_datetime(date, fmt='%d/%m/%Y'):
 @app.route('/')
 def index():
     return redirect(url_for('login'))
+
+
+@app.route('/configuracion/copias', methods=['GET', 'POST'])
+def copias_seguridad():
+    return backup_bd()
+
+
+@app.route('/configuracion/copias/download/<filename>')
+def download_backup(filename):
+    carpeta = os.path.join(current_app.root_path, 'configuracion', 'copias')
+    return send_from_directory(carpeta, filename, as_attachment=True)
+
+
+# Ruta para la vista
+@app.route('/configuracion/automatizacion', methods=['GET', 'POST'])
+def automatizacion_tareas_route():
+    return automatizacion_tareas()
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -2253,93 +2324,6 @@ def eliminar_cama(id):
         return jsonify({"success": True})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
-
-
-# ==================== COPIA GENERAL ====================
-@app.route('/configuracion/copias')
-def copias_seguridad():
-    if 'user_id' not in session or session.get('role') != 'admin':
-        flash('Acceso denegado.', 'error')
-        return redirect(url_for('dashboard'))
-
-    ruta_proyecto = current_app.root_path
-    carpeta_copias = os.path.join(ruta_proyecto, 'configuracion', 'copias')
-    os.makedirs(carpeta_copias, exist_ok=True)
-
-    fecha = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-    nombre_zip = f'respaldo_general_{fecha}.zip'
-    ruta_zip = os.path.join(carpeta_copias, nombre_zip)
-
-    with zipfile.ZipFile(ruta_zip, 'w', zipfile.ZIP_DEFLATED) as zipf:
-        for carpeta, _, archivos in os.walk(ruta_proyecto):
-            if 'venv' in carpeta or 'copias' in carpeta:
-                continue
-            for archivo in archivos:
-                ruta_completa = os.path.join(carpeta, archivo)
-                ruta_relativa = os.path.relpath(ruta_completa, ruta_proyecto)
-                zipf.write(ruta_completa, ruta_relativa)
-
-    flash('Copia de seguridad general creada correctamente', 'success')
-    return render_template(
-        'configuracion/copias/copias_seguridad.html',
-        archivo=nombre_zip
-    )
-
-
-# ==================== COPIA SOLO CAMAS ====================
-@app.route('/copias/camas')
-def copias_seguridad_camas():
-    ruta_proyecto = current_app.root_path
-    ruta_camas = os.path.join(ruta_proyecto, 'gestion_camas')
-
-    carpeta_copias = os.path.join(ruta_proyecto, 'configuracion', 'copias')
-    os.makedirs(carpeta_copias, exist_ok=True)
-
-    fecha = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-    nombre_zip = f'backup_camas_{fecha}.zip'
-    ruta_zip = os.path.join(carpeta_copias, nombre_zip)
-
-    with zipfile.ZipFile(ruta_zip, 'w', zipfile.ZIP_DEFLATED) as zipf:
-        for carpeta, _, archivos in os.walk(ruta_camas):
-            for archivo in archivos:
-                ruta_completa = os.path.join(carpeta, archivo)
-                ruta_relativa = os.path.relpath(ruta_completa, ruta_camas)
-                zipf.write(ruta_completa, ruta_relativa)
-
-    return render_template(
-        'configuracion/copias/copias_seguridad.html',
-        archivo=nombre_zip
-    )
-
-
-# ==================== COPIA AUTOMATICA ====================
-def crear_copia_general():
-    ruta_proyecto = current_app.root_path
-
-    carpeta_copias = os.path.join(ruta_proyecto, 'respaldos', 'general')
-    os.makedirs(carpeta_copias, exist_ok=True)
-
-    fecha = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-    nombre_zip = f'respaldo_general_{fecha}.zip'
-    ruta_zip = os.path.join(carpeta_copias, nombre_zip)
-
-    with zipfile.ZipFile(ruta_zip, 'w', zipfile.ZIP_DEFLATED) as zipf:
-        for carpeta, _, archivos in os.walk(ruta_proyecto):
-            if 'venv' in carpeta or 'respaldos' in carpeta:
-                continue
-            for archivo in archivos:
-                ruta_completa = os.path.join(carpeta, archivo)
-                ruta_relativa = os.path.relpath(ruta_completa, ruta_proyecto)
-                zipf.write(ruta_completa, ruta_relativa)
-
-    print("✅ Copia automática creada:", ruta_zip)
-
-
-# ==================== COPIA AUTo ====================
-@app.route('/test-backup')
-def test_backup():
-    crear_copia_general()
-    return "Backup creado"
 
 
 # ====================================================================================
