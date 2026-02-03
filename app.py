@@ -2483,7 +2483,7 @@ def mostrar_usuario(user_id):
 
 
 # ====================================================================================
-# ============================       DIAGNOSTICO       ====================================
+# ============================     DIAGNOSTICO    ====================================
 # ====================================================================================
 
 # ============================ LISTAR DIAGNÓSTICOS ============================
@@ -2504,7 +2504,6 @@ def listar_diagnosticos():
         'configuracion/diagnostico/cat_diagnostico.html',
         diagnosticos=diagnosticos
     )
-
 
 # ============================ INSERTAR DIAGNÓSTICO ============================
 @app.route('/configuracion/diagnostico/insertar', methods=['POST'])
@@ -2556,6 +2555,206 @@ def editar_diagnostico(id):
         'configuracion/diagnostico/edit_diagnostico.html',
         diagnostico=diagnostico
     )
+
+# ====================================================================================
+# ============================     SERVICIOS    ====================================
+# ====================================================================================
+@app.route('/configuracion/servicios')
+def cat_servicios():
+    if 'login' not in session:
+        return redirect(url_for('login'))
+
+    conexion = pymysql.connect(
+        host='localhost',
+        user='root',
+        password='',
+        db='ineo_db',
+        cursorclass=pymysql.cursors.DictCursor
+    )
+
+    cursor = conexion.cursor()
+
+    # 🔹 Servicios
+    cursor.execute("""
+        SELECT s.*, 
+               t.ser_type_desc AS tipo
+        FROM cat_servicios s
+        LEFT JOIN service_type t ON s.tipo = t.ser_type_id
+        ORDER BY s.id_serv DESC
+    """)
+    servicios = cursor.fetchall()
+
+    # 🔹 Tipos de servicio
+    cursor.execute("SELECT * FROM service_type")
+    tipos = cursor.fetchall()
+
+    # 🔹 Proveedores
+    cursor.execute("SELECT * FROM proveedores")
+    proveedores = cursor.fetchall()
+
+    conexion.close()
+
+    return render_template(
+        'configuracion/servicios/cat_servicios.html',
+        servicios=servicios,
+        tipos=tipos,
+        proveedores=proveedores
+    )
+# ==================== EDITAR SERVICIOS ====================
+@app.route('/configuracion/servicios/editar/<int:id>', methods=['GET', 'POST'])
+def editar_servicio(id):
+    if 'login' not in session:
+        return redirect(url_for('login'))
+
+    conexion = pymysql.connect(
+        host='localhost',
+        user='root',
+        password='',
+        db='ineo_db',
+        cursorclass=pymysql.cursors.DictCursor
+    )
+    cursor = conexion.cursor()
+
+    # ===================== POST (GUARDAR CAMBIOS) =====================
+    if request.method == 'POST':
+        data = request.form
+
+        cursor.execute("""
+            UPDATE cat_servicios SET
+                serv_cve=%s,
+                serv_desc=%s,
+                serv_costo=%s,
+                serv_costo2=%s,
+                serv_costo3=%s,
+                serv_costo4=%s,
+                serv_costo5=%s,
+                serv_costo6=%s,
+                serv_costo7=%s,
+                serv_costo8=%s,
+                serv_umed=%s,
+                tipo=%s,
+                proveedor=%s,
+                grupo=%s,
+                codigo_sat=%s,
+                c_cveuni=%s,
+                c_nombre='SERVICIO',
+                iva=0.16
+            WHERE id_serv=%s
+        """, (
+            data['clave'],
+            data['descripcion'],
+            data['costo'],
+            data.get('costo2', 0),
+            data.get('costo3', 0),
+            data.get('costo4', 0),
+            data.get('costo5', 0),
+            data.get('costo6', 0),
+            data.get('costo7', 0),
+            data.get('costo8', 0),
+            data['med'],
+            data['tipo'],
+            data['proveedor'],
+            data['grupo'],
+            data['codigo_sat'],
+            data['c_cveuni'],
+            id
+        ))
+
+        conexion.commit()
+        conexion.close()
+        flash('Servicio actualizado correctamente', 'success')
+        return redirect(url_for('cat_servicios'))
+
+    # ===================== GET (CARGAR FORM) =====================
+    cursor.execute("""
+        SELECT s.*, t.ser_type_desc, p.nom_prov
+        FROM cat_servicios s
+        LEFT JOIN service_type t ON s.tipo = t.ser_type_id
+        LEFT JOIN proveedores p ON s.proveedor = p.id_prov
+        WHERE s.id_serv=%s
+    """, (id,))
+    servicio = cursor.fetchone()
+
+    cursor.execute("SELECT * FROM service_type")
+    tipos = cursor.fetchall()
+
+    cursor.execute("SELECT * FROM proveedores")
+    proveedores = cursor.fetchall()
+
+    conexion.close()
+
+    if not servicio:
+        flash('Servicio no encontrado', 'danger')
+        return redirect(url_for('cat_servicios'))
+
+    return render_template(
+        'configuracion/servicios/edit_servicios.html',
+        servicio=servicio,
+        tipos=tipos,
+        proveedores=proveedores
+    )
+# ==================== INSERTAR SERVICIO ====================
+@app.route('/insertar_servicio', methods=['POST'])
+def insertar_servicio():
+    if request.method == 'POST':
+        data = request.form
+
+        serv_cve = data['clave']
+        serv_desc = data['descripcion']
+        serv_costo = data['costo']
+        serv_umed = data['med']
+        serv_tipo = data['tipo']
+        proveedor = data['proveedor']
+        grupo = data['grupo']
+        codigo_sat = data['codigo_sat']
+        c_cveuni = data['c_cveuni']
+
+        # Costos opcionales
+        serv_costo2 = data.get('costo2', 0) or 0
+        serv_costo3 = data.get('costo3', 0) or 0
+        serv_costo4 = data.get('costo4', 0) or 0
+        serv_costo5 = data.get('costo5', 0) or 0
+        serv_costo6 = data.get('costo6', 0) or 0
+        serv_costo7 = data.get('costo7', 0) or 0
+        serv_costo8 = data.get('costo8', 0) or 0
+
+        c_nombre = "SERVICIO"
+        tasa = 0.16
+
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        # Obtener descripción del tipo
+        cursor.execute(
+            "SELECT ser_type_desc FROM service_type WHERE ser_type_id = %s",
+            (serv_tipo,)
+        )
+        tipo = cursor.fetchone()
+        tip_insumo = tipo['ser_type_desc'] if tipo else ''
+
+        sql = """
+            INSERT INTO cat_servicios
+            (serv_cve, serv_desc, serv_costo, serv_costo2, serv_costo3,
+             serv_costo4, serv_costo5, serv_costo6, serv_costo7, serv_costo8,
+             serv_umed, serv_activo, tipo, tip_insumo, proveedor, grupo,
+             codigo_sat, c_cveuni, c_nombre, iva)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,'SI',%s,%s,%s,%s,%s,%s,%s,%s)
+        """
+
+        cursor.execute(sql, (
+            serv_cve, serv_desc, serv_costo,
+            serv_costo2, serv_costo3, serv_costo4,
+            serv_costo5, serv_costo6, serv_costo7, serv_costo8,
+            serv_umed, serv_tipo, tip_insumo,
+            proveedor, grupo, codigo_sat, c_cveuni,
+            c_nombre, tasa
+        ))
+
+        conn.commit()
+        conn.close()
+
+        flash('Servicio registrado correctamente', 'success')
+        return redirect(url_for('cat_servicios'))
 
     # ==================== GESTIÓN DE CUENTAS (ACTIVOS) ====================
 
