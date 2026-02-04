@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container">
+  <div class="form-header">EDITAR SERVICIO</div>
+
+  <form method="POST">
+    <div class="form-group">
+      <label>Clave</label>
+      <input class="form-control" name="clave" value="{{ servicio.serv_cve }}" required>
+    </div>
+
+    <div class="form-group">
+      <label>Descripción</label>
+      <input class="form-control" name="descripcion" value="{{ servicio.serv_desc }}" required>
+    </div>
+
+    <div class="form-group">
+      <label>Precio</label>
+      <input class="form-control" name="costo" value="{{ servicio.serv_costo }}" type="number" step="0.01">
+    </div>
+
+    <div class="form-group">
+      <label>Unidad de medida</label>
+      <select class="form-control" name="med">
+        <option selected>{{ servicio.serv_umed }}</option>
+        <option>CONSULTA</option>
+        <option>EQUIPO</option>
+        <option>ESTUDIO</option>
+        <option>HORA</option>
+        <option>SERVICIO</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Tipo</label>
+      <select class="form-control" name="tipo">
+        {% for t in tipos %}
+          <option value="{{ t.ser_type_id }}"
+            {% if t.ser_type_id == servicio.tipo %}selected{% endif %}>
+            {{ t.ser_type_desc }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Proveedor</label>
+      <select class="form-control" name="proveedor">
+        {% for p in proveedores %}
+          <option value="{{ p.id_prov }}"
+            {% if p.id_prov == servicio.proveedor %}selected{% endif %}>
+            {{ p.nom_prov }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Grupo</label>
+      <select class="form-control" name="grupo">
+        <option selected>{{ servicio.grupo }}</option>
+        <option>SERVICIOS HOSPITALARIOS</option>
+        <option>IMAGENOLOGIA</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Código SAT</label>
+      <input class="form-control" name="codigo_sat" value="{{ servicio.codigo_sat }}">
+    </div>
+
+    <div class="form-group">
+      <label>Clave Unidad</label>
+      <input class="form-control" name="c_cveuni" value="{{ servicio.c_cveuni }}">
+    </div>
+
+    <div class="text-center mt-3">
+      <button class="btn btn-success">Guardar</button>
+      <a href="{{ url_for('cat_servicios') }}" class="btn btn-danger">Cancelar</a>
+    </div>
+  </form>
+</div>
+
+{% endblock %}

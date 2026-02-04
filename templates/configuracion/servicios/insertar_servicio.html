@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Insertar Servicio</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+</head>
+<body class="bg-light">
+
+<div class="container mt-5">
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">Registrar Servicio</h4>
+        </div>
+
+        <div class="card-body">
+            <form action="/insertar_servicio" method="POST">
+
+                <div class="form-row">
+                    <div class="form-group col-md-4">
+                        <label>Clave</label>
+                        <input type="text" name="clave" class="form-control" required>
+                    </div>
+
+                    <div class="form-group col-md-8">
+                        <label>Descripción</label>
+                        <input type="text" name="descripcion" class="form-control" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group col-md-4">
+                        <label>Costo principal</label>
+                        <input type="number" step="0.01" name="costo" class="form-control" required>
+                    </div>
+
+                    <div class="form-group col-md-4">
+                        <label>Unidad de medida</label>
+                        <input type="text" name="med" class="form-control" required>
+                    </div>
+
+                    <div class="form-group col-md-4">
+                        <label>Tipo de servicio</label>
+                        <select name="tipo" class="form-control" required>
+                            <option value="">Seleccione</option>
+                            <!-- Ejemplo -->
+                            <option value="1">Consulta</option>
+                            <option value="2">Procedimiento</option>
+                        </select>
+                    </div>
+                </div>
+
+                <hr>
+
+                <h5>Costos adicionales (opcional)</h5>
+
+                <div class="form-row">
+                    <div class="form-group col-md-3">
+                        <input type="number" step="0.01" name="costo2" class="form-control" placeholder="Costo 2">
+                    </div>
+                    <div class="form-group col-md-3">
+                        <input type="number" step="0.01" name="costo3" class="form-control" placeholder="Costo 3">
+                    </div>
+                    <div class="form-group col-md-3">
+                        <input type="number" step="0.01" name="costo4" class="form-control" placeholder="Costo 4">
+                    </div>
+                    <div class="form-group col-md-3">
+                        <input type="number" step="0.01" name="costo5" class="form-control" placeholder="Costo 5">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group col-md-3">
+                        <input type="number" step="0.01" name="costo6" class="form-control" placeholder="Costo 6">
+                    </div>
+                    <div class="form-group col-md-3">
+                        <input type="number" step="0.01" name="costo7" class="form-control" placeholder="Costo 7">
+                    </div>
+                    <div class="form-group col-md-3">
+                        <input type="number" step="0.01" name="costo8" class="form-control" placeholder="Costo 8">
+                    </div>
+                </div>
+
+                <hr>
+
+                <div class="form-row">
+                    <div class="form-group col-md-4">
+                        <label>Proveedor</label>
+                        <input type="text" name="proveedor" class="form-control" required>
+                    </div>
+
+                    <div class="form-group col-md-4">
+                        <label>Grupo</label>
+                        <input type="text" name="grupo" class="form-control" required>
+                    </div>
+
+                    <div class="form-group col-md-4">
+                        <label>Código SAT</label>
+                        <input type="text" name="codigo_sat" class="form-control" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Clave Unidad SAT</label>
+                    <input type="text" name="c_cveuni" class="form-control" required>
+                </div>
+
+                <div class="text-right">
+                    <button type="submit" class="btn btn-success">
+                        Guardar Servicio
+                    </button>
+                    <a href="/cat_servicios" class="btn btn-secondary">
+                        Cancelar
+                    </a>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

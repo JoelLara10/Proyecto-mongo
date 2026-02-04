@@ -125,7 +125,7 @@
 
     <!-- SERVICIOS -->
     <div class="col-md-4 mb-4">
-      <a href="#" class="text-decoration-none">
+      <a href="{{ url_for('cat_servicios') }}" class="text-decoration-none">
         <div class="card dashboard-card text-center shadow-sm">
           <div class="card-body">
             <div class="icon-circle" style="background:#F8BBD0;">
@@ -141,7 +141,6 @@
     {% if usuario.role == 'admin' %}
     <div class="col-md-4 mb-4">
       <a href="{{ url_for('copias_seguridad') }}" class="text-decoration-none">
-
         <div class="card dashboard-card text-center shadow-sm">
           <div class="card-body">
             <div class="icon-circle" style="background:#E8F5E9;">

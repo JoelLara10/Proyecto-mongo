@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Catálogo de Servicios</title>
+
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.0/css/all.css">
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"></script>
+
+    <style>
+        body { background: #f4f6f9; }
+        .price-badge {
+            background: #17a2b8;
+            color: #fff;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container-fluid mt-4">
+
+    <!-- ENCABEZADO -->
+    <div class="card mb-4">
+        <div class="card-body text-center">
+            <h3><i class="fas fa-cogs"></i> CATÁLOGO DE SERVICIOS</h3>
+        </div>
+    </div>
+
+    <!-- BOTÓN NUEVO -->
+    {% if session.login.id_rol == 5 %}
+    <div class="mb-3 text-right">
+        <button class="btn btn-primary" data-toggle="modal" data-target="#modalServicio">
+            <i class="fas fa-plus"></i> Nuevo Servicio
+        </button>
+    </div>
+    {% endif %}
+
+    <!-- MODAL NUEVO SERVICIO -->
+    <div class="modal fade" id="modalServicio">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+
+                <form method="POST" action="{{ url_for('servicios.insertar_servicio') }}">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title">Nuevo Servicio</h5>
+                        <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+                    </div>
+
+                    <div class="modal-body">
+                        <div class="row">
+
+                            <div class="col-md-6">
+                                <label>Clave</label>
+                                <input name="clave" class="form-control" required>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label>Descripción</label>
+                                <input name="descripcion" class="form-control" required>
+                            </div>
+
+                            {% for i in range(1,9) %}
+                            <div class="col-md-3 mt-3">
+                                <label>Precio {{ i }}</label>
+                                <input type="number" step="0.01" name="costo{{ i }}" class="form-control">
+                            </div>
+                            {% endfor %}
+
+                            <div class="col-md-6 mt-3">
+                                <label>Unidad de Medida</label>
+                                <select name="umed" class="form-control" required>
+                                    <option value="">Seleccionar</option>
+                                    <option>CONSULTA</option>
+                                    <option>EQUIPO</option>
+                                    <option>ESTUDIO</option>
+                                    <option>HORA</option>
+                                    <option>SERVICIO</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6 mt-3">
+                                <label>Tipo</label>
+                                <select name="tipo" class="form-control" required>
+                                    <option value="">Seleccionar</option>
+                                    {% for t in tipos %}
+                                        <option value="{{ t.ser_type_id }}">{{ t.ser_type_desc }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="col-md-6 mt-3">
+                                <label>Proveedor</label>
+                                <select name="proveedor" class="form-control" required>
+                                    <option value="">Seleccionar</option>
+                                    {% for p in proveedores %}
+                                        <option value="{{ p.id_prov }}">{{ p.nom_prov }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="col-md-6 mt-3">
+                                <label>Grupo</label>
+                                <select name="grupo" class="form-control">
+                                    <option>SERVICIOS HOSPITALARIOS</option>
+                                    <option>IMAGENOLOGIA</option>
+                                </select>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button class="btn btn-success">
+                            <i class="fas fa-save"></i> Guardar
+                        </button>
+                        <button class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- TABLA -->
+    <div class="card">
+        <div class="card-body table-responsive">
+
+            <input type="text" id="search" class="form-control mb-3" placeholder="🔍 Buscar servicio...">
+
+            <table class="table table-bordered table-hover" id="tabla">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>ID</th>
+                        <th>Clave</th>
+                        <th>Descripción</th>
+                        <th>Precio</th>
+                        <th>U.M.</th>
+                        <th>Tipo</th>
+                        <th>Estado</th>
+                        {% if session.login.id_rol == 5 %}
+                        <th>Acciones</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for s in servicios %}
+                    <tr>
+                        <td>{{ s.id_serv }}</td>
+                        <td>{{ s.serv_cve }}</td>
+                        <td>{{ s.serv_desc }}</td>
+                        <td><span class="price-badge">${{ "%.2f"|format(s.serv_costo) }}</span></td>
+                        <td>{{ s.serv_umed }}</td>
+                        <td>{{ s.ser_type_desc }}</td>
+                        <td>
+                            {% if s.serv_activo == 'NO' %}
+                                <span class="badge badge-danger">Inactivo</span>
+                            {% else %}
+                                <span class="badge badge-success">Activo</span>
+                            {% endif %}
+                        </td>
+
+                        {% if session.login.id_rol == 5 %}
+                        <td>
+                            <a href="{{ url_for('servicios.editar_servicio', id=s.id_serv) }}"
+                               class="btn btn-warning btn-sm">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<script>
+$("#search").on("keyup", function () {
+    var value = $(this).val().toLowerCase();
+    $("#tabla tbody tr").filter(function () {
+        $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+    });
+});
+</script>
+
+</body>
+</html>

@@ -1323,13 +1323,6 @@ def ver_resultado_gabinete(id_examen):
     )
 # ==================== GESTIÓN DE CUENTAS ====================
 
-@app.route('/admin/cuenta_pacientes')
-def cuenta_pacientes():
-    if 'user_id' not in session or session['role'] != 'admin':
-        flash('Acceso denegado.', 'error')
-        return redirect(url_for('dashboard'))
-
-    return render_template('administrativo/gestion_cuentas/cuenta_pacientes.html')
 
 
 @app.route('/admin/presupuestos', methods=['GET', 'POST'])
@@ -2490,7 +2483,7 @@ def mostrar_usuario(user_id):
 
 
 # ====================================================================================
-# ============================       DIAGNOSTICO       ====================================
+# ============================     DIAGNOSTICO    ====================================
 # ====================================================================================
 
 # ============================ LISTAR DIAGNÓSTICOS ============================
@@ -2511,7 +2504,6 @@ def listar_diagnosticos():
         'configuracion/diagnostico/cat_diagnostico.html',
         diagnosticos=diagnosticos
     )
-
 
 # ============================ INSERTAR DIAGNÓSTICO ============================
 @app.route('/configuracion/diagnostico/insertar', methods=['POST'])
@@ -2563,6 +2555,787 @@ def editar_diagnostico(id):
         'configuracion/diagnostico/edit_diagnostico.html',
         diagnostico=diagnostico
     )
+
+# ====================================================================================
+# ============================     SERVICIOS    ====================================
+# ====================================================================================
+@app.route('/configuracion/servicios')
+def cat_servicios():
+    if 'login' not in session:
+        return redirect(url_for('login'))
+
+    conexion = pymysql.connect(
+        host='localhost',
+        user='root',
+        password='',
+        db='ineo_db',
+        cursorclass=pymysql.cursors.DictCursor
+    )
+
+    cursor = conexion.cursor()
+
+    # 🔹 Servicios
+    cursor.execute("""
+        SELECT s.*, 
+               t.ser_type_desc AS tipo
+        FROM cat_servicios s
+        LEFT JOIN service_type t ON s.tipo = t.ser_type_id
+        ORDER BY s.id_serv DESC
+    """)
+    servicios = cursor.fetchall()
+
+    # 🔹 Tipos de servicio
+    cursor.execute("SELECT * FROM service_type")
+    tipos = cursor.fetchall()
+
+    # 🔹 Proveedores
+    cursor.execute("SELECT * FROM proveedores")
+    proveedores = cursor.fetchall()
+
+    conexion.close()
+
+    return render_template(
+        'configuracion/servicios/cat_servicios.html',
+        servicios=servicios,
+        tipos=tipos,
+        proveedores=proveedores
+    )
+# ==================== EDITAR SERVICIOS ====================
+@app.route('/configuracion/servicios/editar/<int:id>', methods=['GET', 'POST'])
+def editar_servicio(id):
+    if 'login' not in session:
+        return redirect(url_for('login'))
+
+    conexion = pymysql.connect(
+        host='localhost',
+        user='root',
+        password='',
+        db='ineo_db',
+        cursorclass=pymysql.cursors.DictCursor
+    )
+    cursor = conexion.cursor()
+
+    # ===================== POST (GUARDAR CAMBIOS) =====================
+    if request.method == 'POST':
+        data = request.form
+
+        cursor.execute("""
+            UPDATE cat_servicios SET
+                serv_cve=%s,
+                serv_desc=%s,
+                serv_costo=%s,
+                serv_costo2=%s,
+                serv_costo3=%s,
+                serv_costo4=%s,
+                serv_costo5=%s,
+                serv_costo6=%s,
+                serv_costo7=%s,
+                serv_costo8=%s,
+                serv_umed=%s,
+                tipo=%s,
+                proveedor=%s,
+                grupo=%s,
+                codigo_sat=%s,
+                c_cveuni=%s,
+                c_nombre='SERVICIO',
+                iva=0.16
+            WHERE id_serv=%s
+        """, (
+            data['clave'],
+            data['descripcion'],
+            data['costo'],
+            data.get('costo2', 0),
+            data.get('costo3', 0),
+            data.get('costo4', 0),
+            data.get('costo5', 0),
+            data.get('costo6', 0),
+            data.get('costo7', 0),
+            data.get('costo8', 0),
+            data['med'],
+            data['tipo'],
+            data['proveedor'],
+            data['grupo'],
+            data['codigo_sat'],
+            data['c_cveuni'],
+            id
+        ))
+
+        conexion.commit()
+        conexion.close()
+        flash('Servicio actualizado correctamente', 'success')
+        return redirect(url_for('cat_servicios'))
+
+    # ===================== GET (CARGAR FORM) =====================
+    cursor.execute("""
+        SELECT s.*, t.ser_type_desc, p.nom_prov
+        FROM cat_servicios s
+        LEFT JOIN service_type t ON s.tipo = t.ser_type_id
+        LEFT JOIN proveedores p ON s.proveedor = p.id_prov
+        WHERE s.id_serv=%s
+    """, (id,))
+    servicio = cursor.fetchone()
+
+    cursor.execute("SELECT * FROM service_type")
+    tipos = cursor.fetchall()
+
+    cursor.execute("SELECT * FROM proveedores")
+    proveedores = cursor.fetchall()
+
+    conexion.close()
+
+    if not servicio:
+        flash('Servicio no encontrado', 'danger')
+        return redirect(url_for('cat_servicios'))
+
+    return render_template(
+        'configuracion/servicios/edit_servicios.html',
+        servicio=servicio,
+        tipos=tipos,
+        proveedores=proveedores
+    )
+# ==================== INSERTAR SERVICIO ====================
+@app.route('/insertar_servicio', methods=['POST'])
+def insertar_servicio():
+    if request.method == 'POST':
+        data = request.form
+
+        serv_cve = data['clave']
+        serv_desc = data['descripcion']
+        serv_costo = data['costo']
+        serv_umed = data['med']
+        serv_tipo = data['tipo']
+        proveedor = data['proveedor']
+        grupo = data['grupo']
+        codigo_sat = data['codigo_sat']
+        c_cveuni = data['c_cveuni']
+
+        # Costos opcionales
+        serv_costo2 = data.get('costo2', 0) or 0
+        serv_costo3 = data.get('costo3', 0) or 0
+        serv_costo4 = data.get('costo4', 0) or 0
+        serv_costo5 = data.get('costo5', 0) or 0
+        serv_costo6 = data.get('costo6', 0) or 0
+        serv_costo7 = data.get('costo7', 0) or 0
+        serv_costo8 = data.get('costo8', 0) or 0
+
+        c_nombre = "SERVICIO"
+        tasa = 0.16
+
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        # Obtener descripción del tipo
+        cursor.execute(
+            "SELECT ser_type_desc FROM service_type WHERE ser_type_id = %s",
+            (serv_tipo,)
+        )
+        tipo = cursor.fetchone()
+        tip_insumo = tipo['ser_type_desc'] if tipo else ''
+
+        sql = """
+            INSERT INTO cat_servicios
+            (serv_cve, serv_desc, serv_costo, serv_costo2, serv_costo3,
+             serv_costo4, serv_costo5, serv_costo6, serv_costo7, serv_costo8,
+             serv_umed, serv_activo, tipo, tip_insumo, proveedor, grupo,
+             codigo_sat, c_cveuni, c_nombre, iva)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,'SI',%s,%s,%s,%s,%s,%s,%s,%s)
+        """
+
+        cursor.execute(sql, (
+            serv_cve, serv_desc, serv_costo,
+            serv_costo2, serv_costo3, serv_costo4,
+            serv_costo5, serv_costo6, serv_costo7, serv_costo8,
+            serv_umed, serv_tipo, tip_insumo,
+            proveedor, grupo, codigo_sat, c_cveuni,
+            c_nombre, tasa
+        ))
+
+        conn.commit()
+        conn.close()
+
+        flash('Servicio registrado correctamente', 'success')
+        return redirect(url_for('cat_servicios'))
+
+    # ==================== GESTIÓN DE CUENTAS (ACTIVOS) ====================
+
+@app.route('/admin/cuenta_pacientes')
+def cuenta_pacientes():
+    if 'user_id' not in session or session.get('role') != 'admin':
+        flash('Acceso denegado.', 'error')
+        return redirect(url_for('dashboard'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
+
+    # 1) Intento con anticipos (si tienes tabla depositos_atencion con id_atencion,monto)
+    #    Si no existe, cae al query sin anticipos y pone 0.
+    sql_con_anticipos = """
+        SELECT
+            a.id_atencion,
+            a.Id_exp,
+            a.especialidad,
+            a.fecha_ing,
+            a.area,
+            COALESCE(c.numero, 'Sin cama') AS num_cama,
+            CONCAT(p.papell, ' ', p.sapell, ' ', p.nom_pac) AS paciente,
+
+            (
+                SELECT u.username
+                FROM atencion_medicos am
+                JOIN users u ON u.id = am.id_medico
+                WHERE am.id_atencion = a.id_atencion
+                ORDER BY am.id ASC
+                LIMIT 1
+            ) AS medico,
+
+            COALESCE(cp.subtotal, 0) AS subtotal,
+
+            COALESCE(dep.anticipos, 0) AS anticipos
+        FROM atencion a
+        JOIN pacientes p ON p.Id_exp = a.Id_exp
+        LEFT JOIN camas c ON c.id_cama = a.id_cama
+        LEFT JOIN (
+            SELECT id_atencion, IFNULL(SUM(subtotal), 0) AS subtotal
+            FROM cuenta_paciente
+            GROUP BY id_atencion
+        ) cp ON cp.id_atencion = a.id_atencion
+        LEFT JOIN (
+            SELECT id_atencion, IFNULL(SUM(monto), 0) AS anticipos
+            FROM depositos_atencion
+            GROUP BY id_atencion
+        ) dep ON dep.id_atencion = a.id_atencion
+        WHERE a.status = 'ABIERTA'
+        ORDER BY a.fecha_ing DESC
+    """
+
+    sql_sin_anticipos = """
+        SELECT
+            a.id_atencion,
+            a.Id_exp,
+            a.especialidad,
+            a.fecha_ing,
+            a.area,
+            COALESCE(c.numero, 'Sin cama') AS num_cama,
+            CONCAT(p.papell, ' ', p.sapell, ' ', p.nom_pac) AS paciente,
+
+            (
+                SELECT u.username
+                FROM atencion_medicos am
+                JOIN users u ON u.id = am.id_medico
+                WHERE am.id_atencion = a.id_atencion
+                ORDER BY am.id ASC
+                LIMIT 1
+            ) AS medico,
+
+            COALESCE(cp.subtotal, 0) AS subtotal
+        FROM atencion a
+        JOIN pacientes p ON p.Id_exp = a.Id_exp
+        LEFT JOIN camas c ON c.id_cama = a.id_cama
+        LEFT JOIN (
+            SELECT id_atencion, IFNULL(SUM(subtotal), 0) AS subtotal
+            FROM cuenta_paciente
+            GROUP BY id_atencion
+        ) cp ON cp.id_atencion = a.id_atencion
+        WHERE a.status = 'ABIERTA'
+        ORDER BY a.fecha_ing DESC
+    """
+
+    try:
+        cursor.execute(sql_con_anticipos)
+        rows = cursor.fetchall()
+        anticipos_ok = True
+    except Exception:
+        conn.rollback()
+        cursor.execute(sql_sin_anticipos)
+        rows = cursor.fetchall()
+        anticipos_ok = False
+
+    cursor.close()
+    conn.close()
+
+    # 2) Cálculos (IVA 16%)
+    for r in rows:
+        # asegurar Decimal (subtotal puede venir Decimal/float/int)
+        sub = Decimal(str(r.get('subtotal', 0) or 0))
+        iva = (sub * Decimal('0.16'))
+        total = sub + iva
+
+        r['iva'] = iva
+        r['total'] = total
+
+        if not anticipos_ok:
+            r['anticipos'] = Decimal('0.00')
+        else:
+            r['anticipos'] = Decimal(str(r.get('anticipos', 0) or 0))
+
+        # Si médico es None
+        if not r.get('medico'):
+            r['medico'] = 'Sin médico'
+
+    return render_template(
+        'administrativo/gestion_cuentas/cuenta_pacientes.html',
+        cuentas=rows
+    )
+
+
+# (Opcional) PDF simple de cuenta: si no tienes aún tu ruta PDF, aquí dejo un placeholder.
+# Puedes cambiar la lógica y el formato a tu gusto.
+@app.route('/admin/cuenta_pdf/<int:id_atencion>')
+def cuenta_pdf(id_atencion):
+    if 'user_id' not in session:
+        flash('Sesión no válida.', 'error')
+        return redirect(url_for('login'))
+
+    conn = get_db_connection()
+    cur = conn.cursor(pymysql.cursors.DictCursor)
+
+    cur.execute("""
+        SELECT a.id_atencion, a.Id_exp, a.fecha_ing,
+               CONCAT(p.papell,' ',p.sapell,' ',p.nom_pac) AS paciente
+        FROM atencion a
+        JOIN pacientes p ON p.Id_exp = a.Id_exp
+        WHERE a.id_atencion = %s
+    """, (id_atencion,))
+    header = cur.fetchone()
+
+    cur.execute("""
+        SELECT fecha, descripcion, cantidad, precio, subtotal
+        FROM cuenta_paciente
+        WHERE id_atencion = %s
+        ORDER BY fecha ASC
+    """, (id_atencion,))
+    items = cur.fetchall()
+
+    cur.execute("""
+        SELECT IFNULL(SUM(subtotal),0) AS subtotal
+        FROM cuenta_paciente
+        WHERE id_atencion = %s
+    """, (id_atencion,))
+    sub = Decimal(str(cur.fetchone()['subtotal']))
+
+    cur.close()
+    conn.close()
+
+    iva = sub * Decimal('0.16')
+    total = sub + iva
+
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", "B", 12)
+    pdf.cell(0, 10, "CUENTA DEL PACIENTE", ln=1, align="C")
+    pdf.ln(3)
+
+    pdf.set_font("Arial", "", 10)
+    pdf.cell(0, 6, f"Atencion: {header['id_atencion']}   Expediente: {header['Id_exp']}", ln=1)
+    pdf.cell(0, 6, f"Paciente: {header['paciente']}", ln=1)
+    pdf.cell(0, 6, f"Fecha ingreso: {header['fecha_ing']}", ln=1)
+    pdf.ln(4)
+
+    pdf.set_font("Arial", "B", 9)
+    pdf.cell(25, 7, "Fecha", 1)
+    pdf.cell(90, 7, "Descripcion", 1)
+    pdf.cell(15, 7, "Cant", 1, align="C")
+    pdf.cell(25, 7, "Subtotal", 1, align="R")
+    pdf.ln()
+
+    pdf.set_font("Arial", "", 8)
+    for it in items:
+        pdf.cell(25, 7, str(it['fecha']), 1)
+        pdf.cell(90, 7, str(it['descripcion'])[:45], 1)
+        pdf.cell(15, 7, str(it['cantidad']), 1, align="C")
+        pdf.cell(25, 7, f"${float(it['subtotal']):.2f}", 1, align="R")
+        pdf.ln()
+
+    pdf.ln(3)
+    pdf.set_font("Arial", "B", 10)
+    pdf.cell(0, 7, f"SUBTOTAL: ${float(sub):.2f}", ln=1, align="R")
+    pdf.cell(0, 7, f"IVA (16%): ${float(iva):.2f}", ln=1, align="R")
+    pdf.cell(0, 7, f"TOTAL: ${float(total):.2f}", ln=1, align="R")
+
+    response = make_response(pdf.output(dest='S').encode('latin-1'))
+    response.headers['Content-Type'] = 'application/pdf'
+    response.headers['Content-Disposition'] = 'inline; filename=cuenta_paciente.pdf'
+    return response
+
+
+    # ==================== CENSO ====================
+
+@app.route('/admin/censo')
+def censo():
+    if 'user_id' not in session or session.get('role') != 'admin':
+        flash('Acceso denegado.', 'error')
+        return redirect(url_for('dashboard'))
+
+    conn = get_db_connection()
+    cur = conn.cursor(pymysql.cursors.DictCursor)
+
+    def obtener_camas_por_area(area_camas, area_atencion=None):
+        """
+        area_camas: valor en tabla camas.area (Urgencias/Hospitalizado)
+        area_atencion: valor en tabla atencion.area (Ambulatorio/Urgencias/Hospitalizado)
+        """
+        filas = []
+
+        # 1) Ambulatorio (sin cama física)
+        if area_atencion == 'Ambulatorio':
+            cur.execute("""
+                SELECT 
+                    a.id_atencion,
+                    CONCAT('Consulta ', a.id_atencion) AS num_cama,
+                    a.fecha_ing,
+                    a.motivo AS motivo_ingreso,
+                    a.status,
+                    a.alergias,
+                    p.Id_exp,
+                    p.fecnac,
+                    p.papell, p.sapell, p.nom_pac,
+                    (SELECT u.username
+                     FROM atencion_medicos am
+                     JOIN users u ON u.id = am.id_medico
+                     WHERE am.id_atencion = a.id_atencion
+                     ORDER BY am.id ASC
+                     LIMIT 1) AS medico_tratante
+                FROM atencion a
+                JOIN pacientes p ON p.Id_exp = a.Id_exp
+                WHERE a.area = 'Ambulatorio' AND a.status = 'ABIERTA'
+                ORDER BY a.fecha_ing DESC
+            """)
+            filas = cur.fetchall()
+
+            for f in filas:
+                f['estatus'] = 'OCUPADA'
+                f['fecha'] = f.get('fecha_ing')
+                f['motivo_recepcion'] = f.get('motivo_ingreso', '') or ''
+                f['alta_med'] = 'NO'  # no existe en tu BD
+                f['paciente_nombre'] = f"{f.get('papell','')} {f.get('sapell','')} {f.get('nom_pac','')}".strip()
+                f['edad_txt'] = calcular_edad(f['fecnac']) if f.get('fecnac') else ''
+                f['medico_txt'] = f.get('medico_tratante') or ''
+
+            return filas
+
+        # 2) Con cama física (Urgencias/Hospitalizado)
+        cur.execute("""
+            SELECT 
+                c.id_cama,
+                c.numero AS num_cama,
+                c.ocupada,
+                c.area AS area_cama,
+
+                a.id_atencion,
+                a.fecha_ing,
+                a.motivo AS motivo_ingreso,
+                a.status,
+
+                p.Id_exp,
+                p.fecnac,
+                p.papell, p.sapell, p.nom_pac,
+
+                (SELECT u.username
+                 FROM atencion_medicos am
+                 JOIN users u ON u.id = am.id_medico
+                 WHERE am.id_atencion = a.id_atencion
+                 ORDER BY am.id ASC
+                 LIMIT 1) AS medico_tratante
+            FROM camas c
+            LEFT JOIN atencion a ON a.id_cama = c.id_cama AND a.status = 'ABIERTA'
+            LEFT JOIN pacientes p ON p.Id_exp = a.Id_exp
+            WHERE c.area = %s
+            ORDER BY c.numero ASC
+        """, (area_camas,))
+        filas = cur.fetchall()
+
+        for f in filas:
+            if not f.get('id_atencion'):
+                # Cama libre (o mantenimiento si ocupada=1 sin atención abierta)
+                f['fecha'] = None
+                f['motivo_recepcion'] = ''
+                f['Id_exp'] = ''
+                f['paciente_nombre'] = ''
+                f['edad_txt'] = ''
+                f['medico_txt'] = ''
+                f['alta_med'] = ''
+
+                if int(f.get('ocupada') or 0) == 1:
+                    f['estatus'] = 'MANTENIMIENTO'
+                else:
+                    f['estatus'] = 'LIBRE'
+            else:
+                # Cama ocupada con atención abierta
+                f['fecha'] = f.get('fecha_ing')
+                f['motivo_recepcion'] = f.get('motivo_ingreso', '') or ''
+                f['paciente_nombre'] = f"{f.get('papell','')} {f.get('sapell','')} {f.get('nom_pac','')}".strip()
+                f['edad_txt'] = calcular_edad(f['fecnac']) if f.get('fecnac') else ''
+                f['medico_txt'] = f.get('medico_tratante') or ''
+                f['alta_med'] = 'NO'
+                f['estatus'] = 'OCUPADA'
+
+        return filas
+
+    # Secciones
+    consulta = obtener_camas_por_area(area_camas='Urgencias', area_atencion='Ambulatorio')  # CONSULTA
+    preparacion = obtener_camas_por_area(area_camas='Urgencias')                           # PREPARACIÓN
+    recuperacion = obtener_camas_por_area(area_camas='Hospitalizado')                      # RECUPERACIÓN
+
+    cur.close()
+    conn.close()
+
+    return render_template(
+        'administrativo/censo/censo.html',
+        consulta=consulta,
+        preparacion=preparacion,
+        recuperacion=recuperacion
+    )
+
+
+@app.route('/admin/censo/imprimir')
+def imprimir_censo():
+    if 'user_id' not in session or session.get('role') != 'admin':
+        flash('Acceso denegado.', 'error')
+        return redirect(url_for('dashboard'))
+
+    conn = get_db_connection()
+    cur = conn.cursor(pymysql.cursors.DictCursor)
+
+    # ========= HELPERS =========
+    def fmt_fecha(x):
+        if not x:
+            return ""
+        if isinstance(x, str):
+            try:
+                if len(x) >= 19:
+                    return datetime.strptime(x[:19], "%Y-%m-%d %H:%M:%S").strftime("%d/%m/%Y")
+                return datetime.strptime(x[:10], "%Y-%m-%d").strftime("%d/%m/%Y")
+            except Exception:
+                return ""
+        try:
+            return x.strftime("%d/%m/%Y")
+        except Exception:
+            return ""
+
+    def calc_estancia(fecha_ing):
+        if not fecha_ing:
+            return ""
+        if isinstance(fecha_ing, str):
+            try:
+                fecha_ing = datetime.strptime(fecha_ing[:19], "%Y-%m-%d %H:%M:%S")
+            except Exception:
+                try:
+                    fecha_ing = datetime.strptime(fecha_ing[:10], "%Y-%m-%d")
+                except Exception:
+                    return ""
+        dias = (datetime.now() - fecha_ing).days
+        return f"{dias}d" if dias >= 0 else ""
+
+    def obtener_area_con_camas(area_camas):
+        cur.execute("""
+            SELECT
+                c.numero AS num_cama,
+                c.ocupada,
+                a.id_atencion,
+                a.fecha_ing,
+                a.motivo,
+                a.alergias,
+                p.Id_exp,
+                p.fecnac,
+                p.papell, p.sapell, p.nom_pac,
+                (SELECT u.username
+                 FROM atencion_medicos am
+                 JOIN users u ON u.id = am.id_medico
+                 WHERE am.id_atencion = a.id_atencion
+                 ORDER BY am.id ASC
+                 LIMIT 1) AS medico_tratante
+            FROM camas c
+            LEFT JOIN atencion a ON a.id_cama = c.id_cama AND a.status = 'ABIERTA'
+            LEFT JOIN pacientes p ON p.Id_exp = a.Id_exp
+            WHERE c.area = %s
+            ORDER BY c.numero ASC
+        """, (area_camas,))
+        rows = cur.fetchall()
+
+        # estatus: OCUPADA / LIBRE / MANTENIMIENTO (ocupada=1 pero sin atención)
+        for r in rows:
+            if not r.get("id_atencion"):
+                r["estatus"] = "MANTENIMIENTO" if int(r.get("ocupada") or 0) == 1 else "LIBRE"
+            else:
+                r["estatus"] = "OCUPADA"
+        return rows
+
+    def obtener_consulta():
+        cur.execute("""
+            SELECT
+                a.id_atencion,
+                a.fecha_ing,
+                a.motivo,
+                a.alergias,
+                p.Id_exp,
+                p.fecnac,
+                p.papell, p.sapell, p.nom_pac,
+                (SELECT u.username
+                 FROM atencion_medicos am
+                 JOIN users u ON u.id = am.id_medico
+                 WHERE am.id_atencion = a.id_atencion
+                 ORDER BY am.id ASC
+                 LIMIT 1) AS medico_tratante
+            FROM atencion a
+            JOIN pacientes p ON p.Id_exp = a.Id_exp
+            WHERE a.area = 'Ambulatorio' AND a.status = 'ABIERTA'
+            ORDER BY a.fecha_ing DESC
+        """)
+        rows = cur.fetchall()
+        for r in rows:
+            r["num_cama"] = f"Consulta {r['id_atencion']}"
+            r["estatus"] = "OCUPADA"
+        return rows
+
+    hosp = obtener_area_con_camas("Hospitalizado")
+    urg = obtener_area_con_camas("Urgencias")
+    cons = obtener_consulta()
+
+    cur.close()
+    conn.close()
+
+    # ========= PDF =========
+    class PDF(FPDF):
+        def header(self):
+            self.set_text_color(43, 45, 127)
+            self.set_font("Arial", "B", 12)
+            self.cell(0, 8, "CENSO DIARIO DE PACIENTES", 0, 1, "C")
+
+            self.set_font("Arial", "", 9)
+            self.cell(0, 6, "FECHA: " + datetime.now().strftime("%d/%m/%Y %I:%M %p"), 0, 1, "R")
+            self.ln(2)
+
+        def footer(self):
+            self.set_y(-15)
+            self.set_font("Arial", "B", 8)
+            self.cell(0, 8, f"Página {self.page_no()}/{{nb}}", 0, 0, "C")
+            self.cell(0, 8, "CMSI-013", 0, 0, "R")
+
+    pdf = PDF("L", "mm", "legal")
+    pdf.alias_nb_pages()
+    pdf.add_page()
+    pdf.set_margins(10, 10, 10)
+    pdf.set_auto_page_break(True, 20)
+
+    pdf.set_draw_color(43, 45, 180)
+    pdf.set_text_color(43, 45, 127)
+
+    def encabezado_tabla(titulo):
+        pdf.set_font("Arial", "B", 9)
+        pdf.cell(0, 6, titulo, 1, 1, "C")
+
+        pdf.set_font("Arial", "B", 6)
+        pdf.cell(12, 6, "#", 1, 0, "C")
+        pdf.cell(18, 6, "F.ING", 1, 0, "C")
+        pdf.cell(78, 6, "PACIENTE", 1, 0, "C")
+        pdf.cell(16, 6, "F.NAC", 1, 0, "C")
+        pdf.cell(10, 6, "EDAD", 1, 0, "C")
+        pdf.cell(14, 6, "FOLIO", 1, 0, "C")
+        pdf.cell(12, 6, "DEIH", 1, 0, "C")
+        pdf.cell(92, 6, "DIAGNOSTICO", 1, 0, "C")
+        pdf.cell(50, 6, "ALERGIAS", 1, 0, "C")
+        pdf.cell(38, 6, "MEDICO", 1, 1, "C")
+
+    def fila_vacia(num):
+        pdf.set_font("Arial", "", 6)
+        pdf.cell(12, 6, str(num), 1, 0, "C")
+        pdf.cell(18, 6, "", 1, 0)
+        pdf.cell(78, 6, "", 1, 0)
+        pdf.cell(16, 6, "", 1, 0)
+        pdf.cell(10, 6, "", 1, 0)
+        pdf.cell(14, 6, "", 1, 0)
+        pdf.cell(12, 6, "", 1, 0)
+        pdf.cell(92, 6, "", 1, 0)
+        pdf.cell(50, 6, "", 1, 0)
+        pdf.cell(38, 6, "", 1, 1)
+
+    def fila_mantenimiento(num):
+        pdf.set_font("Arial", "B", 6)
+        pdf.cell(12, 6, str(num), 1, 0, "C")
+        pdf.set_font("Arial", "", 6)
+        pdf.cell(18, 6, "", 1, 0)
+        pdf.cell(78, 6, "", 1, 0)
+        pdf.cell(16, 6, "", 1, 0)
+        pdf.cell(10, 6, "", 1, 0)
+        pdf.cell(14, 6, "", 1, 0)
+        pdf.cell(12, 6, "", 1, 0)
+        pdf.cell(92, 6, "", 1, 0)
+        pdf.cell(50, 6, "", 1, 0)
+        pdf.set_text_color(255, 0, 2)
+        pdf.set_font("Arial", "B", 6)
+        pdf.cell(38, 6, "NO DISPONIBLE", 1, 1, "C")
+        pdf.set_text_color(43, 45, 127)
+
+    def fila(row):
+        num = row.get("num_cama", "")
+        fecha_ing = fmt_fecha(row.get("fecha_ing"))
+        fecnac = fmt_fecha(row.get("fecnac"))
+        edad = ""
+        if row.get("fecnac"):
+            try:
+                edad = str(calcular_edad(row["fecnac"]))
+            except Exception:
+                edad = ""
+        folio = str(row.get("Id_exp") or "")
+        deih = calc_estancia(row.get("fecha_ing"))
+        paciente = f"{row.get('papell','')} {row.get('sapell','')} {row.get('nom_pac','')}".strip()
+        diag = str(row.get("motivo") or "")
+        alergias = str(row.get("alergias") or "")
+        medico = str(row.get("medico_tratante") or "")
+
+        pdf.set_font("Arial", "", 6)
+        pdf.cell(12, 6, str(num), 1, 0, "C")
+        pdf.cell(18, 6, fecha_ing, 1, 0)
+        pdf.cell(78, 6, paciente[:55], 1, 0)
+        pdf.cell(16, 6, fecnac, 1, 0, "C")
+        pdf.cell(10, 6, edad, 1, 0, "C")
+        pdf.cell(14, 6, folio, 1, 0, "C")
+        pdf.cell(12, 6, deih, 1, 0, "C")
+        pdf.cell(92, 6, diag[:70], 1, 0)
+
+        pdf.set_text_color(255, 0, 2)
+        pdf.set_font("Arial", "B", 6)
+        pdf.cell(50, 6, alergias[:35], 1, 0)
+
+        pdf.set_text_color(43, 45, 127)
+        pdf.set_font("Arial", "", 6)
+        pdf.cell(38, 6, medico[:25], 1, 1)
+
+    # ========= SECCIONES =========
+    encabezado_tabla("HOSPITALIZACIÓN")
+    for r in hosp:
+        if r["estatus"] == "MANTENIMIENTO":
+            fila_mantenimiento(r.get("num_cama"))
+        elif r["estatus"] == "LIBRE":
+            fila_vacia(r.get("num_cama"))
+        else:
+            fila(r)
+
+    pdf.ln(3)
+
+    encabezado_tabla("URGENCIAS")
+    for r in urg:
+        if r["estatus"] == "MANTENIMIENTO":
+            fila_mantenimiento(r.get("num_cama"))
+        elif r["estatus"] == "LIBRE":
+            fila_vacia(r.get("num_cama"))
+        else:
+            fila(r)
+
+    pdf.ln(3)
+
+    encabezado_tabla("CONSULTA")
+    for r in cons:
+        fila(r)
+
+    # ========= RESPUESTA =========
+    pdf_bytes = pdf.output(dest="S").encode("latin-1")
+    response = make_response(pdf_bytes)
+    response.headers["Content-Type"] = "application/pdf"
+    response.headers["Content-Disposition"] = "inline; filename=censo_diario.pdf"
+    return response
+
+
 
 
 @app.route('/logout')
