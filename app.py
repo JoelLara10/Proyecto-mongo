@@ -2,6 +2,9 @@ import os
 import zipfile
 from datetime import datetime, date, timedelta
 from decimal import Decimal
+import psutil
+import time
+
 
 from flask import (
     Flask, render_template, request, redirect,
@@ -186,7 +189,8 @@ def dashboard():
             {'name': 'Administrativo', 'url': url_for('administrativo')},
             {'name': 'Médico', 'url': url_for('medico')},
             {'name': 'Estudios', 'url': url_for('estudios.estudios_home')},
-            {'name': 'Configuración', 'url': url_for('menu_configuracion')}
+            {'name': 'Configuración', 'url': url_for('menu_configuracion')},
+            {'name': 'Rendimiento', 'url': url_for('rendimiento')}
         ]
 
     return render_template('dashboard.html', 
@@ -3334,7 +3338,48 @@ def imprimir_censo():
     response.headers["Content-Type"] = "application/pdf"
     response.headers["Content-Disposition"] = "inline; filename=censo_diario.pdf"
     return response
+# ====================================================================================
+# ============================     RENDIMIENTO    ====================================
+# ====================================================================================
+@app.route('/rendimiento')
+def rendimiento():
+    import psutil
+    from flask import render_template
+    import pymysql
 
+    # ----- Sistema -----
+    cpu = psutil.cpu_percent(interval=1)
+    ram = psutil.virtual_memory().percent
+    disco = psutil.disk_usage('/').percent
+
+    # ----- Usuarios -----
+    usuarios = []
+    try:
+        conn = get_db_connection()
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT id, username, role, created_at FROM users ORDER BY id DESC")
+            usuarios = cursor.fetchall()
+    finally:
+        conn.close()
+
+    # ----- Logs recientes -----
+    logs = []
+    try:
+        conn = get_db_connection()
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT usuario, accion, fecha FROM logs ORDER BY fecha DESC LIMIT 10")
+            logs = cursor.fetchall()
+    finally:
+        conn.close()
+
+    return render_template(
+        'rendimiento/rendimiento.html',
+        cpu=cpu,
+        ram=ram,
+        disco=disco,
+        usuarios=usuarios,
+        logs=logs
+    )
 
 
 

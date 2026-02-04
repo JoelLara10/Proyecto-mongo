@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Rendimiento del Sistema</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body class="bg-light">
+
+<div class="container mt-4">
+
+    <h3 class="text-center mb-4">
+        <i class="fas fa-tachometer-alt"></i> Rendimiento del Sistema
+    </h3>
+
+    <!-- ====== SISTEMA ====== -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5>CPU</h5>
+                    <h2>{{ cpu }}%</h2>
+                    <canvas id="cpuChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5>Memoria RAM</h5>
+                    <h2>{{ ram }}%</h2>
+                    <canvas id="ramChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5>Disco</h5>
+                    <h2>{{ disco }}%</h2>
+                    <canvas id="diskChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====== USUARIOS REGISTRADOS ====== -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Usuarios Registrados</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group">
+                        {% for user in usuarios %}
+                            <li class="list-group-item">
+                                {{ user.username }} - Rol: {{ user.role }} - Registrado: {{ user.created_at }}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====== ACCIONES RECIENTES ====== -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Acciones Recientes</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group" id="lista-logs">
+                        {% for log in logs %}
+                            <li class="list-group-item">{{ log.fecha }} - {{ log.usuario }}: {{ log.accion }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // ====== GRÁFICAS ======
+    const cpuCtx = document.getElementById('cpuChart').getContext('2d');
+    new Chart(cpuCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Usado', 'Libre'],
+            datasets: [{
+                data: [{{ cpu }}, 100-{{ cpu }}],
+                backgroundColor: ['#FF6384', '#36A2EB']
+            }]
+        }
+    });
+
+    const ramCtx = document.getElementById('ramChart').getContext('2d');
+    new Chart(ramCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Usada', 'Libre'],
+            datasets: [{
+                data: [{{ ram }}, 100-{{ ram }}],
+                backgroundColor: ['#FFCE56', '#4BC0C0']
+            }]
+        }
+    });
+
+    const diskCtx = document.getElementById('diskChart').getContext('2d');
+    new Chart(diskCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Usado', 'Libre'],
+            datasets: [{
+                data: [{{ disco }}, 100-{{ disco }}],
+                backgroundColor: ['#9966FF', '#FF9F40']
+            }]
+        }
+    });
+
+    // ====== ACTUALIZAR ACCIONES RECIENTES EN TIEMPO REAL ======
+    function actualizarLogs() {
+        fetch('/api/logs_recientes')
+            .then(response => response.json())
+            .then(data => {
+                const lista = document.getElementById('lista-logs');
+                lista.innerHTML = '';
+                data.forEach(log => {
+                    const li = document.createElement('li');
+                    li.className = 'list-group-item';
+                    li.textContent = `${log.fecha} - ${log.usuario}: ${log.accion}`;
+                    lista.appendChild(li);
+                });
+            });
+    }
+
+    // Actualizar cada 5 segundos
+    setInterval(actualizarLogs, 5000);
+</script>
+
+</body>
+</html>
