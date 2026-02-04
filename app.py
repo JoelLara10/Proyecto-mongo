@@ -2393,37 +2393,39 @@ def insertar_usuario():
     cursor = conexion.cursor()
 
     try:
-        username = request.form['username']
+        username = request.form['username'].strip()
         password = request.form['password']
         role = request.form['role']
 
         # VALIDAR USUARIO DUPLICADO
-        cursor.execute(
-            "SELECT id FROM users WHERE username = %s",
-            (username,)
-        )
+        cursor.execute("SELECT id FROM users WHERE username = %s", (username,))
         if cursor.fetchone():
             flash('El usuario ya existe', 'danger')
-            cursor.close()
-            conexion.close()
             return redirect(url_for('alta_usuarios'))
 
-        # INSERT USERS
+        # ✅ HASHEAR PASSWORD
+        pw_bytes = password.encode('utf-8')
+        pw_hash = bcrypt.hashpw(pw_bytes, bcrypt.gensalt()).decode('utf-8')
+
+        # INSERT USERS (guardas el hash, NO el texto plano)
         cursor.execute("""
-                       INSERT INTO users (username, password, role)
-                       VALUES (%s, %s, %s)
-                       """, (username, password, role))
+            INSERT INTO users (username, password, role)
+            VALUES (%s, %s, %s)
+        """, (username, pw_hash, role))
 
         conexion.commit()
         flash('Usuario creado correctamente', 'success')
         return redirect(url_for('alta_usuarios'))
+
     except Exception as e:
         conexion.rollback()
         flash(f'Error al crear usuario: {e}', 'danger')
         return redirect(url_for('alta_usuarios'))
+
     finally:
         cursor.close()
         conexion.close()
+
 
 
 # ====================================================================================
