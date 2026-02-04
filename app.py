@@ -157,30 +157,36 @@ def dashboard():
     role = session['role']
     menu_options = []
 
-    # Contar solicitudes pendientes
+    # ===============================
+    # CONTAR SOLICITUDES PENDIENTES
+    # ===============================
     conn = get_db_connection()
     cursor = conn.cursor(pymysql.cursors.DictCursor)
-    
-    # Contar solicitudes pendientes de laboratorio (id_examen únicos)
+
+    # Laboratorio pendientes
     cursor.execute("""
-        SELECT COUNT(DISTINCT id_examen) as count 
-        FROM examenes_laboratorio 
+        SELECT COUNT(DISTINCT id_examen) AS count
+        FROM examenes_laboratorio
         WHERE LOWER(estado) = 'pendiente'
     """)
     lab_pendientes = cursor.fetchone()['count']
-    
-    # Contar solicitudes pendientes de gabinete (id_examen únicos)
+
+    # Gabinete pendientes
     cursor.execute("""
-        SELECT COUNT(DISTINCT id_examen) as count 
-        FROM examenes_gabinete_det 
+        SELECT COUNT(DISTINCT id_examen) AS count
+        FROM examenes_gabinete_det
         WHERE UPPER(estado) = 'PENDIENTE'
     """)
     gab_pendientes = cursor.fetchone()['count']
-    
+
     total_pendientes = lab_pendientes + gab_pendientes
+
     cursor.close()
     conn.close()
 
+    # ===============================
+    # MENÚ SEGÚN ROL
+    # ===============================
     if role == 'admin':
         menu_options = [
             {'name': 'Administrativo', 'url': url_for('administrativo')},
@@ -189,12 +195,41 @@ def dashboard():
             {'name': 'Configuración', 'url': url_for('menu_configuracion')}
         ]
 
-    return render_template('dashboard.html', 
-                         role=role, 
-                         menu_options=menu_options,
-                         lab_pendientes=lab_pendientes,
-                         gab_pendientes=gab_pendientes,
-                         total_pendientes=total_pendientes)
+    elif role == 'medico':
+        menu_options = [
+            {'name': 'Módulo Médico', 'url': url_for('medico')},
+            {'name': 'Resultados de Estudios', 'url': url_for('estudios.estudios_home')}
+        ]
+
+    elif role == 'administrativo':
+        menu_options = [
+            {'name': 'Gestión de Pacientes', 'url': url_for('gestion_pacientes')},
+            {'name': 'Cuenta Pacientes', 'url': url_for('cuenta_pacientes')}
+        ]
+
+    elif role == 'enfermero':
+        menu_options = [
+            {'name': 'Signos Vitales', 'url': url_for('dashboard')}  # cambia si tienes ruta propia
+        ]
+
+    elif role == 'estudios':
+        menu_options = [
+        {'name': 'Módulo Estudios', 'url': url_for('estudios.estudios_home')}
+    ]
+
+
+    # ===============================
+    # RENDER
+    # ===============================
+    return render_template(
+        'dashboard.html',
+        role=role,
+        menu_options=menu_options,
+        lab_pendientes=lab_pendientes,
+        gab_pendientes=gab_pendientes,
+        total_pendientes=total_pendientes
+    )
+
 
 
 # ====================================================================================
