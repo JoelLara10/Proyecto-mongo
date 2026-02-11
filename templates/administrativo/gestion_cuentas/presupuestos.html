@@ -17,6 +17,10 @@
       min-height: 100vh;
     }
 
+    .navbar {
+    background-color: #1e3c72;
+}
+
     .main-container {
       background: white;
       border-radius: 15px;
@@ -57,11 +61,25 @@
   </style>
 </head>
 
-<body class="p-3">
+<body>
 
-<a href="{{ url_for('administrativo') }}" class="btn btn-secondary mb-3">
-  <i class="bi bi-arrow-left"></i> Regresar
-</a>
+    <!-- NAVBAR -->
+<nav class="navbar navbar-expand-lg shadow">
+    <div class="container-fluid">
+        <a href="{{ url_for('administrativo') }}" class="btn btn-outline-light btn-sm me-3">
+            <i class="bi bi-arrow-left"></i> Regresar
+        </a>
+
+        <div class="ms-auto">
+            <span class="navbar-text text-white me-3">
+                <i class="bi bi-person-circle"></i> {{ session['username'] }}
+            </span>
+            <a href="{{ url_for('logout') }}" class="btn btn-outline-light btn-sm">
+                <i class="bi bi-box-arrow-right"></i> Cerrar sesión
+            </a>
+        </div>
+    </div>
+</nav>
 
 <div class="container-fluid">
   <div class="main-container">
