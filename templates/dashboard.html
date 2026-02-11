@@ -10,7 +10,7 @@
     <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
 
-    <!-- Toastr para notificaciones -->
+    <!-- Toastr -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet">
 
     <style>
@@ -35,7 +35,7 @@
         .card:hover {
             transform: translateY(-5px);
         }
-        
+
         .badge-notification {
             position: absolute;
             top: -8px;
@@ -43,27 +43,9 @@
             font-size: 0.7rem;
             padding: 3px 7px;
         }
-        
+
         .card-with-badge {
             position: relative;
-        }
-        
-        /* Estilo para el modal de notificaciones */
-        .notification-item {
-            padding: 10px;
-            border-bottom: 1px solid #eee;
-        }
-        
-        .notification-item:last-child {
-            border-bottom: none;
-        }
-        
-        .notification-lab {
-            border-left: 4px solid #0d6efd;
-        }
-        
-        .notification-gab {
-            border-left: 4px solid #198754;
         }
     </style>
 </head>
@@ -97,13 +79,13 @@
                 <div class="card-body text-center">
                     <i class="bi bi-grid fs-1 text-primary"></i>
                     <h5 class="card-title mt-3">{{ option.name }}</h5>
-                    
+
                     {% if option.name == 'Estudios' and total_pendientes > 0 %}
                     <span class="position-absolute top-0 end-0 badge bg-danger rounded-pill badge-notification">
                         {{ total_pendientes }}
                     </span>
                     {% endif %}
-                    
+
                     <a href="{{ option.url }}" class="btn btn-primary mt-2">
                         Acceder
                     </a>
@@ -114,62 +96,101 @@
     </div>
 </div>
 
-
-
-<!-- Bootstrap JS -->
+<!-- JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<!-- jQuery (necesario para Toastr) -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<!-- Toastr JS -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 
 <script>
-    // Mostrar notificación automática al cargar la página
+    // =======================
+    // NOTIFICACIÓN DE PENDIENTES
+    // =======================
     $(document).ready(function() {
         {% if total_pendientes > 0 %}
-        // Esperar un momento antes de mostrar la notificación
         setTimeout(function() {
             toastr.options = {
-                "closeButton": true,
-                "debug": false,
-                "newestOnTop": false,
-                "progressBar": true,
-                "positionClass": "toast-top-right",
-                "preventDuplicates": false,
-                "onclick": function() {
-                    $('#notificationsModal').modal('show');
-                },
-                "showDuration": "300",
-                "hideDuration": "1000",
-                "timeOut": "10000",
-                "extendedTimeOut": "1000",
-                "showEasing": "swing",
-                "hideEasing": "linear",
-                "showMethod": "fadeIn",
-                "hideMethod": "fadeOut"
+                closeButton: true,
+                progressBar: true,
+                positionClass: "toast-top-right",
+                timeOut: "10000"
             };
-            
+
             let message = "Tienes {{ total_pendientes }} solicitud(es) pendiente(s)";
             {% if lab_pendientes > 0 and gab_pendientes > 0 %}
-            message = "{{ lab_pendientes }} solicitud(es) de Laboratorio y {{ gab_pendientes }} de Gabinete pendientes";
+                message = "{{ lab_pendientes }} de Laboratorio y {{ gab_pendientes }} de Gabinete pendientes";
             {% elif lab_pendientes > 0 %}
-            message = "{{ lab_pendientes }} solicitud(es) de Laboratorio pendiente(s)";
+                message = "{{ lab_pendientes }} solicitud(es) de Laboratorio pendientes";
             {% elif gab_pendientes > 0 %}
-            message = "{{ gab_pendientes }} solicitud(es) de Gabinete pendiente(s)";
+                message = "{{ gab_pendientes }} solicitud(es) de Gabinete pendientes";
             {% endif %}
-            
-            toastr.warning(
-                message + '<br><small></small>', 
-                'Solicitudes Pendientes'
-            );
+
+            toastr.warning(message, "Solicitudes Pendientes");
         }, 1500);
         {% endif %}
-        
-        // Actualizar cada 30 segundos (simulación de tiempo real)
-        setInterval(function() {
-            console.log('Verificando nuevas solicitudes...');
-        }, 30000);
     });
+
+    // =======================
+    // NOTIFICACIONES POR LOGS
+    // =======================
+    let ultimaFechaLog = null;
+
+    function verificarLogs() {
+        fetch('/logs/ultimo')
+            .then(response => response.json())
+            .then(data => {
+                if (!data || !data.fecha) return;
+                if (ultimaFechaLog === data.fecha) return;
+
+                ultimaFechaLog = data.fecha;
+
+                toastr.options = {
+                    closeButton: true,
+                    progressBar: true,
+                    positionClass: "toast-top-right",
+                    timeOut: "6000"
+                };
+
+                if (data.accion.toLowerCase().includes('elimin')) {
+                    toastr.error(data.accion, "Acción de " + data.usuario);
+                } else if (data.accion.toLowerCase().includes('agreg')) {
+                    toastr.success(data.accion, "Acción de " + data.usuario);
+                } else {
+                    toastr.info(data.accion, "Actividad del sistema");
+                }
+            })
+            .catch(error => console.error('Error logs:', error));
+    }
+
+    // Verificar logs cada 5 segundos
+    setInterval(verificarLogs, 5000);
 </script>
+
+<script>
+let ultimoLog = null;
+
+function revisarLogs() {
+    fetch('/logs/ultimo')
+        .then(res => res.json())
+        .then(data => {
+            if (!data.nuevo) return;
+
+            const actual = data.usuario + data.accion + data.fecha;
+
+            if (actual !== ultimoLog) {
+                ultimoLog = actual;
+
+                toastr.info(
+                    `${data.usuario}: ${data.accion}`,
+                    'Actividad del sistema'
+                );
+            }
+        });
+}
+
+// Revisar cada 5 segundos
+setInterval(revisarLogs, 5000);
+</script>
+
+
 </body>
 </html>

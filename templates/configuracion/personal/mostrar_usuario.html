@@ -1,18 +1,10 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<title>Datos del Usuario</title>
+{% extends "configuracion/header_configuracion.html" %}
 
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
-</head>
+{% block content %}
 
-<body class="bg-light">
+<div class="container-fluid">
 
-<div class="container mt-4">
-
-    <!-- ===== HEADER ===== -->
+    <!-- HEADER -->
     <div class="card shadow p-3 mb-4">
         <div class="row">
             <div class="col-md-6">
@@ -28,36 +20,36 @@
         </div>
     </div>
 
-    <!-- ===== DATOS PERSONALES ===== -->
+    <!-- DATOS PERSONALES -->
     <div class="card shadow p-3 mb-3">
         <h5 class="text-primary">
             <i class="fas fa-id-card"></i> Datos personales
         </h5>
 
-        <div class="mb-2">
-            <label class="form-label">CURP</label>
+        <div class="form-group">
+            <label>CURP</label>
             <input class="form-control" value="{{ usuario.curp }}" disabled>
         </div>
     </div>
 
-    <!-- ===== DATOS DEL SISTEMA ===== -->
+    <!-- DATOS DEL SISTEMA -->
     <div class="card shadow p-3 mb-3">
         <h5 class="text-primary">
             <i class="fas fa-cogs"></i> Datos del sistema
         </h5>
 
-        <div class="mb-2">
-            <label class="form-label">Usuario</label>
+        <div class="form-group">
+            <label>Usuario</label>
             <input class="form-control" value="{{ usuario.username }}" disabled>
         </div>
 
-        <div class="mb-2">
-            <label class="form-label">Rol</label>
+        <div class="form-group">
+            <label>Rol</label>
             <input class="form-control" value="{{ usuario.role }}" disabled>
         </div>
     </div>
 
-    <!-- ===== ARCHIVOS ===== -->
+    <!-- ARCHIVOS -->
     <div class="card shadow p-3 mb-4">
         <h5 class="text-primary">
             <i class="fas fa-image"></i> Archivos
@@ -86,7 +78,6 @@
         </div>
     </div>
 
-    <!-- ===== BOTÓN ===== -->
     <div class="text-center">
         <a href="{{ url_for('alta_usuarios') }}" class="btn btn-danger">
             <i class="fas fa-arrow-left"></i> Regresar
@@ -95,6 +86,4 @@
 
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+{% endblock %}

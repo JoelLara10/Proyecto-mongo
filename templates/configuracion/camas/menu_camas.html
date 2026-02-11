@@ -1,13 +1,6 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<title>Gestión de Camas</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+{% extends "configuracion/header_configuracion.html" %}
 
-<!-- Bootstrap & FontAwesome -->
-<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
-<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.0/css/all.css">
+{% block content %}
 
 <style>
 body {background:#f8f9fa; font-family:'Segoe UI',Tahoma;}
@@ -40,6 +33,7 @@ table td, table th{vertical-align:middle !important;}
   background:rgba(0,0,0,0.5);
   justify-content:center;
   align-items:center;
+  z-index:1050;
 }
 #modalEliminar .modal-content{
   background:#fff;
@@ -54,9 +48,6 @@ table td, table th{vertical-align:middle !important;}
   to{opacity:1;transform:none}
 }
 </style>
-</head>
-
-<body>
 
 <section class="content container-fluid">
   <div class="form-container">
@@ -70,22 +61,14 @@ table td, table th{vertical-align:middle !important;}
     <div class="form-body">
 
       <!-- BOTONES SUPERIORES -->
-      <div class="d-flex justify-content-between align-items-center mb-4">
-        <a href="{{ url_for('menu_configuracion') }}" class="btn btn-outline-secondary btn-modern">
-          <i class="fas fa-arrow-left"></i> Configuración
-        </a>
 
-        <div class="d-flex flex-wrap gap-2">
+        <div class="d-flex flex-wrap">
           <a href="{{ url_for('alta_camas') }}" class="btn btn-success btn-modern mr-2">
             <i class="fas fa-plus-circle"></i> Registrar Cama
           </a>
 
           <a href="{{ url_for('copias_seguridad') }}" class="btn btn-primary btn-modern mr-2">
             <i class="fas fa-database"></i> Copia General
-          </a>
-
-          <a href="{{ url_for('copias_seguridad_camas') }}" class="btn btn-info btn-modern text-white">
-            <i class="fas fa-bed"></i> Copia Camas
           </a>
         </div>
       </div>
@@ -171,8 +154,6 @@ table td, table th{vertical-align:middle !important;}
   </div>
 </div>
 
-<!-- SCRIPTS -->
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.bundle.min.js"></script>
 <script>
 let filaSeleccionada = null;
 
@@ -209,5 +190,4 @@ document.getElementById('confirmEliminar').onclick = () => {
 };
 </script>
 
-</body>
-</html>
+{% endblock %}

@@ -1,3 +1,6 @@
+{% extends "configuracion/header_configuracion.html" %}
+
+{% block content %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -12,6 +15,7 @@
 
     <style>
         body { background: #f4f6f9; }
+
         .price-badge {
             background: #17a2b8;
             color: #fff;
@@ -34,7 +38,7 @@
     </div>
 
     <!-- BOTÓN NUEVO -->
-    {% if session.login.id_rol == 5 %}
+    {% if session.get('login', {}).get('id_rol') == 5 %}
     <div class="mb-3 text-right">
         <button class="btn btn-primary" data-toggle="modal" data-target="#modalServicio">
             <i class="fas fa-plus"></i> Nuevo Servicio
@@ -47,7 +51,7 @@
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
 
-                <form method="POST" action="{{ url_for('servicios.insertar_servicio') }}">
+                <form method="POST" action="{{ url_for('insertar_servicio') }}">
                     <div class="modal-header bg-primary text-white">
                         <h5 class="modal-title">Nuevo Servicio</h5>
                         <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
@@ -75,7 +79,7 @@
 
                             <div class="col-md-6 mt-3">
                                 <label>Unidad de Medida</label>
-                                <select name="umed" class="form-control" required>
+                                <select name="med" class="form-control" required>
                                     <option value="">Seleccionar</option>
                                     <option>CONSULTA</option>
                                     <option>EQUIPO</option>
@@ -90,19 +94,14 @@
                                 <select name="tipo" class="form-control" required>
                                     <option value="">Seleccionar</option>
                                     {% for t in tipos %}
-                                        <option value="{{ t.ser_type_id }}">{{ t.ser_type_desc }}</option>
+                                        <option value="{{ t.tipo }}">{{ t.tipo }}</option>
                                     {% endfor %}
                                 </select>
                             </div>
 
                             <div class="col-md-6 mt-3">
                                 <label>Proveedor</label>
-                                <select name="proveedor" class="form-control" required>
-                                    <option value="">Seleccionar</option>
-                                    {% for p in proveedores %}
-                                        <option value="{{ p.id_prov }}">{{ p.nom_prov }}</option>
-                                    {% endfor %}
-                                </select>
+                                <input name="proveedor" class="form-control">
                             </div>
 
                             <div class="col-md-6 mt-3">
@@ -120,8 +119,11 @@
                         <button class="btn btn-success">
                             <i class="fas fa-save"></i> Guardar
                         </button>
-                        <button class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                            Cancelar
+                        </button>
                     </div>
+
                 </form>
 
             </div>
@@ -132,7 +134,8 @@
     <div class="card">
         <div class="card-body table-responsive">
 
-            <input type="text" id="search" class="form-control mb-3" placeholder="🔍 Buscar servicio...">
+            <input type="text" id="search" class="form-control mb-3"
+                   placeholder="🔍 Buscar servicio...">
 
             <table class="table table-bordered table-hover" id="tabla">
                 <thead class="thead-dark">
@@ -144,7 +147,7 @@
                         <th>U.M.</th>
                         <th>Tipo</th>
                         <th>Estado</th>
-                        {% if session.login.id_rol == 5 %}
+                        {% if session.get('login', {}).get('id_rol') == 5 %}
                         <th>Acciones</th>
                         {% endif %}
                     </tr>
@@ -156,9 +159,13 @@
                         <td>{{ s.id_serv }}</td>
                         <td>{{ s.serv_cve }}</td>
                         <td>{{ s.serv_desc }}</td>
-                        <td><span class="price-badge">${{ "%.2f"|format(s.serv_costo) }}</span></td>
+                        <td>
+                            <span class="price-badge">
+                                ${{ "%.2f"|format(s.serv_costo) }}
+                            </span>
+                        </td>
                         <td>{{ s.serv_umed }}</td>
-                        <td>{{ s.ser_type_desc }}</td>
+                        <td>{{ s.tipo }}</td>
                         <td>
                             {% if s.serv_activo == 'NO' %}
                                 <span class="badge badge-danger">Inactivo</span>
@@ -167,14 +174,15 @@
                             {% endif %}
                         </td>
 
-                        {% if session.login.id_rol == 5 %}
+                        {% if session.get('login', {}).get('id_rol') == 5 %}
                         <td>
-                            <a href="{{ url_for('servicios.editar_servicio', id=s.id_serv) }}"
+                            <a href="{{ url_for('editar_servicio', id=s.id_serv) }}"
                                class="btn btn-warning btn-sm">
                                 <i class="fas fa-edit"></i>
                             </a>
                         </td>
                         {% endif %}
+
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -196,3 +204,4 @@ $("#search").on("keyup", function () {
 
 </body>
 </html>
+{% endblock %}

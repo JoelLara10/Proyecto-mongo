@@ -14,21 +14,64 @@
   <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 
-  <style>
-    .main-sidebar {
-      background-color: #0f4c75;
-    }
-    .nav-sidebar .nav-link,
-    .brand-text {
-      color: #fff !important;
-    }
-    .nav-sidebar .nav-link.active {
-      background-color: #0b3c5d;
-    }
-    .navbar {
-      background-color: #0f4c75;
-    }
-  </style>
+ <style>
+  /* SIDEBAR */
+  .main-sidebar {
+    background: linear-gradient(180deg, #0f4c75, #0b3c5d);
+  }
+
+  .nav-sidebar .nav-link,
+  .brand-text {
+    color: #fff !important;
+    font-weight: 500;
+  }
+
+  .nav-sidebar .nav-link.active {
+    background-color: rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+  }
+
+  .nav-sidebar .nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    transition: 0.3s;
+  }
+
+  /* NAVBAR / HEADER */
+  .navbar {
+    background: linear-gradient(90deg, #0f4c75, #145374);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+  }
+
+  .navbar .nav-link {
+    color: #ffffff !important;
+    font-weight: 500;
+  }
+
+  .navbar .nav-link:hover {
+    color: #dff6ff !important;
+    transition: 0.3s;
+  }
+
+  .dropdown-menu {
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+  }
+
+  .dropdown-item:hover {
+    background-color: #f1f1f1;
+  }
+
+  .brand-link {
+    background-color: rgba(0,0,0,0.1);
+  }
+
+  .brand-text {
+    font-size: 18px;
+    letter-spacing: 1px;
+  }
+</style>
+
 </head>
 
 <body class="hold-transition sidebar-mini">
@@ -75,7 +118,34 @@
               <p>Panel principal</p>
             </a>
           </li>
-
+          <li class="nav-item">
+          <a href="{{ url_for('menu_configuracion') }}"
+            class="nav-link {% if request.endpoint == 'menu_configuracion' %}active{% endif %}">
+            <i class="nav-icon fas fa-user-plus"></i>
+            <p>Gestion Camas</p>
+          </a>
+        </li>
+          <li class="nav-item">
+          <a href="{{ url_for('alta_usuarios') }}"
+            class="nav-link {% if request.endpoint == 'alta_usuarios' %}active{% endif %}">
+            <i class="nav-icon fas fa-user-plus"></i>
+            <p>Gestion Personal</p>
+          </a>
+        </li>
+          <li class="nav-item">
+          <a href="{{ url_for('listar_diagnosticos') }}"
+            class="nav-link {% if request.endpoint == 'listar_diagnosticos' %}active{% endif %}">
+            <i class="nav-icon fas fa-diagnoses"></i>
+            <p>Diagnósticos</p>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="{{ url_for('cat_servicios') }}"
+            class="nav-link {% if request.endpoint == 'cat_servicios' %}active{% endif %}">
+            <i class="nav-icon fas fa-diagnoses"></i>
+            <p>Servicios</p>
+          </a>
+        </li>
           <li class="nav-item">
             <a href="{{ url_for('copias_seguridad') }}"
                class="nav-link active">
