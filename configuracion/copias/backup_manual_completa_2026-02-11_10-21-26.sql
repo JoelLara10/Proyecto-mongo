@@ -1,4 +1,4 @@
--- BACKUP AUTOMÁTICO COMPLETA - 2026-02-11_14-09-12
+-- Backup generado por la aplicación
 SET FOREIGN_KEY_CHECKS=0;
 
 DROP TABLE IF EXISTS `atencion`;
@@ -370,13 +370,13 @@ CREATE TABLE `users` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `username` varchar(50) NOT NULL,
   `password` varchar(255) NOT NULL,
-  `role` enum('admin','medico','enfermero','administrativo','estudios') NOT NULL,
+  `role` enum('admin','medico','enfermero','administrativo') NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `img_perfil` varchar(255) DEFAULT 'default_profile.jpg',
   `papell` varchar(100) DEFAULT 'Apellido',
   PRIMARY KEY (`id`),
   UNIQUE KEY `username` (`username`)
-) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 INSERT INTO `atencion` (`id_atencion`, `Id_exp`, `area`, `id_cama`, `motivo`, `especialidad`, `alergias`, `fecha_ing`, `status`) VALUES (1, 12, 'Hospitalizado', 1, 'Consulta general', 'Medicina general', 'SI', '2026-01-18 11:32:24', 'CERRADA');
 INSERT INTO `atencion` (`id_atencion`, `Id_exp`, `area`, `id_cama`, `motivo`, `especialidad`, `alergias`, `fecha_ing`, `status`) VALUES (2, 14, 'Hospitalizado', 2, 'Urgencia', 'Medicina general', 'NO', '2026-01-18 11:37:42', 'ABIERTA');
@@ -606,11 +606,6 @@ INSERT INTO `users` (`id`, `username`, `password`, `role`, `created_at`, `img_pe
 INSERT INTO `users` (`id`, `username`, `password`, `role`, `created_at`, `img_perfil`, `papell`) VALUES (4, 'dr_michael_johnson', '$2b$12$m0ZkBHbNEqjZUKsQ4ma8wOg3JHVCncTnycsAEYQ7UlB2teD0zSfDG', 'medico', '2026-01-18 11:20:59', 'default_profile.jpg', 'Johnson');
 INSERT INTO `users` (`id`, `username`, `password`, `role`, `created_at`, `img_perfil`, `papell`) VALUES (5, 'dr_emily_davis', '$2b$12$m0ZkBHbNEqjZUKsQ4ma8wOg3JHVCncTnycsAEYQ7UlB2teD0zSfDG', 'medico', '2026-01-18 11:20:59', 'default_profile.jpg', 'Davis');
 INSERT INTO `users` (`id`, `username`, `password`, `role`, `created_at`, `img_perfil`, `papell`) VALUES (6, 'dr_robert_brown', '$2b$12$m0ZkBHbNEqjZUKsQ4ma8wOg3JHVCncTnycsAEYQ7UlB2teD0zSfDG', 'medico', '2026-01-18 11:20:59', 'default_profile.jpg', 'Brown');
-INSERT INTO `users` (`id`, `username`, `password`, `role`, `created_at`, `img_perfil`, `papell`) VALUES (7, 'JOEL', '123456', 'medico', '2026-02-02 01:35:06', 'default_profile.jpg', 'Apellido');
-INSERT INTO `users` (`id`, `username`, `password`, `role`, `created_at`, `img_perfil`, `papell`) VALUES (8, 'zahidpro', '12345678a', 'medico', '2026-02-03 21:36:37', 'default_profile.jpg', 'Apellido');
-INSERT INTO `users` (`id`, `username`, `password`, `role`, `created_at`, `img_perfil`, `papell`) VALUES (9, 'zahidgx', '12345678a', 'admin', '2026-02-03 22:21:08', 'default_profile.jpg', 'Apellido');
-INSERT INTO `users` (`id`, `username`, `password`, `role`, `created_at`, `img_perfil`, `papell`) VALUES (10, 'jaimediazgay', '12345678a', 'medico', '2026-02-03 22:33:10', 'default_profile.jpg', 'Apellido');
-INSERT INTO `users` (`id`, `username`, `password`, `role`, `created_at`, `img_perfil`, `papell`) VALUES (11, 'tilin', '$2b$12$aypJG6P54s4odQNAIBJDJ.PAt6.MCMV17GpRvji99x1YRFkfGi8pa', 'admin', '2026-02-03 22:54:46', 'default_profile.jpg', 'Apellido');
-INSERT INTO `users` (`id`, `username`, `password`, `role`, `created_at`, `img_perfil`, `papell`) VALUES (12, '', '', '', '2026-02-05 12:45:43', 'default_profile.jpg', 'Apellido');
+INSERT INTO `users` (`id`, `username`, `password`, `role`, `created_at`, `img_perfil`, `papell`) VALUES (7, 'JOEL', '$2b$12$m0ZkBHbNEqjZUKsQ4ma8wOg3JHVCncTnycsAEYQ7UlB2teD0zSfDG', 'admin', '2026-02-02 01:35:06', 'default_profile.jpg', 'Apellido');
 
 SET FOREIGN_KEY_CHECKS=1;

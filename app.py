@@ -51,7 +51,6 @@ DB_HOST = 'localhost'
 DB_USER = 'root'
 DB_PASS = ''
 DB_NAME = 'ineo_db'
-cursorclass=pymysql.cursors.DictCursor
 
 # ===============================
 # Inicializar Scheduler
@@ -156,7 +155,7 @@ def registrar_acciones(response):
 
 
 # ===============================
-# OBTENER ÚLTIMO LOG  
+# OBTENER ÚLTIMO LOG
 # ===============================
 @app.route('/logs/ultimo')
 def ultimo_log():
@@ -227,14 +226,9 @@ def login():
         password = request.form['password'].encode('utf-8')
 
         conn = get_db_connection()
-        cursor = conn.cursor(pymysql.cursors.DictCursor)
-
-        cursor.execute(
-            "SELECT * FROM users WHERE username = %s",
-            (username,)
-        )
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM users WHERE username = %s", (username,))
         user = cursor.fetchone()
-
         cursor.close()
         conn.close()
 
@@ -242,7 +236,6 @@ def login():
             session['user_id'] = user['id']
             session['username'] = user['username']
             session['role'] = user['role']
-
             flash('Login exitoso!', 'success')
             return redirect(url_for('dashboard'))
         else:
@@ -261,6 +254,10 @@ def dashboard():
 
     role = session['role']
     menu_options = []
+
+    # ===============================
+    # CONTAR SOLICITUDES PENDIENTES
+    # ===============================
     conn = get_db_connection()
     cursor = conn.cursor(pymysql.cursors.DictCursor)
 
@@ -285,7 +282,9 @@ def dashboard():
     cursor.close()
     conn.close()
 
-    # MENÚ POR ROL
+    # ===============================
+    # MENÚ SEGÚN ROL
+    # ===============================
     if role == 'admin':
         menu_options = [
             {'name': 'Administrativo', 'url': url_for('administrativo')},
@@ -309,14 +308,18 @@ def dashboard():
 
     elif role == 'enfermero':
         menu_options = [
-            {'name': 'Signos Vitales', 'url': url_for('dashboard')}
+            {'name': 'Signos Vitales', 'url': url_for('dashboard')}  # cambia si tienes ruta propia
         ]
 
     elif role == 'estudios':
         menu_options = [
-            {'name': 'Módulo Estudios', 'url': url_for('estudios.estudios_home')}
-        ]
+        {'name': 'Módulo Estudios', 'url': url_for('estudios.estudios_home')}
+    ]
 
+
+    # ===============================
+    # RENDER
+    # ===============================
     return render_template(
         'dashboard.html',
         role=role,
@@ -2471,16 +2474,18 @@ def alta_usuarios():
     conexion.close()
 
     roles = ['admin', 'medico', 'enfermero', 'administrativo']
-    
+
     return render_template(
         'configuracion/personal/alta_usuario.html',
         personal=personal,
         roles=roles
     )
 
+
 # ====================================================================================
 # ============================     INSERTAR USUARIO     ===============================
 # ====================================================================================
+
 @app.route('/configuracion/personal/insertar', methods=['POST'])
 def insertar_usuario():
     conexion = get_db_connection()
@@ -2491,7 +2496,7 @@ def insertar_usuario():
         password = request.form['password']
         role = request.form['role']
 
-        # Validar duplicado
+        # VALIDAR USUARIO DUPLICADO
         cursor.execute("SELECT id FROM users WHERE username = %s", (username,))
         if cursor.fetchone():
             flash('El usuario ya existe', 'danger')
@@ -2527,6 +2532,8 @@ def insertar_usuario():
     finally:
         cursor.close()
         conexion.close()
+
+
 
 # ====================================================================================
 # ============================        EDITAR USUARIO     ===============================
@@ -2679,8 +2686,8 @@ def editar_diagnostico(id):
     cursor = conexion.cursor(pymysql.cursors.DictCursor)
 
     if request.method == 'POST':
-        diag = request.form.get('diag')
-        id_cie10 = request.form.get('id_cie10')
+        diag = request.form['diag']
+        id_cie10 = request.form['id_cie10']
 
         cursor.execute("""
             UPDATE cat_diag
@@ -2696,12 +2703,7 @@ def editar_diagnostico(id):
         flash('Diagnóstico actualizado correctamente', 'info')
         return redirect(url_for('listar_diagnosticos'))
 
-    cursor.execute("""
-        SELECT id_diag, diag, id_cie10
-        FROM cat_diag
-        WHERE id_diag = %s
-    """, (id,))
-
+    cursor.execute("SELECT * FROM cat_diag WHERE id_diag = %s", (id,))
     diagnostico = cursor.fetchone()
 
     cursor.close()
@@ -2730,29 +2732,39 @@ def eliminar_diagnostico(id):
 
 
 # ====================================================================================
-# ============================     SERVICIOS    ======================================
+# ============================     SERVICIOS    ====================================
 # ====================================================================================
-
 @app.route('/configuracion/servicios')
 def cat_servicios():
+    if 'login' not in session:
+        return redirect(url_for('login'))
 
-    conexion = get_db_connection()
-    cursor = conexion.cursor(pymysql.cursors.DictCursor)
+    conexion = pymysql.connect(
+        host='localhost',
+        user='root',
+        password='',
+        db='ineo_db',
+        cursorclass=pymysql.cursors.DictCursor
+    )
 
-    # Servicios
+    cursor = conexion.cursor()
+
+    # 🔹 Servicios
     cursor.execute("""
-        SELECT *
-        FROM cat_servicios
-        ORDER BY id_serv DESC
+        SELECT s.*, 
+               t.ser_type_desc AS tipo
+        FROM cat_servicios s
+        LEFT JOIN service_type t ON s.tipo = t.ser_type_id
+        ORDER BY s.id_serv DESC
     """)
     servicios = cursor.fetchall()
 
-    # Tipos
-    cursor.execute("SELECT DISTINCT tipo FROM cat_servicios")
+    # 🔹 Tipos de servicio
+    cursor.execute("SELECT * FROM service_type")
     tipos = cursor.fetchall()
 
-    # Proveedores
-    cursor.execute("SELECT id_prov, nom_prov FROM proveedores")
+    # 🔹 Proveedores
+    cursor.execute("SELECT * FROM proveedores")
     proveedores = cursor.fetchall()
 
     conexion.close()
@@ -2763,16 +2775,22 @@ def cat_servicios():
         tipos=tipos,
         proveedores=proveedores
     )
-
-
-# ============================ EDITAR SERVICIO ============================
-
+# ==================== EDITAR SERVICIOS ====================
 @app.route('/configuracion/servicios/editar/<int:id>', methods=['GET', 'POST'])
 def editar_servicio(id):
+    if 'login' not in session:
+        return redirect(url_for('login'))
 
-    conexion = get_db_connection()
-    cursor = conexion.cursor(pymysql.cursors.DictCursor)
+    conexion = pymysql.connect(
+        host='localhost',
+        user='root',
+        password='',
+        db='ineo_db',
+        cursorclass=pymysql.cursors.DictCursor
+    )
+    cursor = conexion.cursor()
 
+    # ===================== POST (GUARDAR CAMBIOS) =====================
     if request.method == 'POST':
         data = request.form
 
@@ -2790,7 +2808,6 @@ def editar_servicio(id):
                 serv_costo8=%s,
                 serv_umed=%s,
                 tipo=%s,
-                tip_insumo=%s,
                 proveedor=%s,
                 grupo=%s,
                 codigo_sat=%s,
@@ -2802,40 +2819,41 @@ def editar_servicio(id):
             data['clave'],
             data['descripcion'],
             data['costo'],
-            data.get('costo2', 0) or 0,
-            data.get('costo3', 0) or 0,
-            data.get('costo4', 0) or 0,
-            data.get('costo5', 0) or 0,
-            data.get('costo6', 0) or 0,
-            data.get('costo7', 0) or 0,
-            data.get('costo8', 0) or 0,
+            data.get('costo2', 0),
+            data.get('costo3', 0),
+            data.get('costo4', 0),
+            data.get('costo5', 0),
+            data.get('costo6', 0),
+            data.get('costo7', 0),
+            data.get('costo8', 0),
             data['med'],
             data['tipo'],
-            data['tipo'],
-            data.get('proveedor', ''),
-            data.get('grupo', ''),
-            data.get('codigo_sat', ''),
-            data.get('c_cveuni', ''),
+            data['proveedor'],
+            data['grupo'],
+            data['codigo_sat'],
+            data['c_cveuni'],
             id
         ))
 
         conexion.commit()
         conexion.close()
-
         flash('Servicio actualizado correctamente', 'success')
         return redirect(url_for('cat_servicios'))
 
+    # ===================== GET (CARGAR FORM) =====================
     cursor.execute("""
-        SELECT *
-        FROM cat_servicios
-        WHERE id_serv=%s
+        SELECT s.*, t.ser_type_desc, p.nom_prov
+        FROM cat_servicios s
+        LEFT JOIN service_type t ON s.tipo = t.ser_type_id
+        LEFT JOIN proveedores p ON s.proveedor = p.id_prov
+        WHERE s.id_serv=%s
     """, (id,))
     servicio = cursor.fetchone()
 
-    cursor.execute("SELECT DISTINCT tipo FROM cat_servicios")
+    cursor.execute("SELECT * FROM service_type")
     tipos = cursor.fetchall()
 
-    cursor.execute("SELECT id_prov, nom_prov FROM proveedores")
+    cursor.execute("SELECT * FROM proveedores")
     proveedores = cursor.fetchall()
 
     conexion.close()
@@ -2850,54 +2868,76 @@ def editar_servicio(id):
         tipos=tipos,
         proveedores=proveedores
     )
-
-
-# ============================ INSERTAR SERVICIO ============================
-
+# ==================== INSERTAR SERVICIO ====================
 @app.route('/insertar_servicio', methods=['POST'])
 def insertar_servicio():
+    if request.method == 'POST':
+        data = request.form
 
-    data = request.form
+        # ──────────────────────────────────────────────────────────────
+        # 1. Extraer todos los campos del formulario
+        # ──────────────────────────────────────────────────────────────
+        serv_cve     = data.get('serv_cve')
+        serv_desc    = data.get('serv_desc')
+        serv_costo   = data.get('serv_costo')
+        serv_costo2  = data.get('serv_costo2')
+        serv_costo3  = data.get('serv_costo3')
+        serv_costo4  = data.get('serv_costo4')
+        serv_costo5  = data.get('serv_costo5')
+        serv_costo6  = data.get('serv_costo6')
+        serv_costo7  = data.get('serv_costo7')
+        serv_costo8  = data.get('serv_costo8')
+        serv_umed    = data.get('serv_umed')
+        serv_tipo    = data.get('serv_tipo')      # ← este es el ID del tipo
+        proveedor    = data.get('proveedor')
+        grupo        = data.get('grupo')
+        codigo_sat   = data.get('codigo_sat')
+        c_cveuni     = data.get('c_cveuni')
+        c_nombre     = data.get('c_nombre')
+        tasa_iva     = data.get('iva')            # cambia el nombre si tu input se llama diferente
 
-    conn = get_db_connection()
-    cursor = conn.cursor()
+        conn = get_db_connection()
+        cursor = conn.cursor()
 
-    sql = """
-        INSERT INTO cat_servicios
-        (serv_cve, serv_desc, serv_costo, serv_costo2, serv_costo3,
-         serv_costo4, serv_costo5, serv_costo6, serv_costo7, serv_costo8,
-         serv_umed, serv_activo, tipo, tip_insumo, proveedor, grupo,
-         codigo_sat, c_cveuni, c_nombre, iva)
-        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,'SI',%s,%s,%s,%s,%s,%s,'SERVICIO',0.16)
-    """
+        # ──────────────────────────────────────────────────────────────
+        # 2. Obtener la descripción del tipo de servicio
+        # ──────────────────────────────────────────────────────────────
+        cursor.execute(
+            "SELECT ser_type_desc FROM service_type WHERE ser_type_id = %s",
+            (serv_tipo,)
+        )
+        tipo = cursor.fetchone()
+        tip_insumo = tipo['ser_type_desc'] if tipo else ''
 
-    cursor.execute(sql, (
-        data['clave'],
-        data['descripcion'],
-        data['costo'],
-        data.get('costo2', 0) or 0,
-        data.get('costo3', 0) or 0,
-        data.get('costo4', 0) or 0,
-        data.get('costo5', 0) or 0,
-        data.get('costo6', 0) or 0,
-        data.get('costo7', 0) or 0,
-        data.get('costo8', 0) or 0,
-        data['med'],
-        data['tipo'],
-        data['tipo'],
-        data.get('proveedor', ''),
-        data.get('grupo', ''),
-        data.get('codigo_sat', ''),
-        data.get('c_cveuni', '')
-    ))
+        # ──────────────────────────────────────────────────────────────
+        # 3. Insertar el servicio
+        # ──────────────────────────────────────────────────────────────
+        sql = """
+            INSERT INTO cat_servicios
+            (serv_cve, serv_desc, serv_costo, serv_costo2, serv_costo3, serv_costo4,
+             serv_costo5, serv_costo6, serv_costo7, serv_costo8,
+             serv_umed, serv_activo, tipo, tip_insumo, proveedor, grupo,
+             codigo_sat, c_cveuni, c_nombre, iva)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,'SI',%s,%s,%s,%s,%s,%s,%s,%s)
+        """
 
-    conn.commit()
-    conn.close()
+        cursor.execute(sql, (
+            serv_cve, serv_desc, serv_costo, serv_costo2, serv_costo3,
+            serv_costo4, serv_costo5, serv_costo6, serv_costo7, serv_costo8,
+            serv_umed, serv_tipo, tip_insumo,
+            proveedor, grupo, codigo_sat, c_cveuni,
+            c_nombre, tasa_iva
+        ))
 
-    flash('Servicio registrado correctamente', 'success')
+        conn.commit()
+        conn.close()
+
+        flash('Servicio registrado correctamente', 'success')
+        return redirect(url_for('cat_servicios'))
+
+    # Por si acaso llega por GET (no debería)
+    flash('Método no permitido', 'danger')
     return redirect(url_for('cat_servicios'))
-
-
     # ==================== GESTIÓN DE CUENTAS (ACTIVOS) ====================
 
 @app.route('/admin/cuenta_pacientes')
@@ -3494,41 +3534,31 @@ def logs_recientes():
 # ====================================================================================
 @app.route('/rendimiento')
 def rendimiento():
-    # ----- SISTEMA -----
+    import psutil
+    from flask import render_template
+    import pymysql
+
+    # ----- Sistema -----
     cpu = psutil.cpu_percent(interval=1)
     ram = psutil.virtual_memory().percent
     disco = psutil.disk_usage('/').percent
 
-    # ----- USUARIOS -----
+    # ----- Usuarios -----
     usuarios = []
     try:
         conn = get_db_connection()
         with conn.cursor() as cursor:
-            cursor.execute("""
-                SELECT id, username, role, created_at
-                FROM users
-                ORDER BY id DESC
-            """)
+            cursor.execute("SELECT id, username, role, created_at FROM users ORDER BY id DESC")
             usuarios = cursor.fetchall()
     finally:
         conn.close()
 
-    # ----- LOGS (USUARIOS + ADMIN) -----
+    # ----- Logs recientes -----
     logs = []
     try:
         conn = get_db_connection()
         with conn.cursor() as cursor:
-            cursor.execute("""
-                SELECT 
-                    l.usuario,
-                    u.role,
-                    l.accion,
-                    l.fecha
-                FROM logs l
-                LEFT JOIN users u ON l.usuario = u.username
-                ORDER BY l.fecha DESC
-                LIMIT 10
-            """)
+            cursor.execute("SELECT usuario, accion, fecha FROM logs ORDER BY fecha DESC LIMIT 10")
             logs = cursor.fetchall()
     finally:
         conn.close()

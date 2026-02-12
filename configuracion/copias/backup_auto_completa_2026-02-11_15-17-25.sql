@@ -1,4 +1,4 @@
--- BACKUP AUTOMÁTICO COMPLETA - 2026-02-11_14-10-12
+-- BACKUP AUTOMÁTICO COMPLETA - 2026-02-11_15-17-25
 SET FOREIGN_KEY_CHECKS=0;
 
 DROP TABLE IF EXISTS `atencion`;
@@ -53,6 +53,15 @@ CREATE TABLE `catalogo_examenes_laboratorio` (
   `nombre` varchar(150) NOT NULL,
   PRIMARY KEY (`id_catalogo`)
 ) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+DROP TABLE IF EXISTS `cat_diag`;
+CREATE TABLE `cat_diag` (
+  `id_diag` int(11) NOT NULL,
+  `diag` varchar(255) NOT NULL,
+  `id_cie10` varchar(20) NOT NULL,
+  `activo` tinyint(1) DEFAULT 1,
+  `fecha_registro` datetime DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 DROP TABLE IF EXISTS `cat_servicios`;
 CREATE TABLE `cat_servicios` (
@@ -264,6 +273,14 @@ CREATE TABLE `item` (
   `activo` varchar(2) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT 'SI'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+DROP TABLE IF EXISTS `logs`;
+CREATE TABLE `logs` (
+  `id` int(11) NOT NULL,
+  `usuario` varchar(100) NOT NULL,
+  `accion` text NOT NULL,
+  `fecha` datetime DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
 DROP TABLE IF EXISTS `notas_medicas`;
 CREATE TABLE `notas_medicas` (
   `id_nota` int(11) NOT NULL AUTO_INCREMENT,
@@ -370,13 +387,13 @@ CREATE TABLE `users` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `username` varchar(50) NOT NULL,
   `password` varchar(255) NOT NULL,
-  `role` enum('admin','medico','enfermero','administrativo','estudios') NOT NULL,
+  `role` enum('admin','medico','enfermero','administrativo') NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `img_perfil` varchar(255) DEFAULT 'default_profile.jpg',
   `papell` varchar(100) DEFAULT 'Apellido',
   PRIMARY KEY (`id`),
   UNIQUE KEY `username` (`username`)
-) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 INSERT INTO `atencion` (`id_atencion`, `Id_exp`, `area`, `id_cama`, `motivo`, `especialidad`, `alergias`, `fecha_ing`, `status`) VALUES (1, 12, 'Hospitalizado', 1, 'Consulta general', 'Medicina general', 'SI', '2026-01-18 11:32:24', 'CERRADA');
 INSERT INTO `atencion` (`id_atencion`, `Id_exp`, `area`, `id_cama`, `motivo`, `especialidad`, `alergias`, `fecha_ing`, `status`) VALUES (2, 14, 'Hospitalizado', 2, 'Urgencia', 'Medicina general', 'NO', '2026-01-18 11:37:42', 'ABIERTA');
@@ -423,6 +440,8 @@ INSERT INTO `catalogo_examenes_laboratorio` (`id_catalogo`, `nombre`) VALUES (7,
 INSERT INTO `catalogo_examenes_laboratorio` (`id_catalogo`, `nombre`) VALUES (8, 'Tiempo de Protrombina');
 INSERT INTO `catalogo_examenes_laboratorio` (`id_catalogo`, `nombre`) VALUES (9, 'Grupo y RH');
 INSERT INTO `catalogo_examenes_laboratorio` (`id_catalogo`, `nombre`) VALUES (10, 'Hemoglobina Glicosilada');
+
+INSERT INTO `cat_diag` (`id_diag`, `diag`, `id_cie10`, `activo`, `fecha_registro`) VALUES (1, 'Ojos ', 'CIE-11', 1, '2026-02-11 10:29:34');
 
 INSERT INTO `cat_servicios` (`id_serv`, `serv_cve`, `serv_desc`, `serv_costo`, `serv_costo2`, `serv_costo3`, `serv_costo4`, `serv_costo5`, `serv_costo6`, `serv_costo7`, `serv_costo8`, `serv_umed`, `serv_activo`, `tipo`, `tip_insumo`, `proveedor`, `grupo`, `codigo_sat`, `c_cveuni`, `c_nombre`, `iva`) VALUES (1, 'S0001', 'CONSULTA OFTALMOLOGICA', 1000.00, 1000.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 'CONSULTA', 'SI', '3', 'CONSULTA OFTALMOLOGICA', 'INEO', 'SERVICIOS HOSPITALARIOS', '85101502', 'E48', 'SERVICIO', 0.16);
 INSERT INTO `cat_servicios` (`id_serv`, `serv_cve`, `serv_desc`, `serv_costo`, `serv_costo2`, `serv_costo3`, `serv_costo4`, `serv_costo5`, `serv_costo6`, `serv_costo7`, `serv_costo8`, `serv_umed`, `serv_activo`, `tipo`, `tip_insumo`, `proveedor`, `grupo`, `codigo_sat`, `c_cveuni`, `c_nombre`, `iva`) VALUES (2, 'S0002', 'APLICACIÓN INTRAVITREA WETLIA ( NO INCLUYE MEDICAMENTO)', 1000.00, 1000.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 'CONSULTA', 'SI', '3', 'CONSULTA OFTALMOLOGICA', 'INEO', 'SERVICIOS HOSPITALARIOS', '85101502', 'E48', 'SERVICIO', 0.16);
@@ -577,6 +596,22 @@ INSERT INTO `historia_clinica` (`id_hc`, `id_exp`, `motivo_consulta`, `sintomato
 INSERT INTO `historia_clinica` (`id_hc`, `id_exp`, `motivo_consulta`, `sintomatologia`, `sintomatologia_otros`, `heredo`, `heredo_otros`, `nopat`, `nopat_otros`, `pat_enfermedades`, `pat_medicamentos`, `pat_alergias`, `pat_oculares`, `pat_cirugias`, `fecha_registro`) VALUES (3, 15, 'wjsne', 'Ojo rojo,Fotofobia', 'wdje', '', '', '', '', '', '', '', '', '', '2026-01-25 21:13:14');
 INSERT INTO `historia_clinica` (`id_hc`, `id_exp`, `motivo_consulta`, `sintomatologia`, `sintomatologia_otros`, `heredo`, `heredo_otros`, `nopat`, `nopat_otros`, `pat_enfermedades`, `pat_medicamentos`, `pat_alergias`, `pat_oculares`, `pat_cirugias`, `fecha_registro`) VALUES (4, 15, 'wwkdnek', 'Visión borrosa,Fotofobia', 'wdnlke', '', '', '', '', '', '', '', '', '', '2026-01-31 21:03:37');
 
+INSERT INTO `logs` (`id`, `usuario`, `accion`, `fecha`) VALUES (0, 'admin', 'GET /', '2026-02-11 15:15:26');
+INSERT INTO `logs` (`id`, `usuario`, `accion`, `fecha`) VALUES (0, 'admin', 'GET /', '2026-02-11 15:15:26');
+INSERT INTO `logs` (`id`, `usuario`, `accion`, `fecha`) VALUES (0, 'admin', 'GET /login', '2026-02-11 15:15:26');
+INSERT INTO `logs` (`id`, `usuario`, `accion`, `fecha`) VALUES (0, 'admin', 'GET /login', '2026-02-11 15:15:26');
+INSERT INTO `logs` (`id`, `usuario`, `accion`, `fecha`) VALUES (0, 'admin', 'POST /login', '2026-02-11 15:15:28');
+INSERT INTO `logs` (`id`, `usuario`, `accion`, `fecha`) VALUES (0, 'admin', 'GET /login', '2026-02-11 15:15:47');
+INSERT INTO `logs` (`id`, `usuario`, `accion`, `fecha`) VALUES (0, 'admin', 'POST /login', '2026-02-11 15:15:50');
+INSERT INTO `logs` (`id`, `usuario`, `accion`, `fecha`) VALUES (0, 'admin', 'GET /admin/administrativo', '2026-02-11 15:15:51');
+INSERT INTO `logs` (`id`, `usuario`, `accion`, `fecha`) VALUES (0, 'admin', 'GET /admin/cuenta_pacientes', '2026-02-11 15:15:54');
+INSERT INTO `logs` (`id`, `usuario`, `accion`, `fecha`) VALUES (0, 'admin', 'GET /admin/administrativo', '2026-02-11 15:15:58');
+INSERT INTO `logs` (`id`, `usuario`, `accion`, `fecha`) VALUES (0, 'admin', 'GET /admin/presupuestos', '2026-02-11 15:16:01');
+INSERT INTO `logs` (`id`, `usuario`, `accion`, `fecha`) VALUES (0, 'admin', 'GET /admin/administrativo', '2026-02-11 15:16:03');
+INSERT INTO `logs` (`id`, `usuario`, `accion`, `fecha`) VALUES (0, 'admin', 'GET /admin/censo', '2026-02-11 15:16:06');
+INSERT INTO `logs` (`id`, `usuario`, `accion`, `fecha`) VALUES (0, 'admin', 'GET /admin/administrativo', '2026-02-11 15:16:09');
+INSERT INTO `logs` (`id`, `usuario`, `accion`, `fecha`) VALUES (0, 'admin', 'GET /rendimiento', '2026-02-11 15:16:17');
+
 INSERT INTO `notas_medicas` (`id_nota`, `id_atencion`, `subjetivo`, `objetivo`, `analisis`, `plan`, `fecha_registro`, `id_medico`) VALUES (1, 3, 'wdne', 'wjkdne', 'wkldnme', 'wklndel', '2026-01-26 14:53:29', 1);
 INSERT INTO `notas_medicas` (`id_nota`, `id_atencion`, `subjetivo`, `objetivo`, `analisis`, `plan`, `fecha_registro`, `id_medico`) VALUES (2, 3, 'Hola ', 'objetivo ', 'análisis ', 'plan ', '2026-01-26 15:16:35', 1);
 INSERT INTO `notas_medicas` (`id_nota`, `id_atencion`, `subjetivo`, `objetivo`, `analisis`, `plan`, `fecha_registro`, `id_medico`) VALUES (3, 3, 'wkldme', 'wkldnwl', 'análisis ', 'wkldnw', '2026-01-31 21:04:07', 1);
@@ -606,11 +641,6 @@ INSERT INTO `users` (`id`, `username`, `password`, `role`, `created_at`, `img_pe
 INSERT INTO `users` (`id`, `username`, `password`, `role`, `created_at`, `img_perfil`, `papell`) VALUES (4, 'dr_michael_johnson', '$2b$12$m0ZkBHbNEqjZUKsQ4ma8wOg3JHVCncTnycsAEYQ7UlB2teD0zSfDG', 'medico', '2026-01-18 11:20:59', 'default_profile.jpg', 'Johnson');
 INSERT INTO `users` (`id`, `username`, `password`, `role`, `created_at`, `img_perfil`, `papell`) VALUES (5, 'dr_emily_davis', '$2b$12$m0ZkBHbNEqjZUKsQ4ma8wOg3JHVCncTnycsAEYQ7UlB2teD0zSfDG', 'medico', '2026-01-18 11:20:59', 'default_profile.jpg', 'Davis');
 INSERT INTO `users` (`id`, `username`, `password`, `role`, `created_at`, `img_perfil`, `papell`) VALUES (6, 'dr_robert_brown', '$2b$12$m0ZkBHbNEqjZUKsQ4ma8wOg3JHVCncTnycsAEYQ7UlB2teD0zSfDG', 'medico', '2026-01-18 11:20:59', 'default_profile.jpg', 'Brown');
-INSERT INTO `users` (`id`, `username`, `password`, `role`, `created_at`, `img_perfil`, `papell`) VALUES (7, 'JOEL', '123456', 'medico', '2026-02-02 01:35:06', 'default_profile.jpg', 'Apellido');
-INSERT INTO `users` (`id`, `username`, `password`, `role`, `created_at`, `img_perfil`, `papell`) VALUES (8, 'zahidpro', '12345678a', 'medico', '2026-02-03 21:36:37', 'default_profile.jpg', 'Apellido');
-INSERT INTO `users` (`id`, `username`, `password`, `role`, `created_at`, `img_perfil`, `papell`) VALUES (9, 'zahidgx', '12345678a', 'admin', '2026-02-03 22:21:08', 'default_profile.jpg', 'Apellido');
-INSERT INTO `users` (`id`, `username`, `password`, `role`, `created_at`, `img_perfil`, `papell`) VALUES (10, 'jaimediazgay', '12345678a', 'medico', '2026-02-03 22:33:10', 'default_profile.jpg', 'Apellido');
-INSERT INTO `users` (`id`, `username`, `password`, `role`, `created_at`, `img_perfil`, `papell`) VALUES (11, 'tilin', '$2b$12$aypJG6P54s4odQNAIBJDJ.PAt6.MCMV17GpRvji99x1YRFkfGi8pa', 'admin', '2026-02-03 22:54:46', 'default_profile.jpg', 'Apellido');
-INSERT INTO `users` (`id`, `username`, `password`, `role`, `created_at`, `img_perfil`, `papell`) VALUES (12, '', '', '', '2026-02-05 12:45:43', 'default_profile.jpg', 'Apellido');
+INSERT INTO `users` (`id`, `username`, `password`, `role`, `created_at`, `img_perfil`, `papell`) VALUES (7, 'JOEL', '$2b$12$m0ZkBHbNEqjZUKsQ4ma8wOg3JHVCncTnycsAEYQ7UlB2teD0zSfDG', 'admin', '2026-02-02 01:35:06', 'default_profile.jpg', 'Apellido');
 
 SET FOREIGN_KEY_CHECKS=1;
