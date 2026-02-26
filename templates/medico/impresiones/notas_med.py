@@ -3,27 +3,34 @@ from fpdf import FPDF
 from bd import get_db_connection
 from . import pdf_med
 from datetime import datetime
-import pymysql.cursors
 
 
 @pdf_med.route('/pdf/signos-vitales/<int:id_signos>')
 def signos_vitales_pdf(id_signos):
 
-    conn = get_db_connection()
-    cur = conn.cursor(pymysql.cursors.DictCursor)
+    db = get_db_connection()
 
-    cur.execute("""
-        SELECT 
-            s.ta, s.fc, s.fr, s.temp, s.spo2, s.peso, s.talla, s.fecha_registro,
-            p.papell, p.sapell, p.nom_pac
-        FROM signos_vitales s
-        JOIN atencion a ON a.id_atencion = s.id_atencion
-        JOIN pacientes p ON p.Id_exp = a.Id_exp
-        WHERE s.id_signos = %s
-    """, (id_signos,))
-
-    datos = cur.fetchone()
-    conn.close()
+    pipeline = [
+        {"$match": {"id_signos": id_signos}},
+        {"$lookup": {"from": "atencion", "localField": "id_atencion", "foreignField": "id_atencion", "as": "atencion"}},
+        {"$unwind": "$atencion"},
+        {"$lookup": {"from": "pacientes", "localField": "atencion.Id_exp", "foreignField": "Id_exp", "as": "paciente"}},
+        {"$unwind": "$paciente"},
+        {"$project": {
+            "ta": 1,
+            "fc": 1,
+            "fr": 1,
+            "temp": 1,
+            "spo2": 1,
+            "peso": 1,
+            "talla": 1,
+            "fecha_registro": 1,
+            "papell": "$paciente.papell",
+            "sapell": "$paciente.sapell",
+            "nom_pac": "$paciente.nom_pac"
+        }}
+    ]
+    datos = list(db['signos_vitales'].aggregate(pipeline))[0] if list(db['signos_vitales'].aggregate(pipeline)) else None
 
     if not datos:
         # Manejar caso de no encontrado, por ejemplo redirigir o error
@@ -72,21 +79,26 @@ def signos_vitales_pdf(id_signos):
 @pdf_med.route('/pdf/notas-medicas/<int:id_nota>')
 def notas_medicas_pdf(id_nota):
 
-    conn = get_db_connection()
-    cur = conn.cursor(pymysql.cursors.DictCursor)
+    db = get_db_connection()
 
-    cur.execute("""
-        SELECT 
-            n.subjetivo, n.objetivo, n.analisis, n.plan, n.fecha_registro,
-            p.papell, p.sapell, p.nom_pac
-        FROM notas_medicas n
-        JOIN atencion a ON a.id_atencion = n.id_atencion
-        JOIN pacientes p ON p.Id_exp = a.Id_exp
-        WHERE n.id_nota = %s
-    """, (id_nota,))
-
-    datos = cur.fetchone()
-    conn.close()
+    pipeline = [
+        {"$match": {"id_nota": id_nota}},
+        {"$lookup": {"from": "atencion", "localField": "id_atencion", "foreignField": "id_atencion", "as": "atencion"}},
+        {"$unwind": "$atencion"},
+        {"$lookup": {"from": "pacientes", "localField": "atencion.Id_exp", "foreignField": "Id_exp", "as": "paciente"}},
+        {"$unwind": "$paciente"},
+        {"$project": {
+            "subjetivo": 1,
+            "objetivo": 1,
+            "analisis": 1,
+            "plan": 1,
+            "fecha_registro": 1,
+            "papell": "$paciente.papell",
+            "sapell": "$paciente.sapell",
+            "nom_pac": "$paciente.nom_pac"
+        }}
+    ]
+    datos = list(db['notas_medicas'].aggregate(pipeline))[0] if list(db['notas_medicas'].aggregate(pipeline)) else None
 
     if not datos:
         return "Nota médica no encontrada", 404
@@ -141,26 +153,25 @@ def notas_medicas_pdf(id_nota):
 @pdf_med.route('/pdf/diagnostico/<int:id_diagnostico>')
 def diagnostico_pdf(id_diagnostico):
 
-    conn = get_db_connection()
-    cur = conn.cursor(pymysql.cursors.DictCursor)
+    db = get_db_connection()
 
-    cur.execute("""
-        SELECT 
-            d.diagnostico_principal,
-            d.diagnosticos_secundarios,
-            d.observaciones,
-            d.fecha_registro,
-            p.papell,
-            p.sapell,
-            p.nom_pac
-        FROM diagnosticos d
-        JOIN atencion a ON a.id_atencion = d.id_atencion
-        JOIN pacientes p ON p.Id_exp = a.Id_exp
-        WHERE d.id_diagnostico = %s
-    """, (id_diagnostico,))
-
-    datos = cur.fetchone()
-    conn.close()
+    pipeline = [
+        {"$match": {"id_diagnostico": id_diagnostico}},
+        {"$lookup": {"from": "atencion", "localField": "id_atencion", "foreignField": "id_atencion", "as": "atencion"}},
+        {"$unwind": "$atencion"},
+        {"$lookup": {"from": "pacientes", "localField": "atencion.Id_exp", "foreignField": "Id_exp", "as": "paciente"}},
+        {"$unwind": "$paciente"},
+        {"$project": {
+            "diagnostico_principal": 1,
+            "diagnosticos_secundarios": 1,
+            "observaciones": 1,
+            "fecha_registro": 1,
+            "papell": "$paciente.papell",
+            "sapell": "$paciente.sapell",
+            "nom_pac": "$paciente.nom_pac"
+        }}
+    ]
+    datos = list(db['diagnosticos'].aggregate(pipeline))[0] if list(db['diagnosticos'].aggregate(pipeline)) else None
 
     if not datos:
         return "Diagnóstico no encontrado", 404
@@ -222,29 +233,29 @@ def diagnostico_pdf(id_diagnostico):
 @pdf_med.route('/pdf/receta/<int:id_atencion>/<fecha>')
 def receta_pdf(id_atencion, fecha):
 
-    conn = get_db_connection()
-    cur = conn.cursor(pymysql.cursors.DictCursor)
+    db = get_db_connection()
 
-    cur.execute("""
-        SELECT 
-            r.medicamento,
-            r.dosis,
-            r.frecuencia,
-            r.duracion,
-            r.indicaciones,
-            r.fecha_registro,
-            p.papell,
-            p.sapell,
-            p.nom_pac
-        FROM recetas r
-        JOIN atencion a ON a.id_atencion = r.id_atencion
-        JOIN pacientes p ON p.Id_exp = a.Id_exp
-        WHERE r.id_atencion = %s
-          AND r.fecha_registro = %s
-    """, (id_atencion, fecha))
+    fecha_dt = datetime.strptime(fecha, '%Y-%m-%d %H:%M:%S') if len(fecha) > 10 else datetime.strptime(fecha, '%Y-%m-%d')
 
-    recetas = cur.fetchall()
-    conn.close()
+    pipeline = [
+        {"$match": {"id_atencion": id_atencion, "fecha_registro": fecha_dt}},
+        {"$lookup": {"from": "atencion", "localField": "id_atencion", "foreignField": "id_atencion", "as": "atencion"}},
+        {"$unwind": "$atencion"},
+        {"$lookup": {"from": "pacientes", "localField": "atencion.Id_exp", "foreignField": "Id_exp", "as": "paciente"}},
+        {"$unwind": "$paciente"},
+        {"$project": {
+            "medicamento": 1,
+            "dosis": 1,
+            "frecuencia": 1,
+            "duracion": 1,
+            "indicaciones": 1,
+            "fecha_registro": 1,
+            "papell": "$paciente.papell",
+            "sapell": "$paciente.sapell",
+            "nom_pac": "$paciente.nom_pac"
+        }}
+    ]
+    recetas = list(db['recetas'].aggregate(pipeline))
 
     if not recetas:
         return "Receta no encontrada", 404
@@ -285,7 +296,7 @@ def receta_pdf(id_atencion, fecha):
             0, 7,
             f"Indicaciones: {r['indicaciones'] or 'No especificado'}"
         )
-        pdf_doc.ln(4)
+        pdf_doc.ln(2)
 
     response = make_response(pdf_doc.output(dest='S').encode('latin-1'))
     response.headers['Content-Type'] = 'application/pdf'
@@ -296,58 +307,51 @@ def receta_pdf(id_atencion, fecha):
 @pdf_med.route('/pdf/laboratorio/<int:id_examen>')
 def laboratorio_pdf(id_examen):
 
-    conn = get_db_connection()
-    cur = conn.cursor(pymysql.cursors.DictCursor)
+    db = get_db_connection()
 
     # ===============================
     # ENCABEZADO + PACIENTE
     # ===============================
-    cur.execute("""
-        SELECT 
-            el.fecha,
-            el.estado,
-            el.fecha_realizado,
-            el.observaciones,
-            p.papell,
-            p.sapell,
-            p.nom_pac
-        FROM examenes_laboratorio el
-        JOIN atencion a ON a.id_atencion = el.id_atencion
-        JOIN pacientes p ON p.Id_exp = a.Id_exp
-        WHERE el.id_examen = %s
-    """, (id_examen,))
-    encabezado = cur.fetchone()
+    pipeline_enc = [
+        {"$match": {"id_examen": id_examen}},
+        {"$lookup": {"from": "atencion", "localField": "id_atencion", "foreignField": "id_atencion", "as": "atencion"}},
+        {"$unwind": "$atencion"},
+        {"$lookup": {"from": "pacientes", "localField": "atencion.Id_exp", "foreignField": "Id_exp", "as": "paciente"}},
+        {"$unwind": "$paciente"},
+        {"$project": {
+            "fecha": 1,
+            "estado": 1,
+            "fecha_realizado": 1,
+            "observaciones": 1,
+            "papell": "$paciente.papell",
+            "sapell": "$paciente.sapell",
+            "nom_pac": "$paciente.nom_pac"
+        }}
+    ]
+    encabezado = list(db['examenes_laboratorio'].aggregate(pipeline_enc))[0] if list(db['examenes_laboratorio'].aggregate(pipeline_enc)) else None
 
     # ===============================
     # DETALLE DE EXÁMENES
     # ===============================
-    cur.execute("""
-        SELECT 
-            c.nombre
-        FROM examenes_laboratorio_det d
-        JOIN catalogo_examenes_laboratorio c
-            ON c.id_catalogo = d.id_catalogo
-        WHERE d.id_examen = %s
-    """, (id_examen,))
-    detalles = cur.fetchall()
-
-    conn.close()
+    pipeline_det = [
+        {"$match": {"id_examen": id_examen}},
+        {"$lookup": {"from": "catalogo_examenes_laboratorio", "localField": "id_catalogo", "foreignField": "id_catalogo", "as": "cat"}},
+        {"$unwind": "$cat"},
+        {"$project": {"nombre": "$cat.nombre"}}
+    ]
+    detalles = list(db['examenes_laboratorio_det'].aggregate(pipeline_det))
 
     if not encabezado:
         return "Examen de laboratorio no encontrado", 404
 
-    # ===============================
     # PDF
-    # ===============================
     pdf_doc = FPDF('P', 'mm', 'Letter')
     pdf_doc.set_auto_page_break(True, 20)
     pdf_doc.add_page()
 
-    # TÍTULO
     pdf_doc.set_font('Arial', 'B', 14)
     pdf_doc.cell(0, 10, 'SOLICITUD DE EXÁMENES DE LABORATORIO', ln=True, align='C')
 
-    # PACIENTE
     pdf_doc.ln(5)
     pdf_doc.set_font('Arial', '', 10)
     pdf_doc.cell(
@@ -362,7 +366,7 @@ def laboratorio_pdf(id_examen):
 
     fecha_realizado = (
         encabezado['fecha_realizado'].strftime('%d/%m/%Y')
-        if encabezado['fecha_realizado'] else 'No especificado'
+        if encabezado.get('fecha_realizado') else 'No especificado'
     )
     pdf_doc.cell(0, 7, f"Fecha realizado: {fecha_realizado}", ln=True)
 
@@ -400,37 +404,27 @@ def laboratorio_pdf(id_examen):
 @pdf_med.route('/pdf/gabinete/<int:id_examen>')
 def gabinete_pdf(id_examen):
 
-    conn = get_db_connection()
-    cur = conn.cursor(pymysql.cursors.DictCursor)
+    db = get_db_connection()
 
     # ENCABEZADO + PACIENTE
-    cur.execute("""
-        SELECT 
-            eg.fecha,
-            eg.observaciones,
-            p.papell,
-            p.sapell,
-            p.nom_pac
-        FROM examenes_gabinete eg
-        JOIN atencion a ON a.id_atencion = eg.id_atencion
-        JOIN pacientes p ON p.Id_exp = a.Id_exp
-        WHERE eg.id_examen = %s
-    """, (id_examen,))
-    encabezado = cur.fetchone()
+    pipeline_enc = [
+        {"$match": {"id_examen": id_examen}},
+        {"$lookup": {"from": "atencion", "localField": "id_atencion", "foreignField": "id_atencion", "as": "atencion"}},
+        {"$unwind": "$atencion"},
+        {"$lookup": {"from": "pacientes", "localField": "atencion.Id_exp", "foreignField": "Id_exp", "as": "paciente"}},
+        {"$unwind": "$paciente"},
+        {"$project": {
+            "fecha": 1,
+            "observaciones": 1,
+            "papell": "$paciente.papell",
+            "sapell": "$paciente.sapell",
+            "nom_pac": "$paciente.nom_pac"
+        }}
+    ]
+    encabezado = list(db['examenes_gabinete'].aggregate(pipeline_enc))[0] if list(db['examenes_gabinete'].aggregate(pipeline_enc)) else None
 
     # DETALLE DE ESTUDIOS
-    cur.execute("""
-        SELECT 
-            nombre_examen,
-            estado,
-            fecha_realizado,
-            observaciones
-        FROM examenes_gabinete_det
-        WHERE id_examen = %s
-    """, (id_examen,))
-    detalles = cur.fetchall()
-
-    conn.close()
+    detalles = list(db['examenes_gabinete_det'].find({"id_examen": id_examen}, {"nombre_examen": 1, "estado": 1, "fecha_realizado": 1, "observaciones": 1}))
 
     if not encabezado:
         return "Examen de gabinete no encontrado", 404
@@ -467,7 +461,7 @@ def gabinete_pdf(id_examen):
         estado = d['estado']
         fecha_realizado = (
             d['fecha_realizado'].strftime('%d/%m/%Y')
-            if d['fecha_realizado'] else 'No especificado'
+            if d.get('fecha_realizado') else 'No especificado'
         )
 
         pdf_doc.multi_cell(
