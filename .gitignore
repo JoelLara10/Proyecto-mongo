@@ -18,3 +18,6 @@ app.secret_key  # Si tienes un archivo con secrets
 # Otros
 *.log
 *.db  # Si tienes bases de datos locales
+
+configuracion/copias/*.sql
+.env

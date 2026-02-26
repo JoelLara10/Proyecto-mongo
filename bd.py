@@ -1,15 +1,14 @@
-import pymysql
+import os
+from pymongo import MongoClient
+from dotenv import load_dotenv
 
-DB_HOST = 'localhost'
-DB_USER = 'root'
-DB_PASS = ''
-DB_NAME = 'ineo_db'
+load_dotenv()
+
+MONGO_URI = os.getenv("MONGO_URI")
+DB_NAME = os.getenv("DB_NAME")
+
+client = MongoClient(MONGO_URI)
+db = client[DB_NAME]
 
 def get_db_connection():
-    return pymysql.connect(
-        host=DB_HOST,
-        user=DB_USER,
-        password=DB_PASS,
-        db=DB_NAME,
-        cursorclass=pymysql.cursors.DictCursor
-    )
+    return db

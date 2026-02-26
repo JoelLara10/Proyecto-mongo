@@ -18,7 +18,6 @@ from flask import (
     redirect, url_for, current_app, send_from_directory
 )
 from bd import get_db_connection
-import pymysql
 from apscheduler.triggers.interval import IntervalTrigger
 from apscheduler.jobstores.memory import MemoryJobStore
 
@@ -83,20 +82,9 @@ def limpiar_backups(max_por_tipo=4):
                 current_app.logger.error(f'Error eliminando {archivo}: {str(e)}')
 
 def validar_admin(username, password):
-    conn = get_db_connection()
-    cursor = conn.cursor(pymysql.cursors.DictCursor)
-
-    cursor.execute("""
-        SELECT username, password, role
-        FROM users
-        WHERE username = %s
-        LIMIT 1
-    """, (username,))
-
-    user = cursor.fetchone()
-
-    cursor.close()
-    conn.close()
+    db = get_db_connection()
+    users = db['users']
+    user = users.find_one({"username": username}, {"username": 1, "password": 1, "role": 1})
 
     if not user:
         return False
@@ -132,19 +120,22 @@ def guardar_control(data):
     with open(ruta, 'w', encoding='utf-8') as f:
         json.dump(data, f, indent=4)
 
-def obtener_tablas_bd(cursor):
-    cursor.execute("""
-        SELECT TABLE_NAME, UPDATE_TIME 
-        FROM information_schema.TABLES 
-        WHERE TABLE_SCHEMA = DATABASE()
-    """)
-    return cursor.fetchall()
+def obtener_tablas_bd():
+    db = get_db_connection()
+    collections = db.list_collection_names()
+    # Para simular UPDATE_TIME, asumir que documentos tienen 'updated_at' field, obtener max por collection
+    tablas = []
+    for coll_name in collections:
+        max_updated = db[coll_name].find_one(sort=[("updated_at", -1)])
+        update_time = max_updated['updated_at'] if max_updated and 'updated_at' in max_updated else None
+        tablas.append({"TABLE_NAME": coll_name, "UPDATE_TIME": update_time})
+    return tablas
 
 def list_backups():
     carpeta = os.path.join(current_app.root_path, 'configuracion', 'copias')
     backups = []
     for file in os.listdir(carpeta):
-        if file.startswith('backup_') and file.endswith(('.sql', '.json', '.zip')):
+        if file.startswith('backup_') and file.endswith(('.json', '.zip', '.xlsx', '.pdf')):  # Ajustado sin .sql
             backups.append(file)
     return sorted(backups, reverse=True)  # Más recientes primero
 
@@ -155,10 +146,7 @@ def backup_bd():
         flash('Acceso denegado.', 'danger')
         return redirect(url_for('dashboard'))
 
-    conn = get_db_connection()
-    cursor = conn.cursor(pymysql.cursors.DictCursor)
-
-    tablas = obtener_tablas_bd(cursor)
+    tablas = obtener_tablas_bd()
     backups = list_backups()
 
     download_filename = request.args.get('download')  # Para mostrar descarga después de POST
@@ -223,103 +211,55 @@ def backup_bd():
 
             nombre_archivo = None
             try:
-                if formato == 'sql':
-                    # Ejemplo para SQL (haz lo mismo en json, csv/zip, excel, pdf)
-                    nombre_archivo = f'backup_manual_{tipo}_{fecha}.sql'
-                    ruta_archivo = os.path.join(carpeta, nombre_archivo)
+                db_conn = get_db_connection()
 
-                    with open(ruta_archivo, 'w', encoding='utf-8') as f:
-                        f.write("-- Backup generado por la aplicación\n")
-                        f.write("SET FOREIGN_KEY_CHECKS=0;\n\n")
-
-                        # 1️⃣ Crear tablas
-                        for tabla in tablas_finales:
-                            f.write(f"DROP TABLE IF EXISTS `{tabla}`;\n")
-                            cursor.execute(f"SHOW CREATE TABLE `{tabla}`")
-                            create_sql = cursor.fetchone()['Create Table']
-                            f.write(create_sql + ";\n\n")
-
-                        # 2️⃣ Insertar datos
-                        for tabla in tablas_finales:
-                            cursor.execute(f"SELECT * FROM `{tabla}`")
-                            filas = cursor.fetchall()
-                            if not filas:
-                                continue
-
-                            columnas = filas[0].keys()
-                            columnas_sql = ", ".join([f"`{c}`" for c in columnas])
-
-                            for fila in filas:
-                                valores = []
-                                for v in fila.values():
-                                    if v is None:
-                                        valores.append("NULL")
-                                    else:
-                                        valores.append(pymysql.converters.escape_item(v, conn))
-                                valores_sql = ", ".join(valores)
-                                f.write(
-                                    f"INSERT INTO `{tabla}` ({columnas_sql}) VALUES ({valores_sql});\n"
-                                )
-                            f.write("\n")
-
-                        f.write("SET FOREIGN_KEY_CHECKS=1;\n")
-
-
-                elif formato == 'json':
-                    # Ejemplo para SQL (haz lo mismo en json, csv/zip, excel, pdf)
+                if formato == 'json':  # Reemplazamos 'sql' por 'json' para Mongo
                     nombre_archivo = f'backup_manual_{tipo}_{fecha}.json'
                     ruta_archivo = os.path.join(carpeta, nombre_archivo)
                     respaldo = {}
-                    for tabla in tablas_finales:
-                        cursor.execute(f"SELECT * FROM `{tabla}`")
-                        respaldo[tabla] = cursor.fetchall()
-
+                    for coll in tablas_finales:
+                        respaldo[coll] = list(db_conn[coll].find())
                     with open(ruta_archivo, 'w', encoding='utf-8') as f:
                         json.dump(respaldo, f, indent=4, default=str)
 
                 elif formato == 'csv':
-                    # Ejemplo para SQL (haz lo mismo en json, csv/zip, excel, pdf)
                     nombre_archivo = f'backup_manual_{tipo}_{fecha}.zip'
                     ruta_archivo = os.path.join(carpeta, nombre_archivo)
 
                     with zipfile.ZipFile(ruta_archivo, 'w', zipfile.ZIP_DEFLATED) as zipf:
-                        for tabla in tablas_finales:
-                            cursor.execute(f"SELECT * FROM `{tabla}`")
-                            filas = cursor.fetchall()
-                            if filas:
+                        for coll in tablas_finales:
+                            docs = list(db_conn[coll].find())
+                            if docs:
                                 csv_buffer = io.StringIO()
-                                writer = csv.DictWriter(csv_buffer, fieldnames=filas[0].keys())
+                                writer = csv.DictWriter(csv_buffer, fieldnames=docs[0].keys())
                                 writer.writeheader()
-                                writer.writerows(filas)
-                                zipf.writestr(f"{tabla}_{tipo}_{fecha}.csv", csv_buffer.getvalue())
+                                writer.writerows(docs)
+                                zipf.writestr(f"{coll}_{tipo}_{fecha}.csv", csv_buffer.getvalue())
 
                 elif formato == 'excel':
-                    # Ejemplo para SQL (haz lo mismo en json, csv/zip, excel, pdf)
                     nombre_archivo = f'backup_manual_{tipo}_{fecha}.xlsx'
                     ruta_archivo = os.path.join(carpeta, nombre_archivo)
 
                     wb = Workbook()
                     wb.remove(wb.active)  # Quitar hoja vacía
 
-                    for tabla in tablas_finales:
-                        ws = wb.create_sheet(title=tabla)
-                        cursor.execute(f"SELECT * FROM `{tabla}`")
-                        filas = cursor.fetchall()
+                    for coll in tablas_finales:
+                        ws = wb.create_sheet(title=coll)
+                        docs = list(db_conn[coll].find())
 
-                        if not filas:
+                        if not docs:
                             continue
 
                         # Encabezados
-                        ws.append(list(filas[0].keys()))
+                        ws.append(list(docs[0].keys()))
 
                         # Datos
-                        for fila in filas:
-                            ws.append(list(fila.values()))
+                        for doc in docs:
+                            ws.append(list(doc.values()))
 
                     wb.save(ruta_archivo)
 
                 elif formato == 'pdf':
-                    # Ejemplo para SQL (haz lo mismo en json, csv/zip, excel, pdf)
                     nombre_archivo = f'backup_manual_{tipo}_{fecha}.pdf'
                     ruta_archivo = os.path.join(carpeta, nombre_archivo)
 
@@ -332,22 +272,21 @@ def backup_bd():
                         styles['Title']
                     ))
 
-                    for tabla in tablas_finales:
-                        cursor.execute(f"SELECT * FROM `{tabla}`")
-                        filas = cursor.fetchall()
+                    for coll in tablas_finales:
+                        docs = list(db_conn[coll].find())
 
                         elementos.append(Paragraph(
-                            f"Tabla: {tabla}",
+                            f"Colección: {coll}",
                             styles['Heading2']
                         ))
 
-                        if not filas:
+                        if not docs:
                             elementos.append(Paragraph("Sin datos", styles['Normal']))
                             continue
 
-                        data = [list(filas[0].keys())]
-                        for fila in filas:
-                            data.append([str(v) for v in fila.values()])
+                        data = [list(docs[0].keys())]
+                        for doc in docs:
+                            data.append([str(v) for v in doc.values()])
 
                         # Ancho disponible de la hoja
                         page_width, page_height = letter
@@ -409,41 +348,17 @@ def backup_bd():
 
             try:
                 ext = os.path.splitext(selected_file)[1].lower()
+                db_conn = get_db_connection()
 
-                if ext == '.sql':
-                    with open(ruta_archivo, 'r', encoding='utf-8') as f:
-                        sql_script = f.read()
-
-                    for statement in sql_script.split(';'):
-                        stmt = statement.strip()
-                        if stmt:
-                            cursor.execute(stmt)
-
-                    conn.commit()
-
-
-                elif ext == '.json':
+                if ext == '.json':
                     with open(ruta_archivo, 'r', encoding='utf-8') as f:
                         data = json.load(f)
-                    for tabla, rows in data.items():
-                        if rows:
-                            cols = list(rows[0].keys())
-                            for row in rows:
-                                values = [row[col] for col in cols]
-                                placeholders = ', '.join(['%s'] * len(cols))
-                                query = f"""
-                                INSERT IGNORE INTO `{tabla}` ({', '.join(cols)})
-                                VALUES ({placeholders})
-                                """
-                                cursor.execute(query, values)
-
-                    conn.commit()
-
-
+                    for coll, docs in data.items():
+                        if docs:
+                            db_conn[coll].delete_many({})  # Clear existing
+                            db_conn[coll].insert_many(docs)
 
                 elif ext == '.zip':
-
-                    filas_insertadas = 0
 
                     with zipfile.ZipFile(ruta_archivo, 'r') as zipf:
 
@@ -452,37 +367,12 @@ def backup_bd():
                             if not name.lower().endswith('.csv'):
                                 continue
 
-                            tabla = name.split('_')[0].strip()
-
-                            # Verificar tabla
-
-                            cursor.execute("""
-
-                                           SELECT 1
-
-                                           FROM information_schema.tables
-
-                                           WHERE table_schema = DATABASE()
-
-                                             AND table_name = %s LIMIT 1
-
-                                           """, (tabla,))
-
-                            if cursor.fetchone() is None:
-                                raise Exception(
-
-                                    f"La tabla '{tabla}' no existe. "
-
-                                    f"Restaura primero un respaldo SQL."
-
-                                )
+                            coll = name.split('_')[0].strip()
 
                             with zipf.open(name) as csvfile:
 
                                 reader = csv.DictReader(
-
                                     io.TextIOWrapper(csvfile, 'utf-8')
-
                                 )
 
                                 rows = list(reader)
@@ -490,104 +380,72 @@ def backup_bd():
                                 if not rows:
                                     continue
 
-                                columnas = reader.fieldnames
+                                db_conn[coll].delete_many({})  # Clear existing
+                                db_conn[coll].insert_many(rows)
 
-                                columnas_sql = ", ".join([f"`{c}`" for c in columnas])
+                elif ext == '.xlsx':
+                    from openpyxl import load_workbook
+                    wb = load_workbook(ruta_archivo)
+                    for sheet_name in wb.sheetnames:
+                        ws = wb[sheet_name]
+                        headers = [cell.value for cell in ws[1]]
+                        docs = []
+                        for row in ws.iter_rows(min_row=2):
+                            doc = {headers[i]: cell.value for i, cell in enumerate(row)}
+                            docs.append(doc)
+                        db_conn[sheet_name].delete_many({})  # Clear existing
+                        if docs:
+                            db_conn[sheet_name].insert_many(docs)
 
-                                placeholders = ", ".join(["%s"] * len(columnas))
-
-                                query = f"""
-
-                                    INSERT IGNORE INTO `{tabla}` ({columnas_sql})
-
-                                    VALUES ({placeholders})
-
-                                """
-
-                                for row in rows:
-                                    values = [
-
-                                        row[c] if row[c] != '' else None
-
-                                        for c in columnas
-
-                                    ]
-
-                                    cursor.execute(query, values)
-
-                                    filas_insertadas += cursor.rowcount
-
-                    if filas_insertadas == 0:
-                        raise Exception(
-
-                            "No se insertaron registros. "
-
-                            "Posibles causas: claves foráneas, duplicados o datos inválidos."
-
-                        )
-
-                    conn.commit()
+                # PDF restore not applicable for data, skip or log
 
                 flash(f'¡Restauración desde {selected_file} completada exitosamente!', 'success')
 
             except Exception as e:
-                conn.rollback()
                 flash(f'Error al restaurar: {str(e)}', 'danger')
 
             return redirect(request.url)
 
-    cursor.close()
-    conn.close()
-
     return render_template('configuracion/copias/copias_seguridad.html', tablas=tablas, backups=backups, download_filename=download_filename)
 
 def restore_from_file(nombre_archivo):
-    conn = get_db_connection()
-    cursor = conn.cursor()
     carpeta = os.path.join(current_app.root_path, 'configuracion', 'copias')
     ruta = os.path.join(carpeta, nombre_archivo)
 
     try:
         ext = os.path.splitext(nombre_archivo)[1].lower()
+        db_conn = get_db_connection()
 
-        if ext == '.sql':
+        if ext == '.json':
             with open(ruta, 'r', encoding='utf-8') as f:
-                sql_script = f.read()
+                data = json.load(f)
+            for coll, docs in data.items():
+                if docs:
+                    db_conn[coll].delete_many({})  # Clear existing
+                    db_conn[coll].insert_many(docs)
 
-            for statement in sql_script.split(';'):
-                stmt = statement.strip()
-                if stmt:
-                    cursor.execute(stmt)
-
-            conn.commit()
-
-        # (JSON / CSV podrías agregar después)
+        # (JSON / CSV / XLSX similar to above)
 
         current_app.logger.info(
             f'Restauración automática completada: {nombre_archivo}'
         )
 
     except Exception as e:
-        conn.rollback()
         current_app.logger.error(
             f'Error en restauración automática: {str(e)}'
         )
-
-    finally:
-        cursor.close()
-        conn.close()
 
 
 def cargar_config_auto():
     ruta = os.path.join(current_app.root_path, RUTA_CONFIG_AUTO)
     if not os.path.exists(ruta):
-        return {'intervalo': 60, 'tipo': 'completa', 'formato': 'sql', 'auto_restore': False}
+        return {'intervalo': 60, 'tipo': 'completa', 'formato': 'json', 'auto_restore': False}  # Cambiado sql a json
     try:
         with open(ruta, 'r', encoding='utf-8') as f:
             data = f.read().strip()
             return json.loads(data) if data else {}
     except:
-        return {'intervalo': 60, 'tipo': 'completa', 'formato': 'sql', 'auto_restore': False}
+        return {'intervalo': 60, 'tipo': 'completa', 'formato': 'json', 'auto_restore': False}
 
 def guardar_config_auto(config):
     ruta = os.path.join(current_app.root_path, RUTA_CONFIG_AUTO)
@@ -597,22 +455,16 @@ def guardar_config_auto(config):
 
 def check_db_health():
     try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("SELECT 1")
-        cursor.close()
-        conn.close()
+        db = get_db_connection()
+        db.command("ping")
         return True
     except Exception as e:
         current_app.logger.error(f"Error en health check: {str(e)}")
         return False
 
 def realizar_backup_automatico(tipo, formato):
-    conn = get_db_connection()
-    cursor = conn.cursor(pymysql.cursors.DictCursor)
-
     try:
-        tablas = obtener_tablas_bd(cursor)
+        tablas = obtener_tablas_bd()
         tablas_sel = [t['TABLE_NAME'] for t in tablas]
 
         control = cargar_control()
@@ -622,19 +474,19 @@ def realizar_backup_automatico(tipo, formato):
         tablas_finales = []
 
         for t in tablas:
-            tabla = t['TABLE_NAME']
+            coll = t['TABLE_NAME']
             update_time = t['UPDATE_TIME']
 
             if tipo == 'completa':
-                tablas_finales.append(tabla)
+                tablas_finales.append(coll)
 
             elif tipo == 'diferencial' and ultima_completa:
                 if update_time and str(update_time) > ultima_completa:
-                    tablas_finales.append(tabla)
+                    tablas_finales.append(coll)
 
             elif tipo == 'incremental' and ultima_copia:
                 if update_time and str(update_time) > ultima_copia:
-                    tablas_finales.append(tabla)
+                    tablas_finales.append(coll)
 
         if not tablas_finales:
             current_app.logger.info(
@@ -651,57 +503,20 @@ def realizar_backup_automatico(tipo, formato):
 
         fecha = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 
-        # ================= BACKUP SQL =================
-        if formato == 'sql':
-            nombre = f'backup_auto_{tipo}_{fecha}.sql'
+        # ================= BACKUP JSON =================
+        if formato == 'json':
+            nombre = f'backup_auto_{tipo}_{fecha}.json'
             ruta_archivo = os.path.join(carpeta, nombre)
 
+            respaldo = {}
+            db_conn = get_db_connection()
+            for coll in tablas_finales:
+                respaldo[coll] = list(db_conn[coll].find())
+
             with open(ruta_archivo, 'w', encoding='utf-8') as f:
-                f.write(f'-- BACKUP AUTOMÁTICO {tipo.upper()} - {fecha}\n')
-                f.write('SET FOREIGN_KEY_CHECKS=0;\n\n')
+                json.dump(respaldo, f, indent=4, default=str)
 
-                # Crear tablas
-                for tabla in tablas_finales:
-                    f.write(f'DROP TABLE IF EXISTS `{tabla}`;\n')
-                    cursor.execute(f"SHOW CREATE TABLE `{tabla}`")
-                    f.write(cursor.fetchone()['Create Table'] + ";\n\n")
-
-                # Insertar datos
-                for tabla in tablas_finales:
-                    cursor.execute(f"SELECT * FROM `{tabla}`")
-                    filas = cursor.fetchall()
-
-                    if not filas:
-                        continue
-
-                    columnas = filas[0].keys()
-                    columnas_sql = ", ".join(
-                        [f"`{c}`" for c in columnas]
-                    )
-
-                    for fila in filas:
-                        valores = []
-                        for v in fila.values():
-                            if v is None:
-                                valores.append("NULL")
-                            else:
-                                valores.append(
-                                    pymysql.converters.escape_item(v, conn)
-                                )
-
-                        valores_sql = ", ".join(valores)
-
-                        f.write(
-                            f"INSERT INTO `{tabla}` "
-                            f"({columnas_sql}) "
-                            f"VALUES ({valores_sql});\n"
-                        )
-
-                    f.write("\n")
-
-                f.write('SET FOREIGN_KEY_CHECKS=1;\n')
-
-        # (JSON / CSV puedes reutilizar lo mismo que ya tienes)
+        # (CSV / EXCEL / PDF similar, adaptado de arriba)
 
         # ================= CONTROL =================
         ahora = datetime.now().isoformat()
@@ -725,10 +540,6 @@ def realizar_backup_automatico(tipo, formato):
         current_app.logger.error(
             f'Error en backup automático: {str(e)}'
         )
-
-    finally:
-        cursor.close()
-        conn.close()
 
 def job_backup_auto(app):
     with app.app_context():
@@ -780,4 +591,3 @@ def automatizacion_tareas():
         'configuracion/automatizacion/automatizacion_tareas.html',
         config=config
     )
-

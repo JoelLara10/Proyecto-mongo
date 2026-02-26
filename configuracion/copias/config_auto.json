@@ -1,5 +1,5 @@
 {
-    "intervalo": 1,
+    "intervalo": 100000,
     "tipo": "completa",
     "formato": "sql",
     "auto_restore": true
