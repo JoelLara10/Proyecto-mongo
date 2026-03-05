@@ -2,11 +2,9 @@ from pathlib import Path
 from dotenv import load_dotenv
 from decimal import Decimal
 
-# 1) Cargar .env desde la raíz del proyecto
 ROOT = Path(__file__).resolve().parent.parent
 load_dotenv(ROOT / ".env")
 
-# 2) Importar tu conexión (bd.py está en la raíz)
 import sys
 sys.path.append(str(ROOT))
 
@@ -19,7 +17,6 @@ def main():
     # Colecciones
     atencion = db["atencion"]
 
-    # Pipeline: cuentas activas (status ABIERTA) + paciente + cama + sumar subtotales de cuenta_paciente
     pipeline = [
         {"$match": {"status": "ABIERTA"}},
 
