@@ -113,7 +113,7 @@
         <input type="text" class="form-control" id="search" placeholder="Buscar pacientes...">
     </div>
 
-    <!-- TABLA -->
+    <!-- TABLA HOSPITALIZADOS -->
     <h4 class="mt-4 text-primary fw-bold">
     <i class="fas fa-procedures"></i> Hospitalizados
 </h4>
@@ -148,11 +148,11 @@
                     </td>
                     <td>{{ f.Id_exp }}</td>
                     <td>{{ f.papell }} {{ f.sapell }} {{ f.nom_pac }}</td>
-                    <td>{{ f.edad }}</td>
-                    <td>{{ f.fecnac | strftime('%d/%m/%Y') }}</td>
-                    <td>{{ f.tel }}</td>
-                    <td>{{ f.num_cama }}</td>
-                    <td>{{ f.fecha_ing | strftime('%d/%m/%Y %I:%M %p') }}</td>
+                    <td>{{ f.edad if f.edad else 'N/A' }}</td>  <!-- Edad se muestra bien, con fallback -->
+                    <td>{{ (f.fecnac | strftime('%d/%m/%Y')) if f.fecnac else 'Sin fecha' }}</td>  <!-- Corregido -->
+                    <td>{{ f.tel or 'N/A' }}</td>
+                    <td>{{ f.num_cama or 'N/A' }}</td>
+                    <td>{{ (f.fecha_ing | strftime('%d/%m/%Y %I:%M %p')) if f.fecha_ing else 'Sin fecha' }}</td>  <!-- Corregido -->
                 </tr>
                 {% endfor %}
             </tbody>
@@ -160,6 +160,7 @@
     </div>
 </div>
 
+    <!-- TABLA URGENCIAS -->
     <h4 class="mt-4 text-danger fw-bold">
     <i class="fas fa-ambulance"></i> Urgencias
 </h4>
@@ -188,8 +189,8 @@
                     </td>
                     <td>{{ f.Id_exp }}</td>
                     <td>{{ f.papell }} {{ f.sapell }} {{ f.nom_pac }}</td>
-                    <td>{{ f.edad }}</td>
-                    <td>{{ f.fecha_ing | strftime('%d/%m/%Y %I:%M %p') }}</td>
+                    <td>{{ f.edad if f.edad else 'N/A' }}</td>  <!-- Edad con fallback -->
+                    <td>{{ (f.fecha_ing | strftime('%d/%m/%Y %I:%M %p')) if f.fecha_ing else 'Sin fecha' }}</td>  <!-- Corregido -->
                 </tr>
                 {% endfor %}
             </tbody>
@@ -197,6 +198,7 @@
     </div>
 </div>
 
+    <!-- TABLA AMBULATORIOS -->
     <h4 class="mt-4 text-success fw-bold">
     <i class="fas fa-walking"></i> Ambulatorios
 </h4>
@@ -221,8 +223,8 @@
                     </td>
                     <td>{{ f.Id_exp }}</td>
                     <td>{{ f.papell }} {{ f.sapell }} {{ f.nom_pac }}</td>
-                    <td>{{ f.edad }}</td>
-                    <td>{{ f.fecha_ing | strftime('%d/%m/%Y %I:%M %p') }}</td>
+                    <td>{{ f.edad if f.edad else 'N/A' }}</td>  <!-- Edad con fallback -->
+                    <td>{{ (f.fecha_ing | strftime('%d/%m/%Y %I:%M %p')) if f.fecha_ing else 'Sin fecha' }}</td>  <!-- Corregido -->
                 </tr>
                 {% endfor %}
             </tbody>

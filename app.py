@@ -137,11 +137,32 @@ def registrar_log_global(accion):
     except Exception as e:
         print("Error al registrar log:", e)
 
-def calcular_edad(fecha_nacimiento):
-    hoy = date.today()
-    return hoy.year - fecha_nacimiento.year - (
-        (hoy.month, hoy.day) < (fecha_nacimiento.month, fecha_nacimiento.day)
-    )
+
+def calcular_edad(fecnac):
+    """Calcula edad aceptando string o fecha (Date/ISODate de MongoDB)"""
+    if not fecnac:
+        return 0
+
+    try:
+        # 1. Si viene como string (lo más común)
+        if isinstance(fecnac, str):
+            # Quitamos posible hora (2025-03-10T00:00:00Z)
+            fecha_str = fecnac.split('T')[0].split(' ')[0]
+            fecha_nac = datetime.strptime(fecha_str, '%Y-%m-%d').date()
+
+        # 2. Si ya es datetime (cuando Mongo lo devuelve como Date)
+        elif hasattr(fecnac, 'date'):
+            fecha_nac = fecnac.date()
+        else:
+            fecha_nac = fecnac
+
+        # Cálculo de edad exacto
+        hoy = datetime.now().date()
+        edad = hoy.year - fecha_nac.year - ((hoy.month, hoy.day) < (fecha_nac.month, fecha_nac.day))
+        return edad
+
+    except (ValueError, TypeError, AttributeError):
+        return 0
 
 # Filtro personalizado para strftime
 @app.template_filter('strftime')
@@ -306,14 +327,25 @@ def login():
 
         user = users_coll.find_one({"username": username})
 
-        if user and bcrypt.checkpw(password, user['password']):
-            session['user_id'] = str(user['_id'])
-            session['username'] = user['username']
-            session['role'] = user['role']
-            flash('Login exitoso!', 'success')
-            return redirect(url_for('dashboard'))
-        else:
-            flash('Usuario o contraseña incorrectos.', 'danger')
+        if user:
+            stored_password = user['password']
+
+            # 🔧 CORRECCIÓN CLAVE: limpiar hash mal guardado
+            # Caso: "b'$2b$12$...'"
+            if isinstance(stored_password, str):
+                if stored_password.startswith("b'") or stored_password.startswith('b"'):
+                    stored_password = stored_password[2:-1]
+                stored_password = stored_password.encode('utf-8')
+
+            # Comparación correcta
+            if bcrypt.checkpw(password, stored_password):
+                session['user_id'] = str(user['_id'])
+                session['username'] = user['username']
+                session['role'] = user['role']
+                flash('Login exitoso!', 'success')
+                return redirect(url_for('dashboard'))
+
+        flash('Usuario o contraseña incorrectos.', 'danger')
 
     return render_template('login.html')
 # ===============================
@@ -409,7 +441,7 @@ def gestion_pacientes():
             "papell": "$paciente.papell",
             "sapell": "$paciente.sapell",
             "nom_pac": "$paciente.nom_pac",
-            "fecnac": "$paciente.fecnac",
+            "fecnac": "$paciente.fecnac",  # ← Removido $dateFromString: si ya es Date en DB, llega como datetime
             "tel": "$paciente.tel",
             "id_atencion": 1,
             "area": 1,
@@ -419,7 +451,7 @@ def gestion_pacientes():
     ]
     hospitalized = list(atencion_coll.aggregate(pipeline_hosp))
     for p in hospitalized:
-        p['edad'] = calcular_edad(p['fecnac']) if 'fecnac' in p else 0
+        p['edad'] = calcular_edad(p['fecnac']) if 'fecnac' in p and p['fecnac'] else 0
     # Urgencias
     pipeline_urg = [
         {"$match": {"area": "Urgencias", "status": "ABIERTA"}},
@@ -432,7 +464,7 @@ def gestion_pacientes():
             "papell": "$paciente.papell",
             "sapell": "$paciente.sapell",
             "nom_pac": "$paciente.nom_pac",
-            "fecnac": "$paciente.fecnac",
+            "fecnac": "$paciente.fecnac",  # ← Removido $dateFromString
             "tel": "$paciente.tel",
             "id_atencion": 1,
             "area": 1,
@@ -442,7 +474,7 @@ def gestion_pacientes():
     ]
     urgencias = list(atencion_coll.aggregate(pipeline_urg))
     for p in urgencias:
-        p['edad'] = calcular_edad(p['fecnac']) if 'fecnac' in p else 0
+        p['edad'] = calcular_edad(p['fecnac']) if 'fecnac' in p and p['fecnac'] else 0
     # Ambulatorios
     pipeline_amb = [
         {"$match": {"area": "Ambulatorio", "status": "ABIERTA"}},
@@ -455,7 +487,7 @@ def gestion_pacientes():
             "papell": "$paciente.papell",
             "sapell": "$paciente.sapell",
             "nom_pac": "$paciente.nom_pac",
-            "fecnac": "$paciente.fecnac",
+            "fecnac": "$paciente.fecnac",  # ← Removido $dateFromString
             "tel": "$paciente.tel",
             "id_atencion": 1,
             "area": 1,
@@ -465,7 +497,7 @@ def gestion_pacientes():
     ]
     ambulatorios = list(atencion_coll.aggregate(pipeline_amb))
     for p in ambulatorios:
-        p['edad'] = calcular_edad(p['fecnac']) if 'fecnac' in p else 0
+        p['edad'] = calcular_edad(p['fecnac']) if 'fecnac' in p and p['fecnac'] else 0
     return render_template('administrativo/pacientes/gestion_pacientes.html',
                            hospitalized=hospitalized,
                            urgencias=urgencias,
@@ -574,13 +606,21 @@ def editar_paciente(id_exp):
     atencion_medicos_coll = db['atencion_medicos']
     familiares_coll = db['familiares']
     # ===== DATOS PARA SELECTS =====
-    camas = list(camas_coll.find({"$or": [{"ocupada": 0}, {"id_cama": {"$in": list(atencion_coll.find({"Id_exp": id_exp}, {"id_cama": 1}))}} ]}, {"id_cama": 1, "numero": 1}))
+    # Obtener id_cama actual del paciente para incluirla aunque esté ocupada
+    current_id_cama_query = list(atencion_coll.find({"Id_exp": id_exp}, {"id_cama": 1}))
+    current_id_camas = [item['id_cama'] for item in current_id_cama_query if 'id_cama' in item]
+    camas = list(camas_coll.find({
+        "$or": [
+            {"ocupada": 0},
+            {"id_cama": {"$in": current_id_camas}}
+        ]
+    }, {"id_cama": 1, "numero": 1}))
     medicos = list(users_coll.find({"role": "medico"}, {"_id": 1, "username": 1}))
     # ===== GET =====
     pipeline = [
         {"$match": {"Id_exp": id_exp}},
         {"$lookup": {"from": "atencion", "localField": "Id_exp", "foreignField": "Id_exp", "as": "atencion"}},
-        {"$unwind": "$atencion"},
+        {"$unwind": {"path": "$atencion", "preserveNullAndEmptyArrays": True}},
         {"$project": {
             "_id": 0,
             "curp": 1,
@@ -593,12 +633,19 @@ def editar_paciente(id_exp):
             "id_cama": "$atencion.id_cama",
             "motivo": "$atencion.motivo",
             "especialidad": "$atencion.especialidad",
-            "alergias": "$atencion.alergias"
+            "alergias": "$atencion.alergias",
+            "id_atencion": "$atencion.id_atencion"  # Necesario para médicos
         }}
     ]
-    paciente = list(pacientes_coll.aggregate(pipeline))[0] if list(pacientes_coll.aggregate(pipeline)) else None
-    medicos_asignados = [m['id_medico'] for m in atencion_medicos_coll.find({"id_atencion": paciente['atencion']['id_atencion']})]
-    familiar = familiares_coll.find_one({"Id_exp": id_exp})
+    paciente_list = list(pacientes_coll.aggregate(pipeline))
+    paciente = paciente_list[0] if paciente_list else None
+    if paciente is None:
+        flash('Paciente no encontrado.', 'error')
+        return redirect(url_for('gestion_pacientes'))
+    # Manejar si no hay atencion
+    id_atencion = paciente.get('id_atencion')
+    medicos_asignados = [m['id_medico'] for m in atencion_medicos_coll.find({"id_atencion": id_atencion})] if id_atencion else []
+    familiar = familiares_coll.find_one({"Id_exp": id_exp}) or {}  # Default vacío si no existe
     if request.method == 'POST':
         try:
             # ===== PACIENTE =====
@@ -610,20 +657,32 @@ def editar_paciente(id_exp):
                 "fecnac": datetime.strptime(request.form['fecnac'], '%Y-%m-%d'),
                 "tel": request.form['tel']
             }})
-            # ===== ATENCION =====
-            atencion_coll.update_one({"Id_exp": id_exp}, {"$set": {
+            # ===== ATENCION (upsert si no existe) =====
+            atencion_data = {
                 "area": request.form['area'],
                 "id_cama": int(request.form.get('id_cama')) if request.form.get('id_cama') else None,
                 "motivo": request.form['motivo'],
                 "especialidad": request.form['especialidad'],
                 "alergias": request.form.get('alergias', '')
-            }})
+            }
+            if id_atencion:
+                atencion_coll.update_one({"_id": id_atencion}, {"$set": atencion_data})
+            else:
+                # Crear nueva atencion si no existe
+                new_atencion = {
+                    "Id_exp": id_exp,
+                    "status": "ABIERTA",  # Asumiendo defaults
+                    "fecha_ing": datetime.now(),
+                    **atencion_data
+                }
+                insert_result = atencion_coll.insert_one(new_atencion)
+                id_atencion = insert_result.inserted_id
             # ===== MÉDICOS =====
-            atencion_medicos_coll.delete_many({"id_atencion": paciente['atencion']['id_atencion']})
-            for m in ['medico1','medico2','medico3','medico4','medico5']:
+            atencion_medicos_coll.delete_many({"id_atencion": id_atencion})
+            for m in ['medico1', 'medico2', 'medico3', 'medico4', 'medico5']:
                 if request.form.get(m):
                     atencion_medicos_coll.insert_one({
-                        "id_atencion": paciente['atencion']['id_atencion'],
+                        "id_atencion": id_atencion,
                         "id_medico": int(request.form[m])
                     })
             # ===== FAMILIAR =====
@@ -631,7 +690,15 @@ def editar_paciente(id_exp):
                 "nombre": request.form['fam_nombre'],
                 "parentesco": request.form['fam_parentesco'],
                 "telefono": request.form['fam_tel']
-            }})
+            }}, upsert=True)
+            # Actualizar ocupada de cama si cambia
+            new_id_cama = int(request.form.get('id_cama')) if request.form.get('id_cama') else None
+            old_id_cama = paciente.get('id_cama')
+            if new_id_cama != old_id_cama:
+                if old_id_cama:
+                    camas_coll.update_one({"id_cama": old_id_cama}, {"$set": {"ocupada": 0}})
+                if new_id_cama:
+                    camas_coll.update_one({"id_cama": new_id_cama}, {"$set": {"ocupada": 1}})
             flash('Paciente actualizado correctamente.', 'success')
             return redirect(url_for('gestion_pacientes'))
         except Exception as e:
