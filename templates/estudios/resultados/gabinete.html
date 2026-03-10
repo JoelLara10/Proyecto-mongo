@@ -16,12 +16,12 @@
           <th class="border-0 py-3">Habitación</th>
           <th class="border-0 py-3">Paciente</th>
           <th class="border-0 py-3">Fecha Solicitud</th>
-          <th class="border-0 py-3">Solicitante</th>
+          <!--<th class="border-0 py-3">Solicitante</th>-->
           <th class="border-0 py-3">Estudio(s)</th>
           <th class="border-0 py-3">Solicitud</th>
           <th class="border-0 py-3">Acciones</th>
           <th class="border-0 py-3">Fecha Resultado</th>
-          <th class="border-0 py-3">Atendió</th>
+          <!--<th class="border-0 py-3">Atendió</th>-->
         </tr>
       </thead>
       <tbody class="bg-white">
@@ -39,12 +39,12 @@
             <td class="py-3 text-muted">
               <i class="bi bi-calendar3 me-2"></i>{{ s.fecha }}
             </td>
-            <td class="py-3">
+            <!--<td class="py-3">
               <div class="d-flex align-items-center">
                 <i class="bi bi-person-circle me-2 text-primary"></i>
                 <span>{{ s.medico }}</span>
               </div>
-            </td>
+            </td>-->
             <td class="py-3">
               {% if s.estudios %}
                 {% set estudios_lista = s.estudios.split(', ') %}
@@ -97,12 +97,12 @@
               </span>
               {% endif %}
             </td>
-            <td class="py-3">
+            <!--<td class="py-3">
               <div class="d-flex align-items-center">
                 <i class="bi bi-person-check me-2 text-success"></i>
                 <span>{{ s.medico }}</span>
               </div>
-            </td>
+            </td>-->
           </tr>
           {% endfor %}
         {% else %}

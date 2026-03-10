@@ -20,23 +20,22 @@
           <div class="list-group list-group-flush">
             {% for archivo in archivos %}
             <a href="#"
-               class="list-group-item list-group-item-action resultado-link py-2"
-               data-file="{{ archivo }}"
-               data-ext="{{ archivo.split('.')[-1].lower() }}">
+              class="list-group-item list-group-item-action resultado-link py-2"
+              data-file="{{ archivo.nombre }}"
+              data-ext="{{ archivo.tipo }}">
               <div class="d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center">
-                  {% set ext = archivo.split('.')[-1].lower() %}
-                  {% if ext == 'pdf' %}
+                  {% if archivo.tipo == 'pdf' %}
                     <i class="bi bi-file-earmark-pdf text-danger me-2"></i>
-                  {% elif ext in ['png', 'jpg', 'jpeg'] %}
+                  {% elif archivo.tipo in ['png', 'jpg', 'jpeg'] %}
                     <i class="bi bi-file-earmark-image text-success me-2"></i>
                   {% else %}
                     <i class="bi bi-file-earmark me-2 text-primary"></i>
                   {% endif %}
-                  <span class="small">{{ archivo }}</span>
+                  <span class="small">{{ archivo.nombre }}</span>
                 </div>
                 <span class="badge bg-light-blue text-primary border border-primary rounded-pill px-2 py-0 small">
-                  {{ ext.upper() }}
+                  {{ archivo.tipo.upper() }}
                 </span>
               </div>
             </a>

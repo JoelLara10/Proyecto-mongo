@@ -1,7 +1,9 @@
+# estudios.py - Versión final con correcciones de joins y manejo de archivos
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from bd import get_db_connection
 from werkzeug.utils import secure_filename
 from datetime import datetime
+from bson.objectid import ObjectId
 import os
 
 # =========================
@@ -19,30 +21,51 @@ MAX_FILE_SIZE = 25 * 1024 * 1024  # 25MB
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-def contar_solicitudes_pendientes():
-    """Función auxiliar para contar solicitudes pendientes (id_examen únicos)"""
+def obtener_ids_catalogo_por_tipo(tipo):
+    """Devuelve lista de id_catalogo cuyo tipo coincida (insensible a mayúsc/minúsc)."""
     db = get_db_connection()
-    examenes_laboratorio = db['examenes_laboratorio']
-    lab_pendientes = examenes_laboratorio.count_documents({"estado": {"$regex": "^pendiente$", "$options": "i"}})
-    
-    examenes_gabinete_det = db['examenes_gabinete_det']
-    gab_pendientes = examenes_gabinete_det.count_documents({"estado": {"$regex": "^PENDIENTE$"}})
-    
-    total_pendientes = lab_pendientes + gab_pendientes
-    
-    return lab_pendientes, gab_pendientes, total_pendientes
-#------------------------------------------------------------------------------------------------------------
+    catalogo = db['catalogo_examenes']
+    docs = catalogo.find({"tipo": {"$regex": f"^{tipo}$", "$options": "i"}}, {"id_catalogo": 1})
+    return [doc['id_catalogo'] for doc in docs]
+
+def contar_solicitudes_pendientes():
+    """Cuenta solicitudes pendientes (id_examen únicos) por tipo usando el catálogo."""
+    db = get_db_connection()
+    examenes_det = db['examenes_det']
+
+    lab_ids = obtener_ids_catalogo_por_tipo("LABORATORIO")
+    gab_ids = obtener_ids_catalogo_por_tipo("GABINETE")
+
+    pipeline_lab = [
+        {"$match": {"id_catalogo": {"$in": lab_ids}, "estado": {"$regex": "^PENDIENTE$", "$options": "i"}}},
+        {"$group": {"_id": "$id_examen"}},
+        {"$count": "count"}
+    ]
+    lab_res = list(examenes_det.aggregate(pipeline_lab))
+    lab_pendientes = lab_res[0]['count'] if lab_res else 0
+
+    pipeline_gab = [
+        {"$match": {"id_catalogo": {"$in": gab_ids}, "estado": {"$regex": "^PENDIENTE$", "$options": "i"}}},
+        {"$group": {"_id": "$id_examen"}},
+        {"$count": "count"}
+    ]
+    gab_res = list(examenes_det.aggregate(pipeline_gab))
+    gab_pendientes = gab_res[0]['count'] if gab_res else 0
+
+    return lab_pendientes, gab_pendientes, lab_pendientes + gab_pendientes
+
 estudios_bp = Blueprint('estudios', __name__)
 
 def obtener_rol_usuario():
     if 'user_id' not in session:
         return None
-
     db = get_db_connection()
     users = db['users']
-    user = users.find_one({"id": int(session['user_id'])}, {"role": 1})
-    return user['role'] if user else None
-
+    try:
+        user = users.find_one({"_id": ObjectId(session['user_id'])}, {"role": 1})
+        return user['role'] if user else None
+    except:
+        return None
 
 # =========================
 # HOME / LISTADOS
@@ -52,33 +75,33 @@ def estudios_home():
     vista = request.args.get('vista')
     solicitudes = []
 
-    # =========================
-    # CONTAR SOLICITUDES PENDIENTES
-    # =========================
     lab_pendientes, gab_pendientes, total_pendientes = contar_solicitudes_pendientes()
+    db = get_db_connection()
+
+    lab_ids = obtener_ids_catalogo_por_tipo("LABORATORIO")
+    gab_ids = obtener_ids_catalogo_por_tipo("GABINETE")
 
     # -------- LABORATORIO PENDIENTES --------
     if vista == 'solicitudes_laboratorio':
-        db = get_db_connection()
         pipeline = [
-            {"$match": {"estado": {"$regex": "^pendiente$", "$options": "i"}}},
             {"$lookup": {"from": "atencion", "localField": "id_atencion", "foreignField": "id_atencion", "as": "atencion"}},
             {"$unwind": "$atencion"},
             {"$lookup": {"from": "pacientes", "localField": "atencion.Id_exp", "foreignField": "Id_exp", "as": "paciente"}},
             {"$unwind": "$paciente"},
             {"$lookup": {"from": "camas", "localField": "atencion.id_cama", "foreignField": "id_cama", "as": "cama"}},
             {"$unwind": {"path": "$cama", "preserveNullAndEmptyArrays": True}},
-            {"$lookup": {"from": "users", "localField": "id_medico", "foreignField": "id", "as": "user"}},
+            {"$lookup": {"from": "users", "localField": "id_medico", "foreignField": "_id", "as": "user"}},  # 👈 CORREGIDO
             {"$unwind": "$user"},
-            {"$lookup": {"from": "examenes_laboratorio_det", "localField": "id_examen", "foreignField": "id_examen", "as": "det"}},
+            {"$lookup": {"from": "examenes_det", "localField": "id_examen", "foreignField": "id_examen", "as": "det"}},
             {"$unwind": "$det"},
-            {"$lookup": {"from": "catalogo_examenes_laboratorio", "localField": "det.id_catalogo", "foreignField": "id_catalogo", "as": "cat"}},
+            {"$match": {"det.id_catalogo": {"$in": lab_ids}, "det.estado": {"$regex": "^PENDIENTE$", "$options": "i"}}},
+            {"$lookup": {"from": "catalogo_examenes", "localField": "det.id_catalogo", "foreignField": "id_catalogo", "as": "cat"}},
             {"$unwind": "$cat"},
             {"$group": {
                 "_id": "$id_examen",
                 "fecha": {"$first": "$fecha"},
                 "paciente": {"$first": {"$concat": ["$paciente.nom_pac", " ", "$paciente.papell", " ", "$paciente.sapell"]}},
-                "medico": {"$first": "$user.papell"},
+                "medico": {"$first": {"$concat": ["$user.nombre", " ", "$user.papell"]}},
                 "habitacion": {"$first": "$cama.numero"},
                 "estudios": {"$push": "$cat.nombre"}
             }},
@@ -88,109 +111,130 @@ def estudios_home():
                 "paciente": 1,
                 "medico": 1,
                 "habitacion": 1,
-                "estudios": {"$reduce": {"input": "$estudios", "initialValue": "", "in": {"$concat": ["$$value", {"$cond": [{"$eq": ["$$value", ""]}, "", ", "]}, "$$this"]}}}
+                "estudios": {
+                    "$reduce": {
+                        "input": "$estudios",
+                        "initialValue": "",
+                        "in": {"$concat": ["$$value", {"$cond": [{"$eq": ["$$value", ""]}, "", ", "]}, "$$this"]}
+                    }
+                }
             }},
             {"$sort": {"fecha": -1}}
         ]
-        solicitudes = list(db['examenes_laboratorio'].aggregate(pipeline))
+        solicitudes = list(db['examenes'].aggregate(pipeline))
 
     # -------- LABORATORIO REALIZADOS --------
-    if vista == 'resultados_laboratorio':
-        db = get_db_connection()
+    elif vista == 'resultados_laboratorio':
         pipeline = [
-            {"$match": {"estado": {"$regex": "^realizado$", "$options": "i"}}},
             {"$lookup": {"from": "atencion", "localField": "id_atencion", "foreignField": "id_atencion", "as": "atencion"}},
             {"$unwind": "$atencion"},
             {"$lookup": {"from": "pacientes", "localField": "atencion.Id_exp", "foreignField": "Id_exp", "as": "paciente"}},
             {"$unwind": "$paciente"},
             {"$lookup": {"from": "camas", "localField": "atencion.id_cama", "foreignField": "id_cama", "as": "cama"}},
             {"$unwind": {"path": "$cama", "preserveNullAndEmptyArrays": True}},
-            {"$lookup": {"from": "users", "localField": "id_medico", "foreignField": "id", "as": "user"}},
+            {"$lookup": {"from": "users", "localField": "id_medico", "foreignField": "_id", "as": "user"}},
             {"$unwind": "$user"},
-            {"$lookup": {"from": "examenes_laboratorio_det", "localField": "id_examen", "foreignField": "id_examen", "as": "det"}},
+            {"$lookup": {"from": "examenes_det", "localField": "id_examen", "foreignField": "id_examen", "as": "det"}},
             {"$unwind": "$det"},
-            {"$lookup": {"from": "catalogo_examenes_laboratorio", "localField": "det.id_catalogo", "foreignField": "id_catalogo", "as": "cat"}},
+            {"$match": {"det.id_catalogo": {"$in": lab_ids}, "det.estado": {"$regex": "^REALIZADO$", "$options": "i"}}},
+            {"$lookup": {"from": "catalogo_examenes", "localField": "det.id_catalogo", "foreignField": "id_catalogo", "as": "cat"}},
             {"$unwind": "$cat"},
-            {"$group": {
-                "_id": "$id_examen",
-                "fecha": {"$first": "$fecha"},
-                "fecha_realizado": {"$first": "$fecha_realizado"},
-                "paciente": {"$first": {"$concat": ["$paciente.nom_pac", " ", "$paciente.papell", " ", "$paciente.sapell"]}},
-                "medico": {"$first": "$user.papell"},
-                "habitacion": {"$first": "$cama.numero"},
-                "estudios": {"$push": "$cat.nombre"}
-            }},
-            {"$project": {
-                "id_examen": "$_id",
-                "fecha": 1,
-                "fecha_realizado": 1,
-                "paciente": 1,
-                "medico": 1,
-                "habitacion": 1,
-                "estudios": {"$reduce": {"input": "$estudios", "initialValue": "", "in": {"$concat": ["$$value", {"$cond": [{"$eq": ["$$value", ""]}, "", ", "]}, "$$this"]}}}
-            }},
-            {"$sort": {"fecha_realizado": -1}}
-        ]
-        solicitudes = list(db['examenes_laboratorio'].aggregate(pipeline))
-
-    # -------- GABINETE PENDIENTES --------
-    if vista == 'solicitudes_gabinete':
-        db = get_db_connection()
-        pipeline = [
-            {"$lookup": {"from": "examenes_gabinete_det", "localField": "id_examen", "foreignField": "id_examen", "as": "det"}},
-            {"$unwind": "$det"},
-            {"$match": {"det.estado": {"$regex": "^PENDIENTE$"}}},
-            {"$lookup": {"from": "atencion", "localField": "id_atencion", "foreignField": "id_atencion", "as": "atencion"}},
-            {"$unwind": "$atencion"},
-            {"$lookup": {"from": "pacientes", "localField": "atencion.Id_exp", "foreignField": "Id_exp", "as": "paciente"}},
-            {"$unwind": "$paciente"},
-            {"$lookup": {"from": "camas", "localField": "atencion.id_cama", "foreignField": "id_cama", "as": "cama"}},
-            {"$unwind": {"path": "$cama", "preserveNullAndEmptyArrays": True}},
-            {"$lookup": {"from": "users", "localField": "id_medico", "foreignField": "id", "as": "user"}},
-            {"$unwind": "$user"},
-            {"$group": {
-                "_id": "$id_examen",
-                "fecha": {"$first": "$fecha"},
-                "paciente": {"$first": {"$concat": ["$paciente.papell", " ", "$paciente.sapell", " ", "$paciente.nom_pac"]}},
-                "medico": {"$first": "$user.papell"},
-                "habitacion": {"$first": "$cama.numero"},
-                "estudios": {"$push": "$det.nombre_examen"}
-            }},
-            {"$project": {
-                "id_examen": "$_id",
-                "fecha": 1,
-                "paciente": 1,
-                "medico": 1,
-                "habitacion": 1,
-                "estudios": {"$reduce": {"input": "$estudios", "initialValue": "", "in": {"$concat": ["$$value", {"$cond": [{"$eq": ["$$value", ""]}, "", ", "]}, "$$this"]}}}
-            }},
-            {"$sort": {"fecha": -1}}
-        ]
-        solicitudes = list(db['examenes_gabinete'].aggregate(pipeline))
-
-    # ---------------- GABINETE REALIZADOS ----------------
-    if vista == 'resultados_gabinete':
-        db = get_db_connection()
-        pipeline = [
-            {"$lookup": {"from": "examenes_gabinete_det", "localField": "id_examen", "foreignField": "id_examen", "as": "det"}},
-            {"$unwind": "$det"},
-            {"$match": {"det.estado": {"$regex": "^REALIZADO$"}}},
-            {"$lookup": {"from": "atencion", "localField": "id_atencion", "foreignField": "id_atencion", "as": "atencion"}},
-            {"$unwind": "$atencion"},
-            {"$lookup": {"from": "pacientes", "localField": "atencion.Id_exp", "foreignField": "Id_exp", "as": "paciente"}},
-            {"$unwind": "$paciente"},
-            {"$lookup": {"from": "camas", "localField": "atencion.id_cama", "foreignField": "id_cama", "as": "cama"}},
-            {"$unwind": {"path": "$cama", "preserveNullAndEmptyArrays": True}},
-            {"$lookup": {"from": "users", "localField": "id_medico", "foreignField": "id", "as": "user"}},
-            {"$unwind": "$user"},
             {"$group": {
                 "_id": "$id_examen",
                 "fecha": {"$first": "$fecha"},
                 "fecha_realizado": {"$first": "$det.fecha_realizado"},
-                "paciente": {"$first": {"$concat": ["$paciente.papell", " ", "$paciente.sapell", " ", "$paciente.nom_pac"]}},
-                "medico": {"$first": "$user.papell"},
+                "paciente": {"$first": {"$concat": ["$paciente.nom_pac", " ", "$paciente.papell", " ", "$paciente.sapell"]}},
+                "medico": {"$first": {"$concat": ["$user.nombre", " ", "$user.papell"]}},
                 "habitacion": {"$first": "$cama.numero"},
-                "estudios": {"$push": "$det.nombre_examen"}
+                "estudios": {"$push": "$cat.nombre"}
+            }},
+            # 👇 IMPORTANTE: proyectar _id como id_examen y formatear estudios como string
+            {"$project": {
+                "id_examen": "$_id",
+                "fecha": 1,
+                "fecha_realizado": 1,
+                "paciente": 1,
+                "medico": 1,
+                "habitacion": 1,
+                "estudios": {
+                    "$reduce": {
+                        "input": "$estudios",
+                        "initialValue": "",
+                        "in": {"$concat": ["$$value", {"$cond": [{"$eq": ["$$value", ""]}, "", ", "]}, "$$this"]}
+                    }
+                }
+            }},
+            {"$sort": {"fecha_realizado": -1}}
+        ]
+        solicitudes = list(db['examenes'].aggregate(pipeline))
+    
+
+    # -------- GABINETE PENDIENTES --------
+    elif vista == 'solicitudes_gabinete':
+        pipeline = [
+            {"$lookup": {"from": "atencion", "localField": "id_atencion", "foreignField": "id_atencion", "as": "atencion"}},
+            {"$unwind": "$atencion"},
+            {"$lookup": {"from": "pacientes", "localField": "atencion.Id_exp", "foreignField": "Id_exp", "as": "paciente"}},
+            {"$unwind": "$paciente"},
+            {"$lookup": {"from": "camas", "localField": "atencion.id_cama", "foreignField": "id_cama", "as": "cama"}},
+            {"$unwind": {"path": "$cama", "preserveNullAndEmptyArrays": True}},
+            {"$lookup": {"from": "users", "localField": "id_medico", "foreignField": "_id", "as": "user"}},  # 👈 CORREGIDO
+            {"$unwind": "$user"},
+            {"$lookup": {"from": "examenes_det", "localField": "id_examen", "foreignField": "id_examen", "as": "det"}},
+            {"$unwind": "$det"},
+            {"$match": {"det.id_catalogo": {"$in": gab_ids}, "det.estado": {"$regex": "^PENDIENTE$", "$options": "i"}}},
+            {"$lookup": {"from": "catalogo_examenes", "localField": "det.id_catalogo", "foreignField": "id_catalogo", "as": "cat"}},
+            {"$unwind": "$cat"},
+            {"$group": {
+                "_id": "$id_examen",
+                "fecha": {"$first": "$fecha"},
+                "paciente": {"$first": {"$concat": ["$paciente.nom_pac", " ", "$paciente.papell", " ", "$paciente.sapell"]}},
+                "medico": {"$first": {"$concat": ["$user.nombre", " ", "$user.papell"]}},
+                "habitacion": {"$first": "$cama.numero"},
+                "estudios": {"$push": "$cat.nombre"}
+            }},
+            {"$project": {
+                "id_examen": "$_id",
+                "fecha": 1,
+                "paciente": 1,
+                "medico": 1,
+                "habitacion": 1,
+                "estudios": {
+                    "$reduce": {
+                        "input": "$estudios",
+                        "initialValue": "",
+                        "in": {"$concat": ["$$value", {"$cond": [{"$eq": ["$$value", ""]}, "", ", "]}, "$$this"]}
+                    }
+                }
+            }},
+            {"$sort": {"fecha": -1}}
+        ]
+        solicitudes = list(db['examenes'].aggregate(pipeline))
+
+    # -------- GABINETE REALIZADOS --------
+    elif vista == 'resultados_gabinete':
+        pipeline = [
+            {"$lookup": {"from": "atencion", "localField": "id_atencion", "foreignField": "id_atencion", "as": "atencion"}},
+            {"$unwind": "$atencion"},
+            {"$lookup": {"from": "pacientes", "localField": "atencion.Id_exp", "foreignField": "Id_exp", "as": "paciente"}},
+            {"$unwind": "$paciente"},
+            {"$lookup": {"from": "camas", "localField": "atencion.id_cama", "foreignField": "id_cama", "as": "cama"}},
+            {"$unwind": {"path": "$cama", "preserveNullAndEmptyArrays": True}},
+            {"$lookup": {"from": "users", "localField": "id_medico", "foreignField": "_id", "as": "user"}},
+            {"$unwind": "$user"},
+            {"$lookup": {"from": "examenes_det", "localField": "id_examen", "foreignField": "id_examen", "as": "det"}},
+            {"$unwind": "$det"},
+            {"$match": {"det.id_catalogo": {"$in": gab_ids}, "det.estado": {"$regex": "^REALIZADO$", "$options": "i"}}},
+            {"$lookup": {"from": "catalogo_examenes", "localField": "det.id_catalogo", "foreignField": "id_catalogo", "as": "cat"}},
+            {"$unwind": "$cat"},
+            {"$group": {
+                "_id": "$id_examen",
+                "fecha": {"$first": "$fecha"},
+                "fecha_realizado": {"$first": "$det.fecha_realizado"},
+                "paciente": {"$first": {"$concat": ["$paciente.nom_pac", " ", "$paciente.papell", " ", "$paciente.sapell"]}},
+                "medico": {"$first": {"$concat": ["$user.nombre", " ", "$user.papell"]}},
+                "habitacion": {"$first": "$cama.numero"},
+                "estudios": {"$push": "$cat.nombre"}
             }},
             {"$project": {
                 "id_examen": "$_id",
@@ -199,11 +243,17 @@ def estudios_home():
                 "paciente": 1,
                 "medico": 1,
                 "habitacion": 1,
-                "estudios": {"$reduce": {"input": "$estudios", "initialValue": "", "in": {"$concat": ["$$value", {"$cond": [{"$eq": ["$$value", ""]}, "", ", "]}, "$$this"]}}}
+                "estudios": {
+                    "$reduce": {
+                        "input": "$estudios",
+                        "initialValue": "",
+                        "in": {"$concat": ["$$value", {"$cond": [{"$eq": ["$$value", ""]}, "", ", "]}, "$$this"]}
+                    }
+                }
             }},
             {"$sort": {"fecha_realizado": -1}}
         ]
-        solicitudes = list(db['examenes_gabinete'].aggregate(pipeline))
+        solicitudes = list(db['examenes'].aggregate(pipeline))
 
     return render_template(
         'estudios/index.html',
@@ -220,6 +270,7 @@ def estudios_home():
 @estudios_bp.route('/subir_resultado_gabinete/<int:id_examen>', methods=['GET', 'POST'])
 def subir_resultado_gabinete(id_examen):
     db = get_db_connection()
+    gab_ids = obtener_ids_catalogo_por_tipo("GABINETE")
 
     pipeline = [
         {"$match": {"id_examen": id_examen}},
@@ -229,45 +280,63 @@ def subir_resultado_gabinete(id_examen):
         {"$unwind": "$paciente"},
         {"$lookup": {"from": "camas", "localField": "atencion.id_cama", "foreignField": "id_cama", "as": "cama"}},
         {"$unwind": {"path": "$cama", "preserveNullAndEmptyArrays": True}},
-        {"$lookup": {"from": "examenes_gabinete_det", "localField": "id_examen", "foreignField": "id_examen", "as": "det"}},
+        {"$lookup": {"from": "examenes_det", "localField": "id_examen", "foreignField": "id_examen", "as": "det"}},
         {"$unwind": "$det"},
+        {"$match": {"det.id_catalogo": {"$in": gab_ids}}},
+        {"$lookup": {"from": "catalogo_examenes", "localField": "det.id_catalogo", "foreignField": "id_catalogo", "as": "cat"}},
+        {"$unwind": "$cat"},
         {"$group": {
             "_id": "$id_examen",
             "paciente": {"$first": {"$concat": ["$paciente.papell", " ", "$paciente.sapell", " ", "$paciente.nom_pac"]}},
             "habitacion": {"$first": "$cama.numero"},
-            "estudios": {"$push": "$det.nombre_examen"}
+            "estudios": {"$push": "$cat.nombre"}
         }},
         {"$project": {
             "id_examen": "$_id",
             "paciente": 1,
             "habitacion": 1,
-            "estudios": {"$reduce": {"input": "$estudios", "initialValue": "", "in": {"$concat": ["$$value", {"$cond": [{"$eq": ["$$value", ""]}, "", ", "]}, "$$this"]}}}
+            "estudios": {
+                "$reduce": {
+                    "input": "$estudios",
+                    "initialValue": "",
+                    "in": {"$concat": ["$$value", {"$cond": [{"$eq": ["$$value", ""]}, "", ", "]}, "$$this"]}
+                }
+            }
         }}
     ]
-    solicitud = list(db['examenes_gabinete'].aggregate(pipeline))[0] if list(db['examenes_gabinete'].aggregate(pipeline)) else None
+    res = list(db['examenes'].aggregate(pipeline))
+    solicitud = res[0] if res else None
 
     if request.method == 'POST':
         observaciones = request.form.get('observaciones', '')
         files = request.files.getlist('archivos')
+        nombres_guardados = []
 
         for file in files:
             if file and allowed_file(file.filename):
-                filename = secure_filename(file.filename)
-                file.save(os.path.join(UPLOAD_FOLDER_GAB, filename))
+                filename_secure = secure_filename(file.filename)
+                ts = datetime.now().strftime('%Y%m%d%H%M%S%f')
+                nombre_guardado = f"{id_examen}_{ts}_{filename_secure}"
+                file.save(os.path.join(UPLOAD_FOLDER_GAB, nombre_guardado))
+                nombres_guardados.append(nombre_guardado)
 
-                db['examenes_gabinete_det'].update_many({"id_examen": id_examen}, {"$set": {
-                    "archivo_resultado": filename,
-                    "observaciones": observaciones,
-                    "fecha_realizado": datetime.now(),
-                    "estado": 'REALIZADO'
-                }})
+        archivos_db = ','.join(nombres_guardados) if nombres_guardados else ''
+
+        db['examenes_det'].update_many(
+            {"id_examen": id_examen, "id_catalogo": {"$in": gab_ids}},
+            {"$set": {
+                "archivo_resultado": archivos_db,
+                "observaciones": observaciones,
+                "fecha_realizado": datetime.now(),
+                "estado": 'REALIZADO'
+                
+            }}
+        )
 
         flash('Resultados de gabinete subidos correctamente', 'success')
         return redirect(url_for('estudios.estudios_home', vista='solicitudes_gabinete'))
-    # Obtener conteo de solicitudes pendientes
-    lab_pendientes, gab_pendientes, total_pendientes = contar_solicitudes_pendientes()
-        
 
+    lab_pendientes, gab_pendientes, total_pendientes = contar_solicitudes_pendientes()
     return render_template(
         'estudios/index.html',
         vista='subir_resultado_gabinete',
@@ -283,6 +352,7 @@ def subir_resultado_gabinete(id_examen):
 @estudios_bp.route('/subir_resultado_laboratorio/<int:id_examen>', methods=['GET', 'POST'])
 def subir_resultado_laboratorio(id_examen):
     db = get_db_connection()
+    lab_ids = obtener_ids_catalogo_por_tipo("LABORATORIO")
 
     pipeline = [
         {"$match": {"id_examen": id_examen}},
@@ -292,9 +362,10 @@ def subir_resultado_laboratorio(id_examen):
         {"$unwind": "$paciente"},
         {"$lookup": {"from": "camas", "localField": "atencion.id_cama", "foreignField": "id_cama", "as": "cama"}},
         {"$unwind": {"path": "$cama", "preserveNullAndEmptyArrays": True}},
-        {"$lookup": {"from": "examenes_laboratorio_det", "localField": "id_examen", "foreignField": "id_examen", "as": "det"}},
+        {"$lookup": {"from": "examenes_det", "localField": "id_examen", "foreignField": "id_examen", "as": "det"}},
         {"$unwind": "$det"},
-        {"$lookup": {"from": "catalogo_examenes_laboratorio", "localField": "det.id_catalogo", "foreignField": "id_catalogo", "as": "cat"}},
+        {"$match": {"det.id_catalogo": {"$in": lab_ids}}},
+        {"$lookup": {"from": "catalogo_examenes", "localField": "det.id_catalogo", "foreignField": "id_catalogo", "as": "cat"}},
         {"$unwind": "$cat"},
         {"$group": {
             "_id": "$id_examen",
@@ -306,35 +377,47 @@ def subir_resultado_laboratorio(id_examen):
             "id_examen": "$_id",
             "paciente": 1,
             "habitacion": 1,
-            "estudios": {"$reduce": {"input": "$estudios", "initialValue": "", "in": {"$concat": ["$$value", {"$cond": [{"$eq": ["$$value", ""]}, "", ", "]}, "$$this"]}}}
+            "estudios": {
+                "$reduce": {
+                    "input": "$estudios",
+                    "initialValue": "",
+                    "in": {"$concat": ["$$value", {"$cond": [{"$eq": ["$$value", ""]}, "", ", "]}, "$$this"]}
+                }
+            }
         }}
     ]
-    solicitud = list(db['examenes_laboratorio'].aggregate(pipeline))[0] if list(db['examenes_laboratorio'].aggregate(pipeline)) else None
+    res = list(db['examenes'].aggregate(pipeline))
+    solicitud = res[0] if res else None
 
     if request.method == 'POST':
         observaciones = request.form.get('observaciones', '')
         files = request.files.getlist('archivos')
-
-        nombres_archivos = []
+        nombres_guardados = []
 
         for file in files:
             if file and allowed_file(file.filename):
-                filename = secure_filename(file.filename)
-                file.save(os.path.join(UPLOAD_FOLDER_LAB, filename))
-                nombres_archivos.append(filename)
+                filename_secure = secure_filename(file.filename)
+                ts = datetime.now().strftime('%Y%m%d%H%M%S%f')
+                nombre_guardado = f"{id_examen}_{ts}_{filename_secure}"
+                file.save(os.path.join(UPLOAD_FOLDER_LAB, nombre_guardado))
+                nombres_guardados.append(nombre_guardado)
 
-        db['examenes_laboratorio'].update_one({"id_examen": id_examen}, {"$set": {
-            "archivo_resultado": ','.join(nombres_archivos),
-            "observaciones": observaciones,
-            "fecha_realizado": datetime.now(),
-            "estado": 'realizado'
-        }})
+        archivos_db = ','.join(nombres_guardados) if nombres_guardados else ''
+
+        db['examenes_det'].update_many(
+            {"id_examen": id_examen, "id_catalogo": {"$in": lab_ids}},
+            {"$set": {
+                "archivo_resultado": archivos_db,
+                "observaciones": observaciones,
+                "fecha_realizado": datetime.now(),
+                "estado": 'REALIZADO'
+            }}
+        )
 
         flash('Resultados de laboratorio subidos correctamente', 'success')
         return redirect(url_for('estudios.estudios_home', vista='solicitudes_laboratorio'))
-    # Obtener conteo de solicitudes pendientes
-    lab_pendientes, gab_pendientes, total_pendientes = contar_solicitudes_pendientes()
 
+    lab_pendientes, gab_pendientes, total_pendientes = contar_solicitudes_pendientes()
     return render_template(
         'estudios/index.html',
         vista='subir_resultado_laboratorio',
@@ -344,16 +427,14 @@ def subir_resultado_laboratorio(id_examen):
         total_pendientes=total_pendientes
     )
 
-
-
 # =========================
 # EDITAR RESULTADOS LABORATORIO
 # =========================
 @estudios_bp.route('/editar_resultado_laboratorio/<int:id_examen>', methods=['GET', 'POST'])
 def editar_resultado_laboratorio(id_examen):
     db = get_db_connection()
+    lab_ids = obtener_ids_catalogo_por_tipo("LABORATORIO")
 
-    # 1) Información general del estudio
     pipeline = [
         {"$match": {"id_examen": id_examen}},
         {"$lookup": {"from": "atencion", "localField": "id_atencion", "foreignField": "id_atencion", "as": "atencion"}},
@@ -362,17 +443,59 @@ def editar_resultado_laboratorio(id_examen):
         {"$unwind": "$paciente"},
         {"$lookup": {"from": "camas", "localField": "atencion.id_cama", "foreignField": "id_cama", "as": "cama"}},
         {"$unwind": {"path": "$cama", "preserveNullAndEmptyArrays": True}},
+        {"$lookup": {"from": "examenes_det", "localField": "id_examen", "foreignField": "id_examen", "as": "dets"}},
         {"$project": {
             "id_examen": 1,
             "paciente": {"$concat": ["$paciente.nom_pac", " ", "$paciente.papell", " ", "$paciente.sapell"]},
             "habitacion": "$cama.numero",
-            "archivo_resultado": 1,
-            "observaciones": 1
+            "archivo_resultado": {
+                "$reduce": {
+                    "input": {
+                        "$filter": {
+                            "input": "$dets",
+                            "as": "d",
+                            "cond": {"$in": ["$$d.id_catalogo", lab_ids]}
+                        }
+                    },
+                    "initialValue": "",
+                    "in": {
+                        "$concat": [
+                            "$$value",
+                            {"$cond": [{"$eq": ["$$value", ""]}, "", ","]},
+                            {"$ifNull": ["$$this.archivo_resultado", ""]}
+                        ]
+                    }
+                }
+            },
+            "observaciones": {
+                "$arrayElemAt": [
+                    {
+                        "$filter": {
+                            "input": {
+                                "$map": {
+                                    "input": {
+                                        "$filter": {
+                                            "input": "$dets",
+                                            "as": "d",
+                                            "cond": {"$in": ["$$d.id_catalogo", lab_ids]}
+                                        }
+                                    },
+                                    "as": "d",
+                                    "in": {"$ifNull": ["$$d.observaciones", ""]}
+                                }
+                            },
+                            "as": "obs",
+                            "cond": {"$ne": ["$$obs", ""]}
+                        }
+                    },
+                    0
+                ]
+            }
         }}
     ]
-    solicitud = list(db['examenes_laboratorio'].aggregate(pipeline))[0] if list(db['examenes_laboratorio'].aggregate(pipeline)) else None
+    rows = list(db['examenes'].aggregate(pipeline))
+    solicitud = rows[0] if rows else None
 
-    # Si no existe
     if not solicitud:
         flash('Solicitud no encontrada', 'danger')
         return redirect(url_for('estudios.estudios_home', vista='resultados_laboratorio'))
@@ -382,126 +505,86 @@ def editar_resultado_laboratorio(id_examen):
     archivo_resultado = solicitud.get('archivo_resultado') or ''
     observaciones = solicitud.get('observaciones') or ''
 
-    # Convertir archivos a lista (nombres)
-    archivos = []
-    if archivo_resultado:
-        # quitar espacios innecesarios
-        archivos = [a.strip() for a in archivo_resultado.split(',') if a.strip()]
+    # Eliminar duplicados y vacíos, manteniendo orden (usando dict.fromkeys)
+    archivos_raw = [a.strip() for a in archivo_resultado.split(',') if a.strip()]
+    archivos = list(dict.fromkeys(archivos_raw))  # elimina duplicados preservando orden
 
-    # POST -> procesar eliminación / subida de nuevos archivos y actualizar DB
     if request.method == 'POST':
-        # 1) Archivos a eliminar (checkboxes)
-        eliminar = request.form.getlist('eliminar_archivos')  # lista de nombres
-        # 2) Nuevos archivos a subir
+        eliminar = request.form.getlist('eliminar_archivos')
         nuevos = request.files.getlist('archivos')
+        nuevas_observaciones = request.form.get('observaciones', '').strip()
 
-        # --- eliminar físicamente los archivos marcados (si existen) ---
+        # Eliminar archivos marcados
         if eliminar:
             for nombre in eliminar:
-                # quitar del listado actual
+                # Eliminar de la lista archivos
                 if nombre in archivos:
                     archivos.remove(nombre)
+                # Eliminar físico
+                ruta = os.path.join(UPLOAD_FOLDER_LAB, nombre)
+                if os.path.exists(ruta):
+                    try:
+                        os.remove(ruta)
+                    except:
+                        pass
 
-                # intentar borrar archivos en la carpeta de uploads que terminen con el nombre eliminado
-                try:
-                    for f in os.listdir(UPLOAD_FOLDER_LAB):
-                        # comparamos por igualdad o por que termine con el nombre (por si guardaste con prefijo)
-                        if f == nombre or f.endswith('_' + nombre) or f.endswith(nombre):
-                            ruta_borrar = os.path.join(UPLOAD_FOLDER_LAB, f)
-                            if os.path.isfile(ruta_borrar):
-                                try:
-                                    os.remove(ruta_borrar)
-                                except Exception:
-                                    # no detener por error en borrado físico
-                                    pass
-                except FileNotFoundError:
-                    # la carpeta puede no existir; no rompemos la ejecución
-                    pass
-
-        # --- procesar subida de nuevos archivos ---
+        # Subir nuevos archivos
         nuevos_guardados = []
         if nuevos:
-            # asegurar carpeta
-            os.makedirs(UPLOAD_FOLDER_LAB, exist_ok=True)
-
             for file in nuevos:
                 if file and allowed_file(file.filename):
-                    # validar tamaño sin leer todo el archivo en memoria
-                    file_stream = file.stream
-                    # mover al final y medir
-                    try:
-                        file_stream.seek(0, os.SEEK_END)
-                        size = file_stream.tell()
-                        file_stream.seek(0)
-                    except Exception:
-                        # si no se puede medir, permitimos (fallback)
-                        size = 0
-
-                    if size and size > MAX_FILE_SIZE:
+                    file.stream.seek(0, os.SEEK_END)
+                    size = file.stream.tell()
+                    file.stream.seek(0)
+                    if size > MAX_FILE_SIZE:
                         flash(f'Archivo {file.filename} demasiado grande (máx 25MB).', 'danger')
                         return redirect(request.url)
 
                     filename_secure = secure_filename(file.filename)
-
-                    # Para evitar colisiones en disco guardamos con prefijo de timestamp,
-                    # pero guardamos en DB el nombre original (o si prefieres guardar el prefijado, cámbialo aqui)
                     ts = datetime.now().strftime('%Y%m%d%H%M%S%f')
-                    nombre_guardado_en_disco = f"{id_examen}_{ts}_{filename_secure}"
-                    ruta_guardado = os.path.join(UPLOAD_FOLDER_LAB, nombre_guardado_en_disco)
-                    try:
-                        file.save(ruta_guardado)
-                    except Exception as e:
-                        flash(f'Error al guardar {file.filename}: {str(e)}', 'danger')
-                        return redirect(request.url)
+                    nombre_guardado = f"{id_examen}_{ts}_{filename_secure}"
+                    file.save(os.path.join(UPLOAD_FOLDER_LAB, nombre_guardado))
+                    nuevos_guardados.append(nombre_guardado)
+                elif file.filename:
+                    flash(f'Formato no permitido para {file.filename}', 'danger')
+                    return redirect(request.url)
 
-                    # Añadimos el nombre **visible** que guardaremos en la BD.
-                    # Si prefieres almacenar el nombre con prefijo (nombre_guardado_en_disco), cámbialo por esa variable.
-                    nuevos_guardados.append(filename_secure)
-                else:
-                    # formato no permitido o filename vacío
-                    if file and file.filename:
-                        flash(f'Formato no permitido para {file.filename}', 'danger')
-                        return redirect(request.url)
-
-        # Unir archivos restantes + nuevos
+        # Combinar archivos existentes (ya sin duplicados) con nuevos
         archivos_finales = archivos + nuevos_guardados
+        # Eliminar posibles duplicados (por si acaso) y mantener orden
+        archivos_finales = list(dict.fromkeys(archivos_finales))
 
-        # Actualizar DB: archivo_resultado, fecha_realizado y estado
-        ahora = datetime.now()
         archivos_db = ','.join(archivos_finales)
 
-        db['examenes_laboratorio'].update_one({"id_examen": id_examen}, {"$set": {
-            "archivo_resultado": archivos_db,
-            "fecha_realizado": ahora,
-            "estado": 'realizado'
-        }})
+        db['examenes_det'].update_many(
+            {"id_examen": id_examen, "id_catalogo": {"$in": lab_ids}},
+            {"$set": {
+                "archivo_resultado": archivos_db,
+                "fecha_realizado": datetime.now(),
+                "estado": 'REALIZADO',
+                "observaciones": nuevas_observaciones
+            }}
+        )
 
         flash('Cambios guardados correctamente', 'success')
         return redirect(url_for('estudios.estudios_home', vista='resultados_laboratorio'))
 
-    # GET -> renderizar la vista de edición
-    # Obtener conteo de solicitudes pendientes
     lab_pendientes, gab_pendientes, total_pendientes = contar_solicitudes_pendientes()
-
-    # preparar 'solicitud' como dict para la plantilla (consistencia)
     solicitud_para_template = {
         'id_examen': id_examen,
         'paciente': paciente,
         'habitacion': habitacion,
         'observaciones': observaciones
     }
-
     return render_template(
         'estudios/index.html',
         vista='editar_resultado_laboratorio',
         solicitud=solicitud_para_template,
-        archivos=archivos,
+        archivos=archivos,  # lista sin duplicados
         lab_pendientes=lab_pendientes,
         gab_pendientes=gab_pendientes,
         total_pendientes=total_pendientes
     )
-
-
 
 # =========================
 # EDITAR RESULTADOS GABINETE
@@ -509,9 +592,8 @@ def editar_resultado_laboratorio(id_examen):
 @estudios_bp.route('/editar_resultado_gabinete/<int:id_examen>', methods=['GET', 'POST'])
 def editar_resultado_gabinete(id_examen):
     db = get_db_connection()
+    gab_ids = obtener_ids_catalogo_por_tipo("GABINETE")
 
-    # 1) Información general del estudio con datos de examenes_gabinete_det
-    # Obtener solo UN registro por id_examen ya que los archivos son los mismos
     pipeline = [
         {"$match": {"id_examen": id_examen}},
         {"$lookup": {"from": "atencion", "localField": "id_atencion", "foreignField": "id_atencion", "as": "atencion"}},
@@ -520,27 +602,59 @@ def editar_resultado_gabinete(id_examen):
         {"$unwind": "$paciente"},
         {"$lookup": {"from": "camas", "localField": "atencion.id_cama", "foreignField": "id_cama", "as": "cama"}},
         {"$unwind": {"path": "$cama", "preserveNullAndEmptyArrays": True}},
-        {"$lookup": {"from": "examenes_gabinete_det", "localField": "id_examen", "foreignField": "id_examen", "as": "det"}},
-        {"$unwind": "$det"},
-        {"$group": {
-            "_id": "$id_examen",
-            "paciente": {"$first": {"$concat": ["$paciente.nom_pac", " ", "$paciente.papell", " ", "$paciente.sapell"]}},
-            "habitacion": {"$first": "$cama.numero"},
-            "observaciones": {"$max": "$det.observaciones"},
-            "archivo_resultado": {"$max": "$det.archivo_resultado"}
-        }},
+        {"$lookup": {"from": "examenes_det", "localField": "id_examen", "foreignField": "id_examen", "as": "dets"}},
         {"$project": {
-            "id_examen": "$_id",
-            "paciente": 1,
-            "habitacion": 1,
-            "observaciones": 1,
-            "archivo_resultado": 1
-        }},
-        {"$limit": 1}
+            "id_examen": 1,
+            "paciente": {"$concat": ["$paciente.nom_pac", " ", "$paciente.papell", " ", "$paciente.sapell"]},
+            "habitacion": "$cama.numero",
+            "archivo_resultado": {
+                "$reduce": {
+                    "input": {
+                        "$filter": {
+                            "input": "$dets",
+                            "as": "d",
+                            "cond": {"$in": ["$$d.id_catalogo", gab_ids]}
+                        }
+                    },
+                    "initialValue": "",
+                    "in": {
+                        "$concat": [
+                            "$$value",
+                            {"$cond": [{"$eq": ["$$value", ""]}, "", ","]},
+                            {"$ifNull": ["$$this.archivo_resultado", ""]}
+                        ]
+                    }
+                }
+            },
+            "observaciones": {
+                "$arrayElemAt": [
+                    {
+                        "$filter": {
+                            "input": {
+                                "$map": {
+                                    "input": {
+                                        "$filter": {
+                                            "input": "$dets",
+                                            "as": "d",
+                                            "cond": {"$in": ["$$d.id_catalogo", gab_ids]}
+                                        }
+                                    },
+                                    "as": "d",
+                                    "in": {"$ifNull": ["$$d.observaciones", ""]}
+                                }
+                            },
+                            "as": "obs",
+                            "cond": {"$ne": ["$$obs", ""]}
+                        }
+                    },
+                    0
+                ]
+            }
+        }}
     ]
-    solicitud = list(db['examenes_gabinete'].aggregate(pipeline))[0] if list(db['examenes_gabinete'].aggregate(pipeline)) else None
+    rows = list(db['examenes'].aggregate(pipeline))
+    solicitud = rows[0] if rows else None
 
-    # Si no existe
     if not solicitud:
         flash('Solicitud no encontrada', 'danger')
         return redirect(url_for('estudios.estudios_home', vista='resultados_gabinete'))
@@ -550,118 +664,71 @@ def editar_resultado_gabinete(id_examen):
     archivo_resultado = solicitud.get('archivo_resultado') or ''
     observaciones = solicitud.get('observaciones') or ''
 
-    # Convertir archivos a lista (nombres)
-    archivos = []
-    if archivo_resultado:
-        # quitar espacios innecesarios y dividir por comas
-        archivos = [a.strip() for a in archivo_resultado.split(',') if a.strip()]
+    # Eliminar duplicados manteniendo orden
+    archivos = [a.strip() for a in archivo_resultado.split(',') if a.strip()]
+    archivos = list(dict.fromkeys(archivos))  # 👈 Elimina duplicados
 
-    # POST -> procesar eliminación / subida de nuevos archivos y actualizar DB
     if request.method == 'POST':
-        # 1) Obtener observaciones del formulario
-        nuevas_observaciones = request.form.get('observaciones', '').strip()
-        
-        # 2) Archivos a eliminar (checkboxes)
-        eliminar = request.form.getlist('eliminar_archivos')  # lista de nombres
-        # 3) Nuevos archivos a subir
+        eliminar = request.form.getlist('eliminar_archivos')
         nuevos = request.files.getlist('archivos')
+        nuevas_observaciones = request.form.get('observaciones', '').strip()
 
-        # --- eliminar físicamente los archivos marcados (si existen) ---
         if eliminar:
             for nombre in eliminar:
-                # quitar del listado actual
                 if nombre in archivos:
                     archivos.remove(nombre)
+                ruta = os.path.join(UPLOAD_FOLDER_GAB, nombre)
+                if os.path.exists(ruta):
+                    try:
+                        os.remove(ruta)
+                    except:
+                        pass
 
-                # intentar borrar archivos en la carpeta de uploads que terminen con el nombre eliminado
-                try:
-                    for f in os.listdir(UPLOAD_FOLDER_GAB):
-                        # comparamos por igualdad o por que termine con el nombre (por si guardaste con prefijo)
-                        if f == nombre or f.endswith('_' + nombre) or f.endswith(nombre):
-                            ruta_borrar = os.path.join(UPLOAD_FOLDER_GAB, f)
-                            if os.path.isfile(ruta_borrar):
-                                try:
-                                    os.remove(ruta_borrar)
-                                except Exception:
-                                    # no detener por error en borrado físico
-                                    pass
-                except FileNotFoundError:
-                    # la carpeta puede no existir; no rompemos la ejecución
-                    pass
-
-        # --- procesar subida de nuevos archivos ---
         nuevos_guardados = []
         if nuevos:
-            # asegurar carpeta
-            os.makedirs(UPLOAD_FOLDER_GAB, exist_ok=True)
-
             for file in nuevos:
                 if file and allowed_file(file.filename):
-                    # validar tamaño sin leer todo el archivo en memoria
-                    file_stream = file.stream
-                    # mover al final y medir
-                    try:
-                        file_stream.seek(0, os.SEEK_END)
-                        size = file_stream.tell()
-                        file_stream.seek(0)
-                    except Exception:
-                        # si no se puede medir, permitimos (fallback)
-                        size = 0
-
-                    if size and size > MAX_FILE_SIZE:
+                    file.stream.seek(0, os.SEEK_END)
+                    size = file.stream.tell()
+                    file.stream.seek(0)
+                    if size > MAX_FILE_SIZE:
                         flash(f'Archivo {file.filename} demasiado grande (máx 25MB).', 'danger')
                         return redirect(request.url)
 
                     filename_secure = secure_filename(file.filename)
-
-                    # Para evitar colisiones en disco guardamos con prefijo de timestamp,
-                    # pero guardamos en DB el nombre original
                     ts = datetime.now().strftime('%Y%m%d%H%M%S%f')
-                    nombre_guardado_en_disco = f"{id_examen}_{ts}_{filename_secure}"
-                    ruta_guardado = os.path.join(UPLOAD_FOLDER_GAB, nombre_guardado_en_disco)
-                    try:
-                        file.save(ruta_guardado)
-                    except Exception as e:
-                        flash(f'Error al guardar {file.filename}: {str(e)}', 'danger')
-                        return redirect(request.url)
+                    nombre_guardado = f"{id_examen}_{ts}_{filename_secure}"
+                    file.save(os.path.join(UPLOAD_FOLDER_GAB, nombre_guardado))
+                    nuevos_guardados.append(nombre_guardado)
+                elif file.filename:
+                    flash(f'Formato no permitido para {file.filename}', 'danger')
+                    return redirect(request.url)
 
-                    # Añadimos el nombre **visible** que guardaremos en la BD.
-                    nuevos_guardados.append(filename_secure)
-                else:
-                    # formato no permitido o filename vacío
-                    if file and file.filename:
-                        flash(f'Formato no permitido para {file.filename}', 'danger')
-                        return redirect(request.url)
-
-        # Unir archivos restantes + nuevos
         archivos_finales = archivos + nuevos_guardados
-
-        # Actualizar DB: archivo_resultado, fecha_realizado, estado y observaciones en TODOS los registros de examenes_gabinete_det para este id_examen
-        ahora = datetime.now()
+        # Eliminar duplicados nuevamente antes de guardar
+        archivos_finales = list(dict.fromkeys(archivos_finales))
         archivos_db = ','.join(archivos_finales)
 
-        db['examenes_gabinete_det'].update_many({"id_examen": id_examen}, {"$set": {
-            "archivo_resultado": archivos_db,
-            "fecha_realizado": ahora,
-            "estado": 'REALIZADO',
-            "observaciones": nuevas_observaciones
-        }})
+        db['examenes_det'].update_many(
+            {"id_examen": id_examen, "id_catalogo": {"$in": gab_ids}},
+            {"$set": {
+                "archivo_resultado": archivos_db,
+                "fecha_realizado": datetime.now(),
+                "estado": 'REALIZADO',
+                "observaciones": nuevas_observaciones
+            }}
+        )
 
         flash('Cambios guardados correctamente', 'success')
         return redirect(url_for('estudios.estudios_home', vista='resultados_gabinete'))
 
-    # GET -> renderizar la vista de edición
-    # Obtener conteo de solicitudes pendientes
     lab_pendientes, gab_pendientes, total_pendientes = contar_solicitudes_pendientes()
-
-    # preparar 'solicitud' como dict para la plantilla (consistencia)
     solicitud_para_template = {
         'id_examen': id_examen,
         'paciente': paciente,
         'habitacion': habitacion,
         'observaciones': observaciones
     }
-
     return render_template(
         'estudios/index.html',
         vista='editar_resultado_gabinete',
@@ -672,15 +739,15 @@ def editar_resultado_gabinete(id_examen):
         total_pendientes=total_pendientes
     )
 
-
-
 # =========================
 # VISTA PREVIA RESULTADOS LABORATORIO
 # =========================
 @estudios_bp.route('/ver_resultado_laboratorio/<int:id_examen>')
 def ver_resultado_laboratorio(id_examen):
     db = get_db_connection()
+    lab_ids = obtener_ids_catalogo_por_tipo("LABORATORIO")
 
+    # Obtener paciente
     pipeline = [
         {"$match": {"id_examen": id_examen}},
         {"$lookup": {"from": "atencion", "localField": "id_atencion", "foreignField": "id_atencion", "as": "atencion"}},
@@ -688,38 +755,49 @@ def ver_resultado_laboratorio(id_examen):
         {"$lookup": {"from": "pacientes", "localField": "atencion.Id_exp", "foreignField": "Id_exp", "as": "paciente"}},
         {"$unwind": "$paciente"},
         {"$project": {
-            "id_examen": 1,
-            "paciente": {"$concat": ["$paciente.nom_pac", " ", "$paciente.papell", " ", "$paciente.sapell"]},
-            "archivo_resultado": 1
+            "paciente": {"$concat": ["$paciente.nom_pac", " ", "$paciente.papell", " ", "$paciente.sapell"]}
         }}
     ]
-    row = list(db['examenes_laboratorio'].aggregate(pipeline))[0] if list(db['examenes_laboratorio'].aggregate(pipeline)) else None
-
-    # Rol del usuario
-    rol = obtener_rol_usuario()
-
-    # Contadores
-    lab_pendientes, gab_pendientes, total_pendientes = contar_solicitudes_pendientes()
+    rows = list(db['examenes'].aggregate(pipeline))
+    row = rows[0] if rows else None
 
     if not row:
         flash('Resultados no encontrados', 'danger')
         return redirect(url_for('estudios.estudios_home', vista='resultados_laboratorio'))
 
-    archivos = []
-    if row['archivo_resultado']:
-        archivos = [a.strip() for a in row['archivo_resultado'].split(',') if a.strip()]
+    # Obtener archivos de detalles LABORATORIO realizados
+    dets = db['examenes_det'].find({
+        "id_examen": id_examen,
+        "id_catalogo": {"$in": lab_ids},
+        "estado": {"$regex": "^REALIZADO$", "$options": "i"}
+    }, {"archivo_resultado": 1})
 
+    archivos_dict = {}
+    for d in dets:
+        ar = d.get('archivo_resultado')
+        if ar:
+            for nombre in ar.split(','):
+                nombre = nombre.strip()
+                if nombre and nombre not in archivos_dict:
+                    archivos_dict[nombre] = {
+                        'nombre': nombre,
+                        'url': url_for('static', filename=f'resultados/laboratorio/{nombre}'),
+                        'tipo': nombre.split('.')[-1].lower()
+                    }
+    archivos = list(archivos_dict.values())
+
+    rol = obtener_rol_usuario()
+    lab_pendientes, gab_pendientes, total_pendientes = contar_solicitudes_pendientes()
     return render_template(
         'estudios/index.html',
         vista='ver_resultado_laboratorio',
         paciente=row['paciente'],
         archivos=archivos,
-        rol=rol,  # 🔥 CLAVE
+        rol=rol,
         lab_pendientes=lab_pendientes,
         gab_pendientes=gab_pendientes,
         total_pendientes=total_pendientes
     )
-
 
 # =========================
 # VISTA PREVIA RESULTADOS GABINETE
@@ -727,41 +805,39 @@ def ver_resultado_laboratorio(id_examen):
 @estudios_bp.route('/ver_resultado_gabinete/<int:id_examen>')
 def ver_resultado_gabinete(id_examen):
     db = get_db_connection()
+    gab_ids = obtener_ids_catalogo_por_tipo("GABINETE")
 
-    rows = list(db['examenes_gabinete_det'].find({"id_examen": id_examen, "estado": "REALIZADO"}, {"archivo_resultado": 1}))
+    dets = db['examenes_det'].find({
+        "id_examen": id_examen,
+        "id_catalogo": {"$in": gab_ids},
+        "estado": {"$regex": "^REALIZADO$", "$options": "i"}
+    }, {"archivo_resultado": 1})
 
-    # Rol del usuario
-    rol = obtener_rol_usuario()
-
-    # Contadores
-    lab_pendientes, gab_pendientes, total_pendientes = contar_solicitudes_pendientes()
-
-    archivos = []
-
-    for row in rows:
-        if row.get('archivo_resultado'):
-            for nombre in row['archivo_resultado'].split(','):
+    archivos_dict = {}
+    for d in dets:
+        ar = d.get('archivo_resultado')
+        if ar:
+            for nombre in ar.split(','):
                 nombre = nombre.strip()
-                if nombre:
-                    archivos.append({
+                if nombre and nombre not in archivos_dict:
+                    archivos_dict[nombre] = {
                         'nombre': nombre,
-                        'url': url_for(
-                            'static',
-                            filename=f'resultados/gabinete/{nombre}'
-                        ),
+                        'url': url_for('static', filename=f'resultados/gabinete/{nombre}'),
                         'tipo': nombre.split('.')[-1].lower()
-                    })
+                    }
+    archivos = list(archivos_dict.values())
 
+    rol = obtener_rol_usuario()
+    lab_pendientes, gab_pendientes, total_pendientes = contar_solicitudes_pendientes()
     return render_template(
         'estudios/index.html',
         vista='ver_resultado_gabinete',
         archivos=archivos,
-        rol=rol,  # 🔥 CLAVE
+        rol=rol,
         lab_pendientes=lab_pendientes,
         gab_pendientes=gab_pendientes,
         total_pendientes=total_pendientes
     )
-
 
 # =========================
 # ELIMINAR RESULTADO GABINETE
@@ -769,29 +845,31 @@ def ver_resultado_gabinete(id_examen):
 @estudios_bp.route('/eliminar_resultado_gabinete/<int:id_examen>')
 def eliminar_resultado_gabinete(id_examen):
     db = get_db_connection()
+    gab_ids = obtener_ids_catalogo_por_tipo("GABINETE")
 
-    # 1) Obtener archivos asociados
-    rows = list(db['examenes_gabinete_det'].find({"id_examen": id_examen}, {"archivo_resultado": 1}))
+    rows = list(db['examenes_det'].find(
+        {"id_examen": id_examen, "id_catalogo": {"$in": gab_ids}},
+        {"archivo_resultado": 1}
+    ))
 
-    # 2) Eliminar archivos físicos
-    try:
-        for row in rows:
-            archivo = row.get('archivo_resultado')
-            if archivo:
-                ruta = os.path.join(UPLOAD_FOLDER_GAB, archivo)
-                if os.path.exists(ruta):
-                    try:
-                        os.remove(ruta)
-                    except Exception:
-                        pass
-    except Exception:
-        pass
+    for row in rows:
+        archivo = row.get('archivo_resultado')
+        if archivo:
+            for nombre in archivo.split(','):
+                nombre = nombre.strip()
+                if nombre:
+                    ruta = os.path.join(UPLOAD_FOLDER_GAB, nombre)
+                    if os.path.exists(ruta):
+                        try:
+                            os.remove(ruta)
+                        except:
+                            pass
 
-    # 3) Eliminar detalles
-    db['examenes_gabinete_det'].delete_many({"id_examen": id_examen})
+    db['examenes_det'].delete_many({"id_examen": id_examen, "id_catalogo": {"$in": gab_ids}})
 
-    # 4) Eliminar encabezado
-    db['examenes_gabinete'].delete_one({"id_examen": id_examen})
+    restantes = db['examenes_det'].count_documents({"id_examen": id_examen})
+    if restantes == 0:
+        db['examenes'].delete_one({"id_examen": id_examen})
 
     flash('Solicitud de gabinete eliminada correctamente', 'success')
     return redirect(url_for('estudios.estudios_home', vista='resultados_gabinete'))
@@ -802,25 +880,46 @@ def eliminar_resultado_gabinete(id_examen):
 @estudios_bp.route('/eliminar_resultado_laboratorio/<int:id_examen>')
 def eliminar_resultado_laboratorio(id_examen):
     db = get_db_connection()
-    
-    # 1) Obtener archivo asociado si existe
-    resultado = db['examenes_laboratorio'].find_one({"id_examen": id_examen}, {"archivo_resultado": 1})
-    
-    # 2) Eliminar archivo físico si existe
-    if resultado and 'archivo_resultado' in resultado and resultado['archivo_resultado']:
-        try:
-            ruta = os.path.join(UPLOAD_FOLDER_LAB, resultado['archivo_resultado'])
-            if os.path.exists(ruta):
-                os.remove(ruta)
-        except Exception as e:
-            print(f"Error al eliminar archivo: {e}")
-            # Continuar con la eliminación de la base de datos aunque falle el archivo
-    
-    # 3) Eliminar detalles primero (debido a la relación de clave foránea)
-    db['examenes_laboratorio_det'].delete_many({"id_examen": id_examen})
-    
-    # 4) Eliminar encabezado
-    db['examenes_laboratorio'].delete_one({"id_examen": id_examen})
-    
+    lab_ids = obtener_ids_catalogo_por_tipo("LABORATORIO")
+
+    rows = list(db['examenes_det'].find(
+        {"id_examen": id_examen, "id_catalogo": {"$in": lab_ids}},
+        {"archivo_resultado": 1}
+    ))
+
+    for row in rows:
+        archivo = row.get('archivo_resultado')
+        if archivo:
+            for nombre in archivo.split(','):
+                nombre = nombre.strip()
+                if nombre:
+                    ruta = os.path.join(UPLOAD_FOLDER_LAB, nombre)
+                    if os.path.exists(ruta):
+                        try:
+                            os.remove(ruta)
+                        except:
+                            pass
+
+    db['examenes_det'].delete_many({"id_examen": id_examen, "id_catalogo": {"$in": lab_ids}})
+
+    restantes = db['examenes_det'].count_documents({"id_examen": id_examen})
+    if restantes == 0:
+        db['examenes'].delete_one({"id_examen": id_examen})
+
     flash('Solicitud de laboratorio eliminada correctamente', 'success')
     return redirect(url_for('estudios.estudios_home', vista='resultados_laboratorio'))
+
+
+# =========================
+# NOTIFICACIONES EN DASHBOARD
+# =========================
+from flask import jsonify
+
+@estudios_bp.route('/api/pendientes', methods=['GET'])
+def api_pendientes():
+    lab_pendientes, gab_pendientes, total_pendientes = contar_solicitudes_pendientes()
+    return jsonify({
+        'lab_pendientes': lab_pendientes,
+        'gab_pendientes': gab_pendientes,
+        'total_pendientes': total_pendientes
+    })

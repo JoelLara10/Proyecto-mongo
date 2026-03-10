@@ -18,25 +18,24 @@
         </div>
         <div class="card-body p-0">
           <div class="list-group list-group-flush">
-            {% for a in archivos %}
+            {% for archivo in archivos %}
             <a href="#"
-               class="list-group-item list-group-item-action gabinete-file py-2"
-               data-url="{{ a.url }}"
-               data-type="{{ a.tipo }}"
-               data-nombre="{{ a.nombre }}">
+               class="list-group-item list-group-item-action resultado-link py-2"
+               data-file="{{ archivo.nombre }}"
+               data-ext="{{ archivo.tipo }}">
               <div class="d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center">
-                  {% if a.tipo == 'pdf' %}
+                  {% if archivo.tipo == 'pdf' %}
                     <i class="bi bi-file-earmark-pdf text-danger me-2"></i>
-                  {% elif a.tipo in ['png', 'jpg', 'jpeg', 'image'] %}
+                  {% elif archivo.tipo in ['png', 'jpg', 'jpeg'] %}
                     <i class="bi bi-file-earmark-image text-success me-2"></i>
                   {% else %}
                     <i class="bi bi-file-earmark me-2 text-primary"></i>
                   {% endif %}
-                  <span class="small">{{ a.nombre }}</span>
+                  <span class="small">{{ archivo.nombre }}</span>
                 </div>
                 <span class="badge bg-light-blue text-primary border border-primary rounded-pill px-2 py-0 small">
-                  {{ a.tipo.upper() }}
+                  {{ archivo.tipo.upper() }}
                 </span>
               </div>
             </a>
@@ -81,6 +80,12 @@
               La vista previa se mostrará aquí
             </div>
             <div class="d-flex gap-2">
+              <button id="zoom-in" class="btn btn-sm btn-outline-primary d-none">
+                <i class="bi bi-zoom-in"></i>
+              </button>
+              <button id="zoom-out" class="btn btn-sm btn-outline-primary d-none">
+                <i class="bi bi-zoom-out"></i>
+              </button>
               <button id="download-gabinete-btn" class="btn btn-sm btn-outline-primary d-none">
                 <i class="bi bi-download me-1"></i>Descargar
               </button>
@@ -111,6 +116,16 @@
     background-color: #4dabf7;
     color: white;
     transform: translateX(-3px);
+  }
+  
+  .info-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    height: 100%;
+  }
+  
+  .info-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08) !important;
   }
   
   .card {
@@ -172,7 +187,7 @@
     color: white;
   }
   
-  h6 {
+  h5, h6 {
     font-size: 0.875rem;
   }
   
@@ -196,6 +211,7 @@
     max-width: 100%;
     max-height: 450px;
     object-fit: contain;
+    transition: transform 0.3s ease;
   }
   
   .unsupported-format {
@@ -208,30 +224,37 @@
   document.addEventListener('DOMContentLoaded', function() {
     const previewArea = document.getElementById('preview-gabinete');
     const downloadBtn = document.getElementById('download-gabinete-btn');
+    const zoomInBtn = document.getElementById('zoom-in');
+    const zoomOutBtn = document.getElementById('zoom-out');
     let currentFile = null;
-    let currentUrl = null;
+    let currentScale = 1;
+    const maxScale = 3;
+    const minScale = 0.5;
+    const scaleStep = 0.1;
     
     // Manejar clics en los enlaces de archivos
-    document.querySelectorAll('.gabinete-file').forEach(link => {
+    document.querySelectorAll('.resultado-link').forEach(link => {
       link.addEventListener('click', function(e) {
         e.preventDefault();
         
         // Remover clase activa de todos los enlaces
-        document.querySelectorAll('.gabinete-file').forEach(item => {
+        document.querySelectorAll('.resultado-link').forEach(item => {
           item.classList.remove('active');
         });
         
         // Agregar clase activa al enlace seleccionado
         this.classList.add('active');
         
-        const url = this.dataset.url;
-        const tipo = this.dataset.type;
-        const nombre = this.dataset.nombre;
-        currentUrl = url;
-        currentFile = nombre;
+        const archivo = this.dataset.file;
+        const ext = this.dataset.ext;
+        currentFile = archivo;
+        currentScale = 1; // Resetear escala
+        
+        // Construir la URL (ajusta la ruta si es necesario)
+        const url = `/static/resultados/gabinete/${archivo}`;
         
         // Actualizar el botón de descarga
-        if (url) {
+        if (archivo) {
           downloadBtn.classList.remove('d-none');
           downloadBtn.onclick = function() {
             window.open(url, '_blank');
@@ -241,25 +264,24 @@
         // Limpiar área de vista previa
         previewArea.innerHTML = '';
         
-        if (tipo === 'pdf') {
+        if (ext === 'pdf') {
           previewArea.innerHTML = `
-            <iframe src="${url}"
+            <iframe src="${url}#toolbar=0"
                     class="pdf-viewer"
                     width="100%"
                     height="450px"
                     style="border:none;"></iframe>
           `;
-        } else if (tipo === 'image' || ['png', 'jpg', 'jpeg'].includes(tipo)) {
+        } else if (['png', 'jpg', 'jpeg'].includes(ext)) {
           const imgContainer = document.createElement('div');
           imgContainer.className = 'text-center';
           
           const img = document.createElement('img');
           img.src = url;
           img.className = 'image-viewer';
-          img.alt = nombre;
-          img.style.maxWidth = '100%';
-          img.style.maxHeight = '450px';
-          img.style.objectFit = 'contain';
+          img.id = 'preview-image';
+          img.style.transform = `scale(${currentScale})`;
+          img.style.transition = 'transform 0.3s ease';
           
           imgContainer.appendChild(img);
           previewArea.appendChild(imgContainer);
@@ -280,8 +302,46 @@
       });
     });
     
-    // Efecto visual para los elementos de la lista al cargar
-    document.querySelectorAll('.gabinete-file').forEach((item, index) => {
+    // Funcionalidad de zoom (solo para imágenes)
+    zoomInBtn.addEventListener('click', function() {
+      const img = document.getElementById('preview-image');
+      if (img && currentScale < maxScale) {
+        currentScale += scaleStep;
+        img.style.transform = `scale(${currentScale})`;
+        updateZoomIndicator();
+      }
+    });
+    
+    zoomOutBtn.addEventListener('click', function() {
+      const img = document.getElementById('preview-image');
+      if (img && currentScale > minScale) {
+        currentScale -= scaleStep;
+        img.style.transform = `scale(${currentScale})`;
+        updateZoomIndicator();
+      }
+    });
+    
+    function updateZoomIndicator() {
+      // Podríamos agregar un indicador de zoom si es necesario
+      console.log(`Escala actual: ${Math.round(currentScale * 100)}%`);
+    }
+    
+    // Efecto visual para las tarjetas de información al cargar
+    document.querySelectorAll('.info-card').forEach((card, index) => {
+      setTimeout(() => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(10px)';
+        card.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+        
+        setTimeout(() => {
+          card.style.opacity = '1';
+          card.style.transform = 'translateY(0)';
+        }, 50);
+      }, index * 100);
+    });
+    
+    // Efecto visual para los elementos de la lista (opcional)
+    document.querySelectorAll('.resultado-link').forEach((item, index) => {
       setTimeout(() => {
         item.style.opacity = '0';
         item.style.transform = 'translateY(10px)';
@@ -295,7 +355,7 @@
     });
     
     // Seleccionar automáticamente el primer archivo si existe
-    const firstFileLink = document.querySelector('.gabinete-file');
+    const firstFileLink = document.querySelector('.resultado-link');
     if (firstFileLink) {
       setTimeout(() => {
         firstFileLink.click();

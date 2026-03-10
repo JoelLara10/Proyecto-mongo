@@ -35,7 +35,14 @@ from utils.backups import (
     cargar_config_auto,
     guardar_config_auto
 )
+<<<<<<< HEAD
 
+=======
+from bson.objectid import ObjectId
+from bson.decimal128 import Decimal128
+from pymongo.errors import PyMongoError
+from estudios import contar_solicitudes_pendientes 
+>>>>>>> 64fa81f (MODULO ESTUDIOS COMPLETO)
 # ===============================
 # Inicializar Flask
 # ===============================
@@ -287,6 +294,7 @@ def dashboard():
     if 'user_id' not in session:
         return redirect(url_for('login'))
     role = session['role']
+    lab_pendientes, gab_pendientes, total_pendientes = contar_solicitudes_pendientes()
     menu_options = []
     # ===============================
     # CONTAR SOLICITUDES PENDIENTES

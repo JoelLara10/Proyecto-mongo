@@ -6,51 +6,51 @@
     </a>
   </div>
 
-  <div class="card border-0 shadow rounded-2 mb-3">
-    <div class="card-header bg-primary text-white py-2 rounded-top">
-      <h5 class="mb-0">
-        <i class="bi bi-camera me-1"></i>Editar Resultados de Gabinete
-      </h5>
-    </div>
-    
-    <!-- Información del paciente -->
-    <div class="card-body bg-light-blue py-3">
-      <div class="row g-2">
-        <div class="col-md-4">
-          <div class="info-card p-2 rounded bg-white shadow-sm">
-            <div class="d-flex align-items-center mb-1">
-              <i class="bi bi-person-circle me-1 text-primary fs-5"></i>
-              <h6 class="mb-0 text-primary small fw-bold">Paciente</h6>
+  <!-- FORMULARIO PRINCIPAL - AHORA INCLUYE TODOS LOS CAMPOS -->
+  <form method="POST" enctype="multipart/form-data">
+    <div class="card border-0 shadow rounded-2 mb-3">
+      <div class="card-header bg-primary text-white py-2 rounded-top">
+        <h5 class="mb-0">
+          <i class="bi bi-camera me-1"></i>Editar Resultados de Gabinete
+        </h5>
+      </div>
+      
+      <!-- Información del paciente (ahora DENTRO del formulario) -->
+      <div class="card-body bg-light-blue py-3">
+        <div class="row g-2">
+          <div class="col-md-4">
+            <div class="info-card p-2 rounded bg-white shadow-sm">
+              <div class="d-flex align-items-center mb-1">
+                <i class="bi bi-person-circle me-1 text-primary fs-5"></i>
+                <h6 class="mb-0 text-primary small fw-bold">Paciente</h6>
+              </div>
+              <p class="fw-medium text-dark mb-0 small">{{ solicitud.paciente or '-' }}</p>
             </div>
-            <p class="fw-medium text-dark mb-0 small">{{ solicitud.paciente or '-' }}</p>
           </div>
-        </div>
-        
-        <div class="col-md-4">
-          <div class="info-card p-2 rounded bg-white shadow-sm">
-            <div class="d-flex align-items-center mb-1">
-              <i class="bi bi-door-closed me-1 text-primary fs-5"></i>
-              <h6 class="mb-0 text-primary small fw-bold">Habitación</h6>
+          
+          <div class="col-md-4">
+            <div class="info-card p-2 rounded bg-white shadow-sm">
+              <div class="d-flex align-items-center mb-1">
+                <i class="bi bi-door-closed me-1 text-primary fs-5"></i>
+                <h6 class="mb-0 text-primary small fw-bold">Habitación</h6>
+              </div>
+              <p class="fw-medium text-dark mb-0 small">{{ solicitud.habitacion or '-' }}</p>
             </div>
-            <p class="fw-medium text-dark mb-0 small">{{ solicitud.habitacion or '-' }}</p>
           </div>
-        </div>
-        
-        <div class="col-md-4">
-          <div class="info-card p-2 rounded bg-white shadow-sm">
-            <div class="d-flex align-items-center mb-1">
-              <i class="bi bi-clipboard-check me-1 text-primary fs-5"></i>
-              <h6 class="mb-0 text-primary small fw-bold">Observaciones</h6>
+          
+          <div class="col-md-4">
+            <div class="info-card p-2 rounded bg-white shadow-sm">
+              <div class="d-flex align-items-center mb-1">
+                <i class="bi bi-clipboard-check me-1 text-primary fs-5"></i>
+                <h6 class="mb-0 text-primary small fw-bold">Observaciones</h6>
+              </div>
+              <textarea name="observaciones" class="form-control form-control-sm" rows="3">{{ solicitud.observaciones or '' }}</textarea>
             </div>
-            <p class="text-dark mb-0 small">{{ solicitud.observaciones or 'Sin observaciones' }}</p>
           </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- Formulario para editar archivos -->
-  <form method="POST" enctype="multipart/form-data">
     <!-- Archivos existentes -->
     <div class="card border-0 shadow rounded-2 mb-3">
       <div class="card-header bg-primary text-white py-2 rounded-top">
@@ -164,6 +164,7 @@
       </button>
     </div>
   </form>
+  <!-- FIN DEL FORMULARIO -->
 </div>
 
 <style>
