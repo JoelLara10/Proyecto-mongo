@@ -30,13 +30,23 @@
     <form method="POST">
       <div class="card-body">
 
+        <!-- ACTIVAR/DESACTIVAR -->
+        <div class="form-group">
+          <div class="form-check">
+            <input type="checkbox" class="form-check-input" name="activo" id="activo" {% if config.activo %}checked{% endif %}>
+            <label class="form-check-label" for="activo">
+              <strong>Activar backups automáticos</strong>
+            </label>
+          </div>
+        </div>
+
         <!-- TIPO DE BACKUP -->
         <div class="form-group">
           <label>Tipo de copia automática</label>
           <select name="tipo" class="form-control">
-            <option value="completa" {% if config.tipo == 'completa' %}selected{% endif %}>Completa</option>
-            <option value="diferencial" {% if config.tipo == 'diferencial' %}selected{% endif %}>Diferencial</option>
-            <option value="incremental" {% if config.tipo == 'incremental' %}selected{% endif %}>Incremental</option>
+            <option value="completa" {% if config.tipo == 'completa' %}selected{% endif %}>Completa (todas las colecciones)</option>
+            <option value="diferencial" {% if config.tipo == 'diferencial' %}selected{% endif %}>Diferencial (cambios desde último completo)</option>
+            <option value="incremental" {% if config.tipo == 'incremental' %}selected{% endif %}>Incremental (cambios desde último backup)</option>
           </select>
         </div>
 
@@ -44,9 +54,10 @@
         <div class="form-group">
           <label>Formato del respaldo</label>
           <select name="formato" class="form-control">
-            <option value="sql" {% if config.formato == 'sql' %}selected{% endif %}>SQL</option>
-            <option value="json" {% if config.formato == 'json' %}selected{% endif %}>JSON</option>
-            <option value="csv" {% if config.formato == 'csv' %}selected{% endif %}>CSV</option>
+            <option value="json" {% if config.formato == 'json' %}selected{% endif %}>JSON (estructura completa)</option>
+            <option value="csv" {% if config.formato == 'csv' %}selected{% endif %}>CSV (archivo ZIP)</option>
+            <option value="excel" {% if config.formato == 'excel' %}selected{% endif %}>Excel (XLSX)</option>
+            <option value="pdf" {% if config.formato == 'pdf' %}selected{% endif %}>PDF (reporte)</option>
           </select>
         </div>
 
@@ -57,11 +68,13 @@
           <p class="text-muted">Ejemplo: 60 para cada hora, 1440 para diario.</p>
         </div>
 
-        <!-- DETECCIÓN DE ERRORES -->
+        <!-- AUTO-RESTORE -->
         <div class="form-group">
           <div class="form-check">
             <input type="checkbox" class="form-check-input" name="auto_restore" id="auto_restore" {% if config.auto_restore %}checked{% endif %}>
-            <label class="form-check-label" for="auto_restore">Restaurar automáticamente si se detecta error en BD</label>
+            <label class="form-check-label" for="auto_restore">
+              <strong>Restaurar automáticamente si se detecta error en BD</strong>
+            </label>
           </div>
           <p class="text-muted">Esto verificará la conexión a la BD antes de cada backup. Si falla, restaurará el último backup exitoso.</p>
         </div>

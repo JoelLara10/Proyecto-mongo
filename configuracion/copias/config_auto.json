@@ -1,6 +1,7 @@
 {
     "intervalo": 100000,
     "tipo": "completa",
-    "formato": "sql",
-    "auto_restore": true
+    "formato": "json",
+    "auto_restore": true,
+    "activo": true
 }

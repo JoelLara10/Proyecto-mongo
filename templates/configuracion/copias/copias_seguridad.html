@@ -36,165 +36,151 @@
         <!-- TIPO -->
         <div class="form-group">
           <label>Tipo de copia</label>
-          <select name="tipo" class="form-control">
-            <option value="completa">Completa</option>
-            <option value="diferencial">Diferencial</option>
-            <option value="incremental">Incremental</option>
+          <select name="tipo" class="form-control" id="tipoBackup">
+            <option value="completa">Completa (todas las colecciones)</option>
+            <option value="diferencial">Diferencial (cambios desde último completo)</option>
+            <option value="incremental">Incremental (cambios desde último backup)</option>
           </select>
         </div>
 
         <!-- FORMATO -->
         <div class="form-group">
-          <label>Formato del respaldo (Base de Datos)</label>
+          <label>Formato del respaldo</label>
           <select name="formato" class="form-control">
-            <option value="sql">SQL (estructura + datos)</option>
-            <option value="json">JSON (datos)</option>
-            <option value="csv">CSV (una tabla por archivo)</option>
-            <option value="excel">Excel (XLSX)</option>
+            <option value="json">JSON (estructura completa)</option>
+            <option value="csv">CSV (archivo ZIP)</option>
+            <option value="xlsx">Excel (XLSX)</option>
             <option value="pdf">PDF (reporte)</option>
           </select>
         </div>
 
-        <p class="text-muted">
-          <i class="fas fa-info-circle"></i>
-          El respaldo se genera únicamente de la <b>base de datos</b>.
-        </p>
-
-        <!-- TABLAS -->
+        <!-- COLECCIONES -->
         <div class="form-group">
-          <label>Tablas</label>
+          <label>Colecciones a respaldar</label>
           <div class="border rounded p-3" style="max-height: 300px; overflow-y:auto;">
-            {% for t in tablas %}
+            {% for coll in colecciones %}
               <div class="form-check">
                 <input type="checkbox"
-                       class="form-check-input"
-                       name="tablas"
-                       value="{{ t.TABLE_NAME }}"
-                       id="tabla{{ loop.index }}">
-                <label class="form-check-label" for="tabla{{ loop.index }}">
-                  {{ t.TABLE_NAME }}
+                       class="form-check-input coleccion-check"
+                       name="colecciones"
+                       value="{{ coll }}"
+                       id="coll{{ loop.index }}">
+                <label class="form-check-label" for="coll{{ loop.index }}">
+                  {{ coll }}
                 </label>
               </div>
             {% endfor %}
           </div>
         </div>
 
+      </div>
+
       <div class="card-footer text-right">
-        <button type="button" class="btn btn-primary" onclick="abrirModal('backup')">
+        <button type="button" class="btn btn-primary" onclick="abrirModal()">
   <i class="fas fa-play"></i> Generar copia
 </button>
-
       </div>
     </form>
   </div>
 
   <!-- ===================== RESTAURAR ===================== -->
-  <div class="card card-warning mt-4">
-    <div class="card-header">
-      <h3 class="card-title">
-        <i class="fas fa-undo"></i> Restaurar copia de seguridad
-      </h3>
+<div class="card card-warning mt-4">
+  <div class="card-header">
+    <h3 class="card-title">
+      <i class="fas fa-undo"></i> Restaurar copia de seguridad
+    </h3>
+  </div>
+
+  <form method="POST" id="restoreForm">  <!-- Agregado id -->
+    <input type="hidden" name="action" value="restore">
+
+    <div class="card-body">
+
+      <div class="form-group">
+        <label>Selecciona un respaldo</label>
+        <select name="selected_backup" class="form-control" required>
+          <option value="">-- Selecciona un archivo --</option>
+          {% for b in backups %}
+            <option value="{{ b.nombre }}">
+              {{ b.nombre }} ({{ b.fecha.strftime('%d/%m/%Y %H:%M') }} - {{ (b.tamano / 1024)|round }} KB)
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <p class="text-muted">
+        <i class="fas fa-exclamation-triangle"></i>
+        Esta acción sobrescribirá los datos existentes en las colecciones restauradas.
+      </p>
+
     </div>
 
-    <form method="POST">
-      <input type="hidden" name="action" value="restore">
-
-      <div class="card-body">
-
-        <div class="form-group">
-          <label>Selecciona un respaldo</label>
-          <select name="selected_backup" class="form-control" required>
-            <option value="">-- Selecciona un archivo --</option>
-            {% for b in backups %}
-              <option value="{{ b }}">{{ b }}</option>
-            {% endfor %}
-          </select>
-        </div>
-
-        <p class="text-muted">
-          <i class="fas fa-exclamation-triangle"></i>
-          Esta acción puede sobrescribir datos existentes.
-        </p>
-
-      <div class="card-footer text-right">
-        <button type="button" class="btn btn-warning" onclick="abrirModal('restore')">
-  <i class="fas fa-undo"></i> Restaurar
-</button>
-
-      </div>
-    </form>
-  </div>
+    <div class="card-footer text-right">
+      <!-- Botón modificado: submit directo sin modal -->
+      <button type="submit" class="btn btn-warning">
+        <i class="fas fa-undo"></i> Restaurar
+      </button>
+    </div>
+  </form>
+</div>
 
 </section>
 
+<!-- Auto-download después de crear backup - VERSIÓN CORREGIDA -->
 {% if download_filename %}
-<a id="auto-download"
-   href="{{ url_for('download_backup', filename=download_filename) }}"
-   download
-   style="display:none;"></a>
+  <script>
+    (function() {
+      // Usar una bandera en sessionStorage para evitar múltiples descargas
+      const downloadKey = 'downloaded_' + '{{ download_filename }}';
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  document.getElementById('auto-download').click();
-});
-</script>
+      if (!sessionStorage.getItem(downloadKey)) {
+        // Marcar como descargado inmediatamente
+        sessionStorage.setItem(downloadKey, 'true');
+
+        // Pequeño retraso para asegurar que la página cargó
+        setTimeout(function() {
+          // Crear un iframe temporal para la descarga (método silencioso)
+          const iframe = document.createElement('iframe');
+          iframe.style.display = 'none';
+          iframe.src = "{{ url_for('download_backup', filename=download_filename) }}";
+          document.body.appendChild(iframe);
+
+          // Limpiar después de un tiempo
+          setTimeout(function() {
+            document.body.removeChild(iframe);
+            // Limpiar la bandera después de 5 segundos (por si acaso)
+            setTimeout(function() {
+              sessionStorage.removeItem(downloadKey);
+            }, 5000);
+          }, 3000);
+        }, 500);
+      }
+    })();
+  </script>
 {% endif %}
 
+<!-- Script para seleccionar/deseleccionar colecciones según tipo -->
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-  const tipo = document.querySelector('select[name="tipo"]');
-  const checks = document.querySelectorAll('input[name="tablas"]');
+document.addEventListener('DOMContentLoaded', function() {
+  const tipoSelect = document.getElementById('tipoBackup');
+  const checkboxes = document.querySelectorAll('.coleccion-check');
 
-  tipo.addEventListener('change', function() {
+  tipoSelect.addEventListener('change', function() {
     if (this.value === 'completa') {
-      checks.forEach(c => c.checked = true);
+      checkboxes.forEach(cb => cb.checked = true);
+      checkboxes.forEach(cb => cb.disabled = false);
     } else {
-      checks.forEach(c => c.checked = false);
+      checkboxes.forEach(cb => cb.checked = false);
+      checkboxes.forEach(cb => cb.disabled = false);
     }
   });
 });
-</script>
-<!-- MODAL AUTENTICACIÓN ADMIN -->
-<div class="modal fade" id="modalAdmin" tabindex="-1">
-  <div class="modal-dialog modal-sm">
-    <div class="modal-content">
 
-      <div class="modal-header bg-primary">
-        <h5 class="modal-title">
-          <i class="fas fa-user-shield"></i> Confirmar administrador
-        </h5>
-        <button type="button" class="close" data-dismiss="modal">&times;</button>
-      </div>
-
-      <div class="modal-body">
-        <div class="form-group">
-          <label>Usuario</label>
-          <input type="text" id="modal_user" class="form-control">
-        </div>
-
-        <div class="form-group">
-          <label>Contraseña</label>
-          <input type="password" id="modal_pass" class="form-control">
-        </div>
-      </div>
-
-      <div class="modal-footer">
-        <button class="btn btn-secondary" data-dismiss="modal">
-          Cancelar
-        </button>
-        <button class="btn btn-primary" onclick="confirmarAdmin()">
-          Confirmar
-        </button>
-      </div>
-
-    </div>
-  </div>
-</div>
-<script>
+// Modal de autenticación - AHORA SOLO PARA BACKUP
 let accionPendiente = null;
 
-function abrirModal(accion) {
-  accionPendiente = accion;
+// Modal de autenticación - SOLO PARA BACKUP
+function abrirModal() {
   $('#modalAdmin').modal('show');
 }
 
@@ -207,15 +193,8 @@ function confirmarAdmin() {
     return;
   }
 
-  let form;
+  const form = document.querySelector('form input[name="action"][value="backup"]').form;
 
-  if (accionPendiente === 'backup') {
-    form = document.querySelector('form input[name="action"][value="backup"]').form;
-  } else if (accionPendiente === 'restore') {
-    form = document.querySelector('form input[name="action"][value="restore"]').form;
-  }
-
-  // Crear inputs ocultos
   const u = document.createElement('input');
   u.type = 'hidden';
   u.name = 'auth_user';
@@ -234,4 +213,31 @@ function confirmarAdmin() {
 }
 </script>
 
+<!-- Modal de autenticación admin -->
+<div class="modal fade" id="modalAdmin" tabindex="-1">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header bg-primary">
+        <h5 class="modal-title">
+          <i class="fas fa-user-shield"></i> Confirmar administrador
+        </h5>
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Usuario</label>
+          <input type="text" id="modal_user" class="form-control">
+        </div>
+        <div class="form-group">
+          <label>Contraseña</label>
+          <input type="password" id="modal_pass" class="form-control">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+        <button class="btn btn-primary" onclick="confirmarAdmin()">Confirmar</button>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}

@@ -3,7 +3,9 @@ import zipfile
 from datetime import datetime, date, timedelta
 from decimal import Decimal
 from bd import get_db_connection
-from bson.objectid import ObjectId
+from bson.objectid import ObjectId  # Solo una vez
+from bson.decimal128 import Decimal128
+from pymongo.errors import PyMongoError
 import psutil
 import time
 from flask import (
@@ -11,55 +13,67 @@ from flask import (
     url_for, session, flash, jsonify, current_app, send_from_directory
 )
 from apscheduler.schedulers.background import BackgroundScheduler
-from apscheduler.triggers.interval import IntervalTrigger
 import bcrypt
 from fpdf import FPDF
+
+# Blueprints
 from estudios import estudios_bp
 from templates.administrativo.pacientes.doc_pacientes import pdf
 from templates.medico.impresiones import pdf_med
+
+# Importar funciones de backups
+from configuracion.automatizacion import automatizacion_tareas
 from utils.backups import (
-    automatizacion_tareas,
-    realizar_backup_automatico,
+    realizar_backup,
+    restaurar_backup,
+    list_backups,
+    obtener_colecciones_mongo,
+    validar_admin,
+    limpiar_backups,
     check_db_health,
     job_backup_auto,
-    backup_bd
+    cargar_config_auto,
+    guardar_config_auto
 )
-from bson.objectid import ObjectId
-from bson.decimal128 import Decimal128
-from pymongo.errors import PyMongoError
+
 # ===============================
 # Inicializar Flask
 # ===============================
 app = Flask(__name__)
-app.secret_key = 'tu_clave_secreta_aqui' # ⚠️ usa una clave segura en producción
+app.secret_key = 'tu_clave_secreta_aqui'  # ⚠️ usa una clave segura en producción
+
 # ===============================
 # Registrar Blueprints
 # ===============================
 app.register_blueprint(estudios_bp, url_prefix='/estudios')
 app.register_blueprint(pdf)
 app.register_blueprint(pdf_med)
+
 # ===============================
 # Inicializar Scheduler
 # ===============================
 scheduler = BackgroundScheduler()
-scheduler.start()
+
 # Guardar scheduler en la app (MUY IMPORTANTE)
 app.config['SCHEDULER'] = scheduler
+
 # ===============================
-# Programar backup automático
+# Programar backup automático (solo una vez)
 # ===============================
 with app.app_context():
-    from utils.backups import cargar_config_auto
     config = cargar_config_auto()
-    scheduler.remove_all_jobs()
-    trigger = IntervalTrigger(minutes=config.get('intervalo', 60))
-    scheduler.add_job(
-        func=job_backup_auto,
-        trigger=trigger,
-        args=[app], # 👈 se pasa la app real
-        id='backup_automatico',
-        replace_existing=True
-    )
+    if config.get('activo', False):
+        scheduler.add_job(
+            job_backup_auto,
+            'interval',
+            minutes=config['intervalo'],
+            args=[app],
+            id='backup_automatico',
+            replace_existing=True
+        )
+
+# Iniciar scheduler (UNA SOLA VEZ)
+scheduler.start()
 
 def get_next_sequence(name):
     db = get_db_connection()
@@ -153,7 +167,81 @@ def index():
 # ===============================
 @app.route('/configuracion/copias', methods=['GET', 'POST'])
 def copias_seguridad():
-    return backup_bd()
+    """Vista para copias de seguridad - IMPLEMENTACIÓN DIRECTA"""
+    if 'user_id' not in session or session.get('role') != 'admin':
+        flash('Acceso denegado.', 'danger')
+        return redirect(url_for('dashboard'))
+
+    # Importar aquí para evitar circular imports
+    from utils.backups import obtener_colecciones_mongo, list_backups, validar_admin, realizar_backup, restaurar_backup, \
+        limpiar_backups
+
+    colecciones = obtener_colecciones_mongo()
+    backups = list_backups()
+
+    # Usar sesión en lugar de request.args para evitar descargas múltiples
+    download_filename = session.pop('download_backup', None)
+
+    if request.method == 'POST':
+        action = request.form.get('action')
+
+        # ===== SOLO BACKUP requiere autenticación =====
+        if action == 'backup':
+            auth_user = request.form.get('auth_user')
+            auth_pass = request.form.get('auth_pass')
+
+            if not auth_user or not auth_pass:
+                flash('Debes confirmar usuario y contraseña de administrador.', 'danger')
+                return redirect(request.url)
+            if not validar_admin(auth_user, auth_pass):
+                flash('Credenciales inválidas.', 'danger')
+                return redirect(request.url)
+
+            tipo = request.form.get('tipo', 'completa')
+            formato = request.form.get('formato', 'json')
+            colecciones_sel = request.form.getlist('colecciones')
+
+            if tipo == 'completa' and not colecciones_sel:
+                colecciones_sel = colecciones
+
+            if not colecciones_sel:
+                flash('Selecciona al menos una colección.', 'warning')
+                return redirect(request.url)
+
+            try:
+                nombre = realizar_backup(tipo, formato, colecciones_sel, False)
+                if nombre:
+                    flash(f'Backup {tipo} creado', 'success')
+                    limpiar_backups(4)
+                    # Guardar en sesión para descarga
+                    session['download_backup'] = nombre
+                    return redirect(url_for('copias_seguridad'))
+                else:
+                    flash('No se pudo crear el backup (sin cambios para modo diferencial/incremental)', 'warning')
+            except Exception as e:
+                flash(f'Error en backup: {str(e)}', 'danger')
+
+        # ===== RESTORE NO requiere autenticación =====
+        elif action == 'restore':
+            archivo = request.form.get('selected_backup')
+            if not archivo:
+                flash('Selecciona un archivo para restaurar', 'warning')
+                return redirect(request.url)
+
+            try:
+                restaurar_backup(archivo)
+                flash(f'Restauración desde {archivo} completada exitosamente', 'success')
+            except Exception as e:
+                flash(f'Error en restauración: {str(e)}', 'danger')
+
+        return redirect(request.url)
+
+    return render_template(
+        'configuracion/copias/copias_seguridad.html',
+        colecciones=colecciones,
+        backups=backups,
+        download_filename=download_filename
+    )
 
 @app.route('/configuracion/copias/download/<filename>')
 def download_backup(filename):
