@@ -35,14 +35,11 @@ from utils.backups import (
     cargar_config_auto,
     guardar_config_auto
 )
-<<<<<<< HEAD
 
-=======
 from bson.objectid import ObjectId
 from bson.decimal128 import Decimal128
 from pymongo.errors import PyMongoError
 from estudios import contar_solicitudes_pendientes 
->>>>>>> 64fa81f (MODULO ESTUDIOS COMPLETO)
 # ===============================
 # Inicializar Flask
 # ===============================
