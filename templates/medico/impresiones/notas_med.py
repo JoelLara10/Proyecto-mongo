@@ -230,87 +230,88 @@ def diagnostico_pdf(id_diagnostico):
     return response
 
 
-@pdf_med.route('/pdf/receta/<int:id_atencion>/<fecha>')
-def receta_pdf(id_atencion, fecha):
-
+@pdf_med.route('/pdf/receta/<int:id_receta>')
+def receta_pdf(id_receta):
     db = get_db_connection()
 
-    fecha_dt = datetime.strptime(fecha, '%Y-%m-%d %H:%M:%S') if len(fecha) > 10 else datetime.strptime(fecha, '%Y-%m-%d')
-
+    # Buscar la receta por su ID
     pipeline = [
-        {"$match": {"id_atencion": id_atencion, "fecha_registro": fecha_dt}},
+        {"$match": {"id_receta": id_receta}},
         {"$lookup": {"from": "atencion", "localField": "id_atencion", "foreignField": "id_atencion", "as": "atencion"}},
         {"$unwind": "$atencion"},
         {"$lookup": {"from": "pacientes", "localField": "atencion.Id_exp", "foreignField": "Id_exp", "as": "paciente"}},
         {"$unwind": "$paciente"},
         {"$project": {
-            "medicamento": 1,
-            "dosis": 1,
-            "frecuencia": 1,
-            "duracion": 1,
-            "indicaciones": 1,
+            "medicamentos": 1,
             "fecha_registro": 1,
             "papell": "$paciente.papell",
             "sapell": "$paciente.sapell",
             "nom_pac": "$paciente.nom_pac"
         }}
     ]
+
     recetas = list(db['recetas'].aggregate(pipeline))
 
     if not recetas:
         return "Receta no encontrada", 404
 
-    paciente = recetas[0]
+    receta = recetas[0]
 
+    # Crear PDF
     pdf_doc = FPDF('P', 'mm', 'Letter')
     pdf_doc.set_auto_page_break(True, 20)
     pdf_doc.add_page()
 
-    pdf_doc.set_font('Arial', 'B', 14)
+    # Encabezado
+    pdf_doc.set_font('Arial', 'B', 16)
     pdf_doc.cell(0, 10, 'RECETA MÉDICA', ln=True, align='C')
 
-    pdf_doc.ln(5)
-    pdf_doc.set_font('Arial', '', 10)
-    pdf_doc.cell(
-        0, 7,
-        f"Paciente: {paciente['papell']} {paciente['sapell']} {paciente['nom_pac']}",
-        ln=True
-    )
+    pdf_doc.ln(10)
+    pdf_doc.set_font('Arial', '', 11)
 
-    fecha_txt = paciente['fecha_registro'].strftime('%d/%m/%Y %H:%M')
-    pdf_doc.cell(0, 7, f"Fecha: {fecha_txt}", ln=True)
+    # Datos del paciente
+    pdf_doc.cell(0, 7, f"Paciente: {receta['papell']} {receta['sapell']} {receta['nom_pac']}", ln=True)
+    pdf_doc.cell(0, 7, f"Fecha: {receta['fecha_registro'].strftime('%d/%m/%Y %H:%M')}", ln=True)
 
     pdf_doc.ln(10)
 
-    # LISTA DE MEDICAMENTOS
-    for i, r in enumerate(recetas, 1):
-        pdf_doc.set_font('Arial', 'B', 11)
-        pdf_doc.cell(0, 8, f"Medicamento {i}", ln=True)
+    # Línea separadora
+    pdf_doc.cell(0, 0, '', 'T', ln=True)
+    pdf_doc.ln(5)
+
+    # Lista de medicamentos
+    for i, med in enumerate(receta['medicamentos'], 1):
+        pdf_doc.set_font('Arial', 'B', 12)
+        pdf_doc.cell(0, 8, f"{i}. {med['medicamento']}", ln=True)
 
         pdf_doc.set_font('Arial', '', 10)
-        pdf_doc.multi_cell(0, 7, f"Nombre: {r['medicamento']}")
-        pdf_doc.multi_cell(0, 7, f"Dosis: {r['dosis']}")
-        pdf_doc.multi_cell(0, 7, f"Frecuencia: {r['frecuencia']}")
-        pdf_doc.multi_cell(0, 7, f"Duración: {r['duracion']}")
-        pdf_doc.multi_cell(
-            0, 7,
-            f"Indicaciones: {r['indicaciones'] or 'No especificado'}"
-        )
-        pdf_doc.ln(2)
+        pdf_doc.cell(0, 6, f"   Dosis: {med['dosis']}", ln=True)
+        pdf_doc.cell(0, 6, f"   Frecuencia: {med['frecuencia']}", ln=True)
+        pdf_doc.cell(0, 6, f"   Duración: {med['duracion']}", ln=True)
+
+        if med.get('indicaciones'):
+            pdf_doc.multi_cell(0, 6, f"   Indicaciones: {med['indicaciones']}")
+
+        pdf_doc.ln(5)
+
+    # Espacio para firma
+    pdf_doc.ln(20)
+    pdf_doc.cell(0, 7, "__________________________________", ln=True, align='R')
+    pdf_doc.set_font('Arial', 'B', 10)
+    pdf_doc.cell(0, 7, "Firma del Médico", ln=True, align='R')
 
     response = make_response(pdf_doc.output(dest='S').encode('latin-1'))
     response.headers['Content-Type'] = 'application/pdf'
-    response.headers['Content-Disposition'] = 'inline; filename=receta_medica.pdf'
+    response.headers['Content-Disposition'] = f'inline; filename=receta_{id_receta}.pdf'
     return response
 
 
 @pdf_med.route('/pdf/laboratorio/<int:id_examen>')
 def laboratorio_pdf(id_examen):
-
     db = get_db_connection()
 
     # ===============================
-    # ENCABEZADO + PACIENTE
+    # ENCABEZADO + PACIENTE (desde colecciones unificadas)
     # ===============================
     pipeline_enc = [
         {"$match": {"id_examen": id_examen}},
@@ -318,162 +319,252 @@ def laboratorio_pdf(id_examen):
         {"$unwind": "$atencion"},
         {"$lookup": {"from": "pacientes", "localField": "atencion.Id_exp", "foreignField": "Id_exp", "as": "paciente"}},
         {"$unwind": "$paciente"},
+        {"$lookup": {"from": "users", "localField": "id_medico", "foreignField": "_id", "as": "medico"}},
+        {"$unwind": {"path": "$medico", "preserveNullAndEmptyArrays": True}},
         {"$project": {
             "fecha": 1,
-            "estado": 1,
-            "fecha_realizado": 1,
             "observaciones": 1,
             "papell": "$paciente.papell",
             "sapell": "$paciente.sapell",
-            "nom_pac": "$paciente.nom_pac"
+            "nom_pac": "$paciente.nom_pac",
+            "medico_nombre": {"$concat": ["$medico.pnombre", " ", "$medico.papell"]}
         }}
     ]
-    encabezado = list(db['examenes_laboratorio'].aggregate(pipeline_enc))[0] if list(db['examenes_laboratorio'].aggregate(pipeline_enc)) else None
+
+    encabezado_list = list(db['examenes'].aggregate(pipeline_enc))
+    if not encabezado_list:
+        return "Examen de laboratorio no encontrado", 404
+
+    encabezado = encabezado_list[0]
 
     # ===============================
-    # DETALLE DE EXÁMENES
+    # DETALLE DE EXÁMENES (desde examenes_det + catálogo)
     # ===============================
     pipeline_det = [
         {"$match": {"id_examen": id_examen}},
-        {"$lookup": {"from": "catalogo_examenes_laboratorio", "localField": "id_catalogo", "foreignField": "id_catalogo", "as": "cat"}},
+        {"$lookup": {
+            "from": "catalogo_examenes",
+            "localField": "id_catalogo",
+            "foreignField": "id_catalogo",
+            "as": "cat"
+        }},
         {"$unwind": "$cat"},
-        {"$project": {"nombre": "$cat.nombre"}}
+        {"$match": {"cat.tipo": "LABORATORIO"}},
+        {"$project": {
+            "nombre": "$cat.nombre",
+            "estado": 1,
+            "resultado": 1,
+            "fecha_realizado": 1,
+            "observaciones": 1
+        }}
     ]
-    detalles = list(db['examenes_laboratorio_det'].aggregate(pipeline_det))
 
-    if not encabezado:
-        return "Examen de laboratorio no encontrado", 404
+    detalles = list(db['examenes_det'].aggregate(pipeline_det))
 
     # PDF
     pdf_doc = FPDF('P', 'mm', 'Letter')
     pdf_doc.set_auto_page_break(True, 20)
     pdf_doc.add_page()
 
-    pdf_doc.set_font('Arial', 'B', 14)
+    # Encabezado
+    pdf_doc.set_font('Arial', 'B', 16)
     pdf_doc.cell(0, 10, 'SOLICITUD DE EXÁMENES DE LABORATORIO', ln=True, align='C')
 
     pdf_doc.ln(5)
-    pdf_doc.set_font('Arial', '', 10)
-    pdf_doc.cell(
-        0, 7,
-        f"Paciente: {encabezado['papell']} {encabezado['sapell']} {encabezado['nom_pac']}",
-        ln=True
-    )
+    pdf_doc.set_font('Arial', '', 11)
+
+    # Datos del paciente
+    pdf_doc.cell(0, 7, f"Paciente: {encabezado['papell']} {encabezado['sapell']} {encabezado['nom_pac']}", ln=True)
 
     fecha = encabezado['fecha'].strftime('%d/%m/%Y %H:%M')
-    pdf_doc.cell(0, 7, f"Fecha: {fecha}", ln=True)
-    pdf_doc.cell(0, 7, f"Estado: {encabezado['estado'].capitalize()}", ln=True)
+    pdf_doc.cell(0, 7, f"Fecha de solicitud: {fecha}", ln=True)
 
-    fecha_realizado = (
-        encabezado['fecha_realizado'].strftime('%d/%m/%Y')
-        if encabezado.get('fecha_realizado') else 'No especificado'
-    )
-    pdf_doc.cell(0, 7, f"Fecha realizado: {fecha_realizado}", ln=True)
+    if encabezado.get('medico_nombre'):
+        pdf_doc.cell(0, 7, f"Médico solicitante: {encabezado['medico_nombre']}", ln=True)
 
-    # OBSERVACIONES GENERALES
-    if encabezado['observaciones']:
+    # Observaciones generales
+    if encabezado.get('observaciones'):
         pdf_doc.ln(3)
-        pdf_doc.multi_cell(
-            0, 7,
-            f"Observaciones generales:\n{encabezado['observaciones']}"
-        )
+        pdf_doc.set_font('Arial', 'B', 11)
+        pdf_doc.cell(0, 7, 'Observaciones generales:', ln=True)
+        pdf_doc.set_font('Arial', '', 10)
+        pdf_doc.multi_cell(0, 6, encabezado['observaciones'])
 
-    # DETALLE
-    pdf_doc.ln(8)
+    # Línea separadora
+    pdf_doc.ln(5)
+    pdf_doc.cell(0, 0, '', 'T', ln=True)
+    pdf_doc.ln(5)
+
+    # Detalle de exámenes
     pdf_doc.set_font('Arial', 'B', 12)
     pdf_doc.cell(0, 8, 'Exámenes solicitados:', ln=True)
+    pdf_doc.ln(3)
 
     pdf_doc.set_font('Arial', '', 10)
-    for i, d in enumerate(detalles, 1):
-        pdf_doc.multi_cell(
-            0, 7,
-            f"{i}. {d['nombre']}\n"
-            f"   Estado: {encabezado['estado'].capitalize()}\n"
-            f"   Fecha realizado: {fecha_realizado}"
-        )
-        pdf_doc.ln(2)
+    for i, det in enumerate(detalles, 1):
+        # Nombre del examen
+        pdf_doc.set_font('Arial', 'B', 10)
+        pdf_doc.cell(0, 6, f"{i}. {det['nombre']}", ln=True)
 
-    # RESPUESTA
+        # Estado
+        pdf_doc.set_font('Arial', '', 10)
+        estado = det.get('estado', 'PENDIENTE')
+        pdf_doc.cell(0, 5, f"   Estado: {estado}", ln=True)
+
+        # Fecha realizado (si existe)
+        if det.get('fecha_realizado'):
+            fecha_real = det['fecha_realizado'].strftime('%d/%m/%Y')
+            pdf_doc.cell(0, 5, f"   Fecha realizado: {fecha_real}", ln=True)
+
+        # Resultado (si existe)
+        if det.get('resultado'):
+            pdf_doc.multi_cell(0, 5, f"   Resultado: {det['resultado']}")
+
+        # Observaciones del detalle
+        if det.get('observaciones'):
+            pdf_doc.multi_cell(0, 5, f"   Observaciones: {det['observaciones']}")
+
+        pdf_doc.ln(3)
+
+    # Espacio para firma
+    pdf_doc.ln(10)
+    pdf_doc.cell(0, 7, "__________________________________", ln=True, align='R')
+    pdf_doc.set_font('Arial', 'B', 10)
+    pdf_doc.cell(0, 7, "Firma del Médico", ln=True, align='R')
+
     response = make_response(pdf_doc.output(dest='S').encode('latin-1'))
     response.headers['Content-Type'] = 'application/pdf'
-    response.headers['Content-Disposition'] = 'inline; filename=examenes_laboratorio.pdf'
+    response.headers['Content-Disposition'] = f'inline; filename=laboratorio_{id_examen}.pdf'
     return response
-
 
 
 @pdf_med.route('/pdf/gabinete/<int:id_examen>')
 def gabinete_pdf(id_examen):
-
     db = get_db_connection()
 
-    # ENCABEZADO + PACIENTE
+    # ===============================
+    # ENCABEZADO + PACIENTE (desde colecciones unificadas)
+    # ===============================
     pipeline_enc = [
         {"$match": {"id_examen": id_examen}},
         {"$lookup": {"from": "atencion", "localField": "id_atencion", "foreignField": "id_atencion", "as": "atencion"}},
         {"$unwind": "$atencion"},
         {"$lookup": {"from": "pacientes", "localField": "atencion.Id_exp", "foreignField": "Id_exp", "as": "paciente"}},
         {"$unwind": "$paciente"},
+        {"$lookup": {"from": "users", "localField": "id_medico", "foreignField": "_id", "as": "medico"}},
+        {"$unwind": {"path": "$medico", "preserveNullAndEmptyArrays": True}},
         {"$project": {
             "fecha": 1,
             "observaciones": 1,
             "papell": "$paciente.papell",
             "sapell": "$paciente.sapell",
-            "nom_pac": "$paciente.nom_pac"
+            "nom_pac": "$paciente.nom_pac",
+            "medico_nombre": {"$concat": ["$medico.pnombre", " ", "$medico.papell"]}
         }}
     ]
-    encabezado = list(db['examenes_gabinete'].aggregate(pipeline_enc))[0] if list(db['examenes_gabinete'].aggregate(pipeline_enc)) else None
 
-    # DETALLE DE ESTUDIOS
-    detalles = list(db['examenes_gabinete_det'].find({"id_examen": id_examen}, {"nombre_examen": 1, "estado": 1, "fecha_realizado": 1, "observaciones": 1}))
-
-    if not encabezado:
+    encabezado_list = list(db['examenes'].aggregate(pipeline_enc))
+    if not encabezado_list:
         return "Examen de gabinete no encontrado", 404
+
+    encabezado = encabezado_list[0]
+
+    # ===============================
+    # DETALLE DE ESTUDIOS (desde examenes_det + catálogo)
+    # ===============================
+    pipeline_det = [
+        {"$match": {"id_examen": id_examen}},
+        {"$lookup": {
+            "from": "catalogo_examenes",
+            "localField": "id_catalogo",
+            "foreignField": "id_catalogo",
+            "as": "cat"
+        }},
+        {"$unwind": "$cat"},
+        {"$match": {"cat.tipo": "GABINETE"}},
+        {"$project": {
+            "nombre": "$cat.nombre",
+            "estado": 1,
+            "fecha_realizado": 1,
+            "observaciones": 1,
+            "archivo_resultado": 1
+        }}
+    ]
+
+    detalles = list(db['examenes_det'].aggregate(pipeline_det))
 
     # PDF
     pdf_doc = FPDF('P', 'mm', 'Letter')
     pdf_doc.set_auto_page_break(True, 20)
     pdf_doc.add_page()
 
-    pdf_doc.set_font('Arial', 'B', 14)
+    # Encabezado
+    pdf_doc.set_font('Arial', 'B', 16)
     pdf_doc.cell(0, 10, 'SOLICITUD DE EXÁMENES DE GABINETE', ln=True, align='C')
 
     pdf_doc.ln(5)
-    pdf_doc.set_font('Arial', '', 10)
-    pdf_doc.cell(
-        0, 7,
-        f"Paciente: {encabezado['papell']} {encabezado['sapell']} {encabezado['nom_pac']}",
-        ln=True
-    )
+    pdf_doc.set_font('Arial', '', 11)
+
+    # Datos del paciente
+    pdf_doc.cell(0, 7, f"Paciente: {encabezado['papell']} {encabezado['sapell']} {encabezado['nom_pac']}", ln=True)
 
     fecha = encabezado['fecha'].strftime('%d/%m/%Y %H:%M')
-    pdf_doc.cell(0, 7, f"Fecha: {fecha}", ln=True)
+    pdf_doc.cell(0, 7, f"Fecha de solicitud: {fecha}", ln=True)
 
-    if encabezado['observaciones']:
+    if encabezado.get('medico_nombre'):
+        pdf_doc.cell(0, 7, f"Médico solicitante: {encabezado['medico_nombre']}", ln=True)
+
+    # Observaciones generales
+    if encabezado.get('observaciones'):
         pdf_doc.ln(3)
-        pdf_doc.multi_cell(0, 7, f"Observaciones generales:\n{encabezado['observaciones']}")
+        pdf_doc.set_font('Arial', 'B', 11)
+        pdf_doc.cell(0, 7, 'Observaciones generales:', ln=True)
+        pdf_doc.set_font('Arial', '', 10)
+        pdf_doc.multi_cell(0, 6, encabezado['observaciones'])
 
-    pdf_doc.ln(8)
+    # Línea separadora
+    pdf_doc.ln(5)
+    pdf_doc.cell(0, 0, '', 'T', ln=True)
+    pdf_doc.ln(5)
+
+    # Detalle de estudios
     pdf_doc.set_font('Arial', 'B', 12)
     pdf_doc.cell(0, 8, 'Estudios solicitados:', ln=True)
+    pdf_doc.ln(3)
 
     pdf_doc.set_font('Arial', '', 10)
-    for i, d in enumerate(detalles, 1):
-        estado = d['estado']
-        fecha_realizado = (
-            d['fecha_realizado'].strftime('%d/%m/%Y')
-            if d.get('fecha_realizado') else 'No especificado'
-        )
+    for i, det in enumerate(detalles, 1):
+        # Nombre del estudio
+        pdf_doc.set_font('Arial', 'B', 10)
+        pdf_doc.cell(0, 6, f"{i}. {det['nombre']}", ln=True)
 
-        pdf_doc.multi_cell(
-            0, 7,
-            f"{i}. {d['nombre_examen']}\n"
-            f"   Estado: {estado}\n"
-            f"   Fecha realizado: {fecha_realizado}\n"
-            f"   Observaciones: {d['observaciones'] or 'No especificado'}"
-        )
-        pdf_doc.ln(2)
+        # Estado
+        pdf_doc.set_font('Arial', '', 10)
+        estado = det.get('estado', 'PENDIENTE')
+        pdf_doc.cell(0, 5, f"   Estado: {estado}", ln=True)
+
+        # Fecha realizado (si existe)
+        if det.get('fecha_realizado'):
+            fecha_real = det['fecha_realizado'].strftime('%d/%m/%Y')
+            pdf_doc.cell(0, 5, f"   Fecha realizado: {fecha_real}", ln=True)
+
+        # Indicador de archivo (si existe)
+        if det.get('archivo_resultado'):
+            pdf_doc.cell(0, 5, f"   Archivo resultado: Disponible", ln=True)
+
+        # Observaciones del detalle
+        if det.get('observaciones'):
+            pdf_doc.multi_cell(0, 5, f"   Observaciones: {det['observaciones']}")
+
+        pdf_doc.ln(3)
+
+    # Espacio para firma
+    pdf_doc.ln(10)
+    pdf_doc.cell(0, 7, "__________________________________", ln=True, align='R')
+    pdf_doc.set_font('Arial', 'B', 10)
+    pdf_doc.cell(0, 7, "Firma del Médico", ln=True, align='R')
 
     response = make_response(pdf_doc.output(dest='S').encode('latin-1'))
     response.headers['Content-Type'] = 'application/pdf'
-    response.headers['Content-Disposition'] = 'inline; filename=examenes_gabinete.pdf'
+    response.headers['Content-Disposition'] = f'inline; filename=gabinete_{id_examen}.pdf'
     return response

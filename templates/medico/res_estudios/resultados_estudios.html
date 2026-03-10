@@ -34,22 +34,25 @@
                         <th>Estudios</th>
                         <th>Médico</th>
                         <th>Observaciones</th>
-                        <th>Resultados</th>
+                        <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for l in laboratorio %}
                     <tr>
-                        <td>{{ l.fecha }}</td>
-                        <td>{{ l.estudios }}</td>
+                        <td>{{ l.fecha.strftime('%d/%m/%Y %H:%M') }}</td>
+                        <td>
+                            {% for estudio in l.detalles %}
+                                {{ estudio.nombre }}{% if not loop.last %}, {% endif %}
+                            {% endfor %}
+                        </td>
                         <td>{{ l.medico }}</td>
                         <td>{{ l.observaciones or '—' }}</td>
                         <td class="text-center">
-                            <a href="{{ url_for('estudios.ver_resultado_laboratorio', id_examen=l.id_examen) }}"
-   class="btn btn-sm btn-primary">
-   <i class="fas fa-eye"></i> Ver
-</a>
-
+                            <a href="{{ url_for('ver_resultado_laboratorio', id_examen=l.id_examen) }}"
+                               class="btn btn-sm btn-primary">
+                               <i class="fas fa-eye"></i> Ver
+                            </a>
                         </td>
                     </tr>
                     {% endfor %}
@@ -77,26 +80,28 @@
                         <th>Estudios</th>
                         <th>Médico</th>
                         <th>Observaciones</th>
-                        <th>Resultados</th>
+                        <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for g in gabinete %}
-<tr>
-    <td>{{ g.fecha }}</td>
-    <td>{{ g.estudios }}</td>
-    <td>{{ g.medico }}</td>
-    <td>{{ g.observaciones or '—' }}</td>
-    <td>
-        <a href="{{ url_for('estudios.ver_resultado_gabinete', id_examen=g.id_examen) }}"
-           class="btn btn-sm btn-primary">
-            <i class="fas fa-eye"></i> Ver
-        </a>
-    </td>
-</tr>
-{% endfor %}
-
-
+                    <tr>
+                        <td>{{ g.fecha.strftime('%d/%m/%Y %H:%M') }}</td>
+                        <td>
+                            {% for estudio in g.detalles %}
+                                {{ estudio.nombre }}{% if not loop.last %}, {% endif %}
+                            {% endfor %}
+                        </td>
+                        <td>{{ g.medico }}</td>
+                        <td>{{ g.observaciones or '—' }}</td>
+                        <td>
+                            <a href="{{ url_for('ver_resultado_gabinete', id_examen=g.id_examen) }}"
+                               class="btn btn-sm btn-primary">
+                                <i class="fas fa-eye"></i> Ver
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
                 </tbody>
             </table>
             {% else %}

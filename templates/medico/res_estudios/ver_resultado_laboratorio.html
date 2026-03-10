@@ -14,37 +14,69 @@
   <div class="card card-primary mb-3">
     <div class="card-header">
       <h3 class="card-title">
-        Paciente: {{ resultado.papell }} {{ resultado.sapell }} {{ resultado.nom_pac }}
+        Paciente: {{ encabezado.papell }} {{ encabezado.sapell }} {{ encabezado.nom_pac }}  <!-- Cambiado de paciente a encabezado -->
       </h3>
     </div>
 
     <div class="card-body">
-      <p><strong>Expediente:</strong> {{ resultado.Id_exp }}</p>
-      <p><strong>Médico solicitante:</strong> {{ resultado.medico }}</p>
+      <p><strong>Expediente:</strong> {{ encabezado.Id_exp }}</p>  <!-- Cambiado de paciente a encabezado -->
+      <p><strong>Médico solicitante:</strong> {{ encabezado.medico }}</p>
+      <p><strong>Fecha solicitud:</strong> {{ encabezado.fecha.strftime('%d/%m/%Y %H:%M') }}</p>
     </div>
   </div>
 
   <!-- ================= ESTUDIOS ================= -->
   <div class="card card-success mb-3">
     <div class="card-header">
-      <h3 class="card-title">Estudios solicitados</h3>
+      <h3 class="card-title">Resultados de Estudios</h3>
     </div>
 
     <div class="card-body">
-      <p>{{ resultado.estudios }}</p>
+      {% if detalles %}
+        <table class="table table-bordered table-striped">
+          <thead>
+            <tr>
+              <th>Estudio</th>
+              <th>Estado</th>
+              <th>Resultado</th>
+              <th>Fecha realizado</th>
+              <th>Observaciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for d in detalles %}
+            <tr>
+              <td>{{ d.nombre }}</td>
+              <td>
+                <span class="badge badge-{{ 'success' if d.estado == 'REALIZADO' else 'warning' }}">
+                  {{ d.estado }}
+                </span>
+              </td>
+              <td>{{ d.resultado or '—' }}</td>
+              <td>{{ d.fecha_realizado.strftime('%d/%m/%Y') if d.fecha_realizado else '—' }}</td>
+              <td>{{ d.observaciones or '—' }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p>No hay estudios disponibles</p>
+      {% endif %}
     </div>
   </div>
 
-  <!-- ================= OBSERVACIONES ================= -->
+  <!-- ================= OBSERVACIONES GENERALES ================= -->
+  {% if encabezado.observaciones %}
   <div class="card card-info">
     <div class="card-header">
-      <h3 class="card-title">Observaciones</h3>
+      <h3 class="card-title">Observaciones generales</h3>
     </div>
 
     <div class="card-body">
-      <p>{{ resultado.observaciones or 'Sin observaciones' }}</p>
+      <p>{{ encabezado.observaciones }}</p>
     </div>
   </div>
+  {% endif %}
 
 </section>
 

@@ -25,14 +25,12 @@
         </tr>
       </thead>
       <tbody>
-        {% for r in recetas %}
+        {% for receta in recetas %}
         <tr>
-          <td>{{ r.fecha_registro.strftime('%d/%m/%Y %H:%M') }}</td>
-          <td>{{ r.total_meds }}</td>
+          <td>{{ receta.fecha_registro.strftime('%d/%m/%Y %H:%M') }}</td>
+          <td>{{ receta.medicamentos|length }} medicamento(s)</td>
           <td>
-            <a href="{{ url_for('pdf_med.receta_pdf',
-                id_atencion=id_atencion,
-                fecha=r.fecha_registro.strftime('%Y-%m-%d %H:%M:%S')) }}"
+            <a href="{{ url_for('pdf_med.receta_pdf', id_receta=receta.id_receta) }}"
                class="btn btn-sm btn-primary"
                target="_blank">
               <i class="fas fa-print"></i> Imprimir receta

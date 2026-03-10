@@ -14,13 +14,14 @@
   <div class="card card-primary mb-3">
     <div class="card-header">
       <h3 class="card-title">
-        Paciente: {{ paciente.papell }} {{ paciente.sapell }} {{ paciente.nom_pac }}
+        Paciente: {{ encabezado.papell }} {{ encabezado.sapell }} {{ encabezado.nom_pac }}
       </h3>
     </div>
 
     <div class="card-body">
-      <p><strong>Expediente:</strong> {{ paciente.Id_exp }}</p>
-      <p><strong>Fecha solicitud:</strong> {{ encabezado.fecha }}</p>
+      <p><strong>Expediente:</strong> {{ encabezado.Id_exp }}</p>
+      <p><strong>Médico solicitante:</strong> {{ encabezado.medico }}</p>
+      <p><strong>Fecha solicitud:</strong> {{ encabezado.fecha.strftime('%d/%m/%Y %H:%M') }}</p>
       <p><strong>Observaciones generales:</strong>
         {{ encabezado.observaciones or 'Sin observaciones' }}
       </p>
@@ -48,15 +49,19 @@
           <tbody>
             {% for d in detalles %}
             <tr>
-              <td>{{ d.nombre_examen }}</td>
-              <td>{{ d.estado }}</td>
-              <td>{{ d.fecha_realizado or '—' }}</td>
+              <td>{{ d.nombre }}</td>
+              <td>
+                <span class="badge badge-{{ 'success' if d.estado == 'REALIZADO' else 'warning' }}">
+                  {{ d.estado }}
+                </span>
+              </td>
+              <td>{{ d.fecha_realizado.strftime('%d/%m/%Y') if d.fecha_realizado else '—' }}</td>
               <td>
                 {% if d.archivo_resultado %}
                   <a href="{{ url_for('static', filename='resultados/' ~ d.archivo_resultado) }}"
                      target="_blank"
                      class="btn btn-sm btn-primary">
-                    <i class="fas fa-eye"></i> Ver
+                    <i class="fas fa-file-pdf"></i> Ver archivo
                   </a>
                 {% else %}
                   —

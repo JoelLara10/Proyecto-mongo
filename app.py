@@ -3,6 +3,7 @@ import zipfile
 from datetime import datetime, date, timedelta
 from decimal import Decimal
 from bd import get_db_connection
+from bson.objectid import ObjectId
 import psutil
 import time
 from flask import (
@@ -15,7 +16,7 @@ import bcrypt
 from fpdf import FPDF
 from estudios import estudios_bp
 from templates.administrativo.pacientes.doc_pacientes import pdf
-""" from templates.medico.impresiones import pdf_med """
+from templates.medico.impresiones import pdf_med
 from utils.backups import (
     automatizacion_tareas,
     realizar_backup_automatico,
@@ -36,7 +37,7 @@ app.secret_key = 'tu_clave_secreta_aqui' # ⚠️ usa una clave segura en produc
 # ===============================
 app.register_blueprint(estudios_bp, url_prefix='/estudios')
 app.register_blueprint(pdf)
-""" app.register_blueprint(pdf_med) """
+app.register_blueprint(pdf_med)
 # ===============================
 # Inicializar Scheduler
 # ===============================
@@ -608,7 +609,7 @@ def expediente(id_atencion, id_exp):
             "id_exp": id_exp,
             "id_atencion": id_atencion,
             "fecha_alta": datetime.now(),
-            "usuario_alta": int(session['user_id'])
+            "usuario_alta": ObjectId(session['user_id'])
         })
         return redirect(url_for('expediente', id_atencion=id_atencion, id_exp=id_exp))
     return render_template(
@@ -733,7 +734,7 @@ def paciente(id_atencion, Id_exp):
     user_data = users_coll.find_one({"_id": ObjectId(session['user_id'])}, {"papell": 1})
     usuario = {
         'id_usua': session['user_id'],
-        'papell': user_data['papell']
+        'papell': user_data.get('papell', '')  # Use .get() with a default value
     }
     # Datos del paciente
     pipeline = [
@@ -748,8 +749,8 @@ def paciente(id_atencion, Id_exp):
             "nom_pac": 1,
             "fecnac": 1,
             "area": "$atencion.area",
-            "motivo_atn": "$atencion.motivo",
-            "alergias": "$atencion.alergias",
+            "motivo_atn": {"$ifNull": ["$atencion.motivo", ""]},  # Default to empty string if missing
+            "alergias": {"$ifNull": ["$atencion.alergias", ""]},
             "fecha": "$atencion.fecha_ing"
         }}
     ]
@@ -837,7 +838,6 @@ def examenes_gabinete(id_atencion):
         flash('Acceso denegado.', 'error')
         return redirect(url_for('dashboard'))
     db = get_db_connection()
-    # Paciente
     pipeline = [
         {"$match": {"id_atencion": id_atencion}},
         {"$lookup": {"from": "pacientes", "localField": "Id_exp", "foreignField": "Id_exp", "as": "paciente"}},
@@ -845,15 +845,13 @@ def examenes_gabinete(id_atencion):
         {"$project": {"Id_exp": "$paciente.Id_exp", "papell": "$paciente.papell", "sapell": "$paciente.sapell", "nom_pac": "$paciente.nom_pac"}}
     ]
     paciente = list(db['atencion'].aggregate(pipeline))[0] if list(db['atencion'].aggregate(pipeline)) else None
-    # Catálogo de exámenes
-    examenes = list(db['catalogo_examenes_gabinete'].find({}, {"id_catalogo": 1, "nombre": 1}).sort("nombre", 1))
+    examenes = list(db['catalogo_examenes'].find({"tipo": "GABINETE"}, {"id_catalogo": 1, "nombre": 1}).sort("nombre", 1))
     return render_template(
         'medico/forms/examenes_gabinete.html',
         id_atencion=id_atencion,
         paciente=paciente,
         examenes=examenes
     )
-
 @app.route('/medico/examenes-gabinete/guardar', methods=['POST'])
 def guardar_examenes_gabinete():
     if 'user_id' not in session:
@@ -867,24 +865,25 @@ def guardar_examenes_gabinete():
         flash('Debe seleccionar al menos un examen.', 'warning')
         return redirect(url_for('examenes_gabinete', id_atencion=id_atencion))
     db = get_db_connection()
-    # 1️⃣ Insertar encabezado
-    examenes_gabinete_coll = db['examenes_gabinete']
-    id_examen = get_next_sequence('examenes_gabinete_id_examen')
-    examenes_gabinete_coll.insert_one({
+    # 1️⃣ Insertar encabezado (usando colección unificada 'examenes')
+    examenes_coll = db['examenes']
+    id_examen = get_next_sequence('examenes_id_examen')
+    examenes_coll.insert_one({
         "id_examen": id_examen,
         "id_atencion": id_atencion,
-        "id_medico": int(session['user_id']),
+        "id_medico": ObjectId(session['user_id']),
         "observaciones": observaciones,
         "fecha": datetime.now()
     })
-    # 2️⃣ Insertar detalle (nombre del examen)
-    examenes_gabinete_det_coll = db['examenes_gabinete_det']
-    catalogo_coll = db['catalogo_examenes_gabinete']
+    # 2️⃣ Insertar detalle (usando colección unificada 'examenes_det', con id_catalogo)
+    examenes_det_coll = db['examenes_det']
+    catalogo_coll = db['catalogo_examenes']
     for id_catalogo in examenes_ids:
         examen = catalogo_coll.find_one({"id_catalogo": id_catalogo}, {"nombre": 1})
-        examenes_gabinete_det_coll.insert_one({
+        examenes_det_coll.insert_one({
             "id_examen": id_examen,
-            "nombre_examen": examen['nombre'],
+            "id_catalogo": id_catalogo,
+            "nombre_examen": examen.get('nombre', ''),  # Denormalizar nombre para simplicidad
             "estado": "PENDIENTE"
         })
     flash('Exámenes de gabinete guardados correctamente.', 'success')
@@ -914,8 +913,8 @@ def examenes_laboratorio(id_atencion):
         }}
     ]
     paciente = list(db['atencion'].aggregate(pipeline))[0] if list(db['atencion'].aggregate(pipeline)) else None
-    # Catálogo de exámenes
-    examenes = list(db['catalogo_examenes_laboratorio'].find({}, {"id_catalogo": 1, "nombre": 1}).sort("nombre", 1))
+    # Catálogo de exámenes (filtrado por tipo LABORATORIO)
+    examenes = list(db['catalogo_examenes'].find({"tipo": "LABORATORIO"}, {"id_catalogo": 1, "nombre": 1}).sort("nombre", 1))
     return render_template(
         'medico/forms/examenes_laboratorio.html',
         id_atencion=id_atencion,
@@ -938,23 +937,26 @@ def guardar_examenes_laboratorio():
         flash('Debe seleccionar al menos un examen.', 'warning')
         return redirect(url_for('examenes_laboratorio', id_atencion=id_atencion))
     db = get_db_connection()
-    # Encabezado
-    examenes_laboratorio_coll = db['examenes_laboratorio']
-    id_examen = get_next_sequence('examenes_laboratorio_id_examen')
-    examenes_laboratorio_coll.insert_one({
+    # Encabezado (usando colección unificada 'examenes')
+    examenes_coll = db['examenes']
+    id_examen = get_next_sequence('examenes_id_examen')
+    examenes_coll.insert_one({
         "id_examen": id_examen,
         "id_atencion": id_atencion,
-        "id_medico": int(session['user_id']),
+        "id_medico": ObjectId(session['user_id']),
         "observaciones": observaciones,
-        "estado": "pendiente",
         "fecha": datetime.now()
     })
-    # Detalle
-    examenes_laboratorio_det_coll = db['examenes_laboratorio_det']
+    # Detalle (usando colección unificada 'examenes_det', con id_catalogo)
+    examenes_det_coll = db['examenes_det']
+    catalogo_coll = db['catalogo_examenes']
     for id_catalogo in examenes:
-        examenes_laboratorio_det_coll.insert_one({
+        examen = catalogo_coll.find_one({"id_catalogo": id_catalogo}, {"nombre": 1})
+        examenes_det_coll.insert_one({
             "id_examen": id_examen,
-            "id_catalogo": id_catalogo
+            "id_catalogo": id_catalogo,
+            "nombre_examen": examen.get('nombre', ''),  # Denormalizar nombre para simplicidad
+            "estado": "PENDIENTE"
         })
     flash('Exámenes de laboratorio enviados correctamente.', 'success')
     return redirect(
@@ -964,12 +966,14 @@ def guardar_examenes_laboratorio():
         )
     )
 
+
 @app.route('/medico/resultados-estudios/<int:id_atencion>')
 def resultados_estudios(id_atencion):
     if 'user_id' not in session:
         flash('Sesión no válida.', 'error')
         return redirect(url_for('dashboard'))
     db = get_db_connection()
+
     # ================= PACIENTE =================
     pipeline = [
         {"$match": {"id_atencion": id_atencion}},
@@ -984,51 +988,71 @@ def resultados_estudios(id_atencion):
             "fecha_ing": 1
         }}
     ]
-    paciente = list(db['atencion'].aggregate(pipeline))[0] if list(db['atencion'].aggregate(pipeline)) else None
+    paciente_list = list(db['atencion'].aggregate(pipeline))
+    paciente = paciente_list[0] if paciente_list else None
+
     if not paciente:
         flash('Paciente no encontrado.', 'error')
         return redirect(url_for('dashboard'))
-    # ================= LABORATORIO (SOLO REALIZADOS) =================
+
+    # ================= LABORATORIO =================
     pipeline_lab = [
-        {"$match": {"id_atencion": id_atencion, "$or": [{"estado": "realizado"}, {"archivo_resultado": {"$ne": None}}, {"fecha_realizado": {"$ne": None}}]}},
-        {"$lookup": {"from": "examenes_laboratorio_det", "localField": "id_examen", "foreignField": "id_examen", "as": "det"}},
-        {"$unwind": "$det"},
-        {"$lookup": {"from": "catalogo_examenes_laboratorio", "localField": "det.id_catalogo", "foreignField": "id_catalogo", "as": "cat"}},
-        {"$unwind": "$cat"},
-        {"$lookup": {"from": "users", "localField": "id_medico", "foreignField": "id", "as": "user"}},
-        {"$unwind": "$user"},
-        {"$group": {
-            "_id": "$id_examen",
-            "estudios": {"$push": "$cat.nombre"},
-            "medico": {"$first": "$user.papell"},
-            "observaciones": {"$first": "$observaciones"},
-            "fecha": {"$first": "$fecha"}
-        }},
-        {"$sort": {"fecha": -1}}
-    ]
-    laboratorio = list(db['examenes_laboratorio'].aggregate(pipeline_lab))
-    for l in laboratorio:
-        l['estudios'] = ', '.join(l['estudios'])
-    # ================= GABINETE (SOLO REALIZADO) =================
-    pipeline_gab = [
         {"$match": {"id_atencion": id_atencion}},
-        {"$lookup": {"from": "examenes_gabinete_det", "localField": "id_examen", "foreignField": "id_examen", "as": "det"}},
+        {"$lookup": {"from": "examenes_det", "localField": "id_examen", "foreignField": "id_examen", "as": "det"}},
         {"$unwind": "$det"},
-        {"$match": {"$or": [{"det.estado": "REALIZADO"}, {"det.archivo_resultado": {"$ne": None}}]}},
-        {"$lookup": {"from": "users", "localField": "id_medico", "foreignField": "id", "as": "user"}},
+        {"$lookup": {"from": "catalogo_examenes", "localField": "det.id_catalogo", "foreignField": "id_catalogo",
+                     "as": "cat"}},
+        {"$unwind": "$cat"},
+        {"$match": {"cat.tipo": "LABORATORIO"}},
+        {"$lookup": {"from": "users", "localField": "id_medico", "foreignField": "_id", "as": "user"}},
         {"$unwind": "$user"},
         {"$group": {
             "_id": "$id_examen",
+            "id_examen": {"$first": "$id_examen"},  # 👈 AGREGAR ESTO
             "fecha": {"$first": "$fecha"},
             "observaciones": {"$first": "$observaciones"},
-            "medico": {"$first": "$user.papell"},
-            "estudios": {"$push": "$det.nombre_examen"}
+            "medico": {"$first": {"$concat": ["$user.pnombre", " ", "$user.papell"]}},
+            "estudios": {"$push": "$cat.nombre"},
+            "detalles": {"$push": {
+                "nombre": "$cat.nombre",
+                "estado": "$det.estado",
+                "resultado": "$det.resultado",
+                "fecha_realizado": "$det.fecha_realizado"
+            }}
         }},
         {"$sort": {"fecha": -1}}
     ]
-    gabinete = list(db['examenes_gabinete'].aggregate(pipeline_gab))
-    for g in gabinete:
-        g['estudios'] = ', '.join(g['estudios'])
+    laboratorio = list(db['examenes'].aggregate(pipeline_lab))
+
+    # ================= GABINETE =================
+    pipeline_gab = [
+        {"$match": {"id_atencion": id_atencion}},
+        {"$lookup": {"from": "examenes_det", "localField": "id_examen", "foreignField": "id_examen", "as": "det"}},
+        {"$unwind": "$det"},
+        {"$lookup": {"from": "catalogo_examenes", "localField": "det.id_catalogo", "foreignField": "id_catalogo",
+                     "as": "cat"}},
+        {"$unwind": "$cat"},
+        {"$match": {"cat.tipo": "GABINETE"}},
+        {"$lookup": {"from": "users", "localField": "id_medico", "foreignField": "_id", "as": "user"}},
+        {"$unwind": "$user"},
+        {"$group": {
+            "_id": "$id_examen",
+            "id_examen": {"$first": "$id_examen"},  # 👈 AGREGAR ESTO
+            "fecha": {"$first": "$fecha"},
+            "observaciones": {"$first": "$observaciones"},
+            "medico": {"$first": {"$concat": ["$user.pnombre", " ", "$user.papell"]}},
+            "estudios": {"$push": "$cat.nombre"},
+            "detalles": {"$push": {
+                "nombre": "$cat.nombre",
+                "estado": "$det.estado",
+                "archivo": "$det.archivo_resultado",
+                "fecha_realizado": "$det.fecha_realizado"
+            }}
+        }},
+        {"$sort": {"fecha": -1}}
+    ]
+    gabinete = list(db['examenes'].aggregate(pipeline_gab))
+
     return render_template(
         'medico/res_estudios/resultados_estudios.html',
         paciente=paciente,
@@ -1037,80 +1061,146 @@ def resultados_estudios(id_atencion):
         gabinete=gabinete
     )
 
+
 @app.route('/medico/resultados-laboratorio/<int:id_examen>')
 def ver_resultado_laboratorio(id_examen):
     if 'user_id' not in session:
         flash('Sesión no válida.', 'error')
         return redirect(url_for('dashboard'))
+
     db = get_db_connection()
-    # ================= RESULTADO LABORATORIO =================
-    pipeline = [
+
+    # Obtener encabezado y paciente
+    pipeline_enc = [
         {"$match": {"id_examen": id_examen}},
-        {"$lookup": {"from": "examenes_laboratorio_det", "localField": "id_examen", "foreignField": "id_examen", "as": "det"}},
-        {"$unwind": "$det"},
-        {"$lookup": {"from": "catalogo_examenes_laboratorio", "localField": "det.id_catalogo", "foreignField": "id_catalogo", "as": "cat"}},
-        {"$unwind": "$cat"},
         {"$lookup": {"from": "atencion", "localField": "id_atencion", "foreignField": "id_atencion", "as": "atencion"}},
         {"$unwind": "$atencion"},
         {"$lookup": {"from": "pacientes", "localField": "atencion.Id_exp", "foreignField": "Id_exp", "as": "paciente"}},
         {"$unwind": "$paciente"},
-        {"$lookup": {"from": "users", "localField": "id_medico", "foreignField": "id", "as": "user"}},
+        {"$lookup": {"from": "users", "localField": "id_medico", "foreignField": "_id", "as": "user"}},
         {"$unwind": "$user"},
-        {"$group": {
-            "_id": "$id_examen",
-            "fecha": {"$first": "$fecha"},
-            "observaciones": {"$first": "$observaciones"},
-            "id_atencion": {"$first": "$atencion.id_atencion"},
-            "Id_exp": {"$first": "$paciente.Id_exp"},
-            "papell": {"$first": "$paciente.papell"},
-            "sapell": {"$first": "$paciente.sapell"},
-            "nom_pac": {"$first": "$paciente.nom_pac"},
-            "medico": {"$first": "$user.papell"},
-            "estudios": {"$push": "$cat.nombre"}
+        {"$project": {
+            "fecha": 1,
+            "observaciones": 1,
+            "id_atencion": "$atencion.id_atencion",
+            "Id_exp": "$paciente.Id_exp",
+            "papell": "$paciente.papell",
+            "sapell": "$paciente.sapell",
+            "nom_pac": "$paciente.nom_pac",
+            "medico": {"$concat": ["$user.pnombre", " ", "$user.papell"]}
         }}
     ]
-    resultado = list(db['examenes_laboratorio'].aggregate(pipeline))[0] if list(db['examenes_laboratorio'].aggregate(pipeline)) else None
-    if not resultado:
+
+    encabezado_list = list(db['examenes'].aggregate(pipeline_enc))
+    if not encabezado_list:
         flash('Resultado no encontrado.', 'error')
         return redirect(url_for('dashboard'))
-    resultado['estudios'] = ', '.join(resultado['estudios'])
+
+    encabezado = encabezado_list[0]
+
+    # Crear objeto paciente para el template
+    paciente = {
+        'Id_exp': encabezado['Id_exp'],
+        'papell': encabezado['papell'],
+        'sapell': encabezado['sapell'],
+        'nom_pac': encabezado['nom_pac']
+    }
+
+    # Obtener detalles de laboratorio
+    pipeline_det = [
+        {"$match": {"id_examen": id_examen}},
+        {"$lookup": {"from": "catalogo_examenes", "localField": "id_catalogo", "foreignField": "id_catalogo",
+                     "as": "cat"}},
+        {"$unwind": "$cat"},
+        {"$match": {"cat.tipo": "LABORATORIO"}},
+        {"$project": {
+            "nombre": "$cat.nombre",
+            "estado": 1,
+            "resultado": 1,
+            "fecha_realizado": 1,
+            "observaciones": 1
+        }}
+    ]
+
+    detalles = list(db['examenes_det'].aggregate(pipeline_det))
+
     return render_template(
         'medico/res_estudios/ver_resultado_laboratorio.html',
-        resultado=resultado,
-        id_atencion=resultado['id_atencion'],
-        paciente={
-            'Id_exp': resultado['Id_exp'],
-            'nom_pac': resultado['nom_pac'],
-            'papell': resultado['papell'],
-            'sapell': resultado['sapell']
-        }
+        encabezado=encabezado,
+        paciente=paciente,  # 👈 AGREGAR ESTO
+        detalles=detalles,
+        id_atencion=encabezado['id_atencion']
     )
+
 
 @app.route('/medico/gabinete/ver/<int:id_examen>')
 def ver_resultado_gabinete(id_examen):
     if 'user_id' not in session:
         flash('Sesión no válida', 'error')
         return redirect(url_for('dashboard'))
+
     db = get_db_connection()
-    encabezado = db['examenes_gabinete'].find_one({"id_examen": id_examen}, {"fecha": 1, "observaciones": 1})
-    if encabezado:
-        atencion = db['atencion'].find_one({"id_atencion": encabezado['id_atencion']}, {"id_atencion": 1, "Id_exp": 1})
-        paciente = db['pacientes'].find_one({"Id_exp": atencion['Id_exp']}, {"nom_pac": 1, "papell": 1, "sapell": 1})
-        encabezado.update(paciente)
-        encabezado['id_atencion'] = atencion['id_atencion']
-        encabezado['Id_exp'] = atencion['Id_exp']
-    detalles = list(db['examenes_gabinete_det'].find({"id_examen": id_examen}, {"nombre_examen": 1, "estado": 1, "fecha_realizado": 1, "archivo_resultado": 1, "observaciones": 1}))
+
+    # Obtener encabezado y paciente
+    pipeline_enc = [
+        {"$match": {"id_examen": id_examen}},
+        {"$lookup": {"from": "atencion", "localField": "id_atencion", "foreignField": "id_atencion", "as": "atencion"}},
+        {"$unwind": "$atencion"},
+        {"$lookup": {"from": "pacientes", "localField": "atencion.Id_exp", "foreignField": "Id_exp", "as": "paciente"}},
+        {"$unwind": "$paciente"},
+        {"$lookup": {"from": "users", "localField": "id_medico", "foreignField": "_id", "as": "user"}},
+        {"$unwind": "$user"},
+        {"$project": {
+            "fecha": 1,
+            "observaciones": 1,
+            "id_atencion": "$atencion.id_atencion",
+            "Id_exp": "$paciente.Id_exp",
+            "papell": "$paciente.papell",
+            "sapell": "$paciente.sapell",
+            "nom_pac": "$paciente.nom_pac",
+            "medico": {"$concat": ["$user.pnombre", " ", "$user.papell"]}
+        }}
+    ]
+
+    encabezado_list = list(db['examenes'].aggregate(pipeline_enc))
+    if not encabezado_list:
+        flash('Resultado no encontrado.', 'error')
+        return redirect(url_for('dashboard'))
+
+    encabezado = encabezado_list[0]
+
+    # Crear objeto paciente para el template
+    paciente = {
+        'Id_exp': encabezado['Id_exp'],
+        'papell': encabezado['papell'],
+        'sapell': encabezado['sapell'],
+        'nom_pac': encabezado['nom_pac']
+    }
+
+    # Obtener detalles de gabinete
+    pipeline_det = [
+        {"$match": {"id_examen": id_examen}},
+        {"$lookup": {"from": "catalogo_examenes", "localField": "id_catalogo", "foreignField": "id_catalogo",
+                     "as": "cat"}},
+        {"$unwind": "$cat"},
+        {"$match": {"cat.tipo": "GABINETE"}},
+        {"$project": {
+            "nombre": "$cat.nombre",
+            "estado": 1,
+            "archivo_resultado": 1,
+            "fecha_realizado": 1,
+            "observaciones": 1
+        }}
+    ]
+
+    detalles = list(db['examenes_det'].aggregate(pipeline_det))
+
     return render_template(
         'medico/res_estudios/ver_resultado_gabinete.html',
         encabezado=encabezado,
+        paciente=paciente,  # 👈 AGREGAR ESTO
         detalles=detalles,
-        id_atencion=encabezado['id_atencion'],
-        paciente={
-            'Id_exp': encabezado['Id_exp'],
-            'nom_pac': encabezado['nom_pac'],
-            'papell': encabezado['papell'],
-            'sapell': encabezado['sapell']
-        }
+        id_atencion=encabezado['id_atencion']
     )
 
 # ==================== GESTIÓN DE CUENTAS ====================
@@ -1319,17 +1409,35 @@ def imprimir_documentos(id_atencion):
         id_atencion=id_atencion
     )
 
+
 @app.route('/medico/imprimir/signos/<int:id_atencion>')
 def imprimir_signos_vitales(id_atencion):
     db = get_db_connection()
-    pipeline = [
+
+    # Obtener información del paciente
+    pipeline_paciente = [
         {"$match": {"id_atencion": id_atencion}},
         {"$lookup": {"from": "pacientes", "localField": "Id_exp", "foreignField": "Id_exp", "as": "paciente"}},
         {"$unwind": "$paciente"},
-        {"$project": {"Id_exp": "$paciente.Id_exp", "papell": "$paciente.papell", "sapell": "$paciente.sapell", "nom_pac": "$paciente.nom_pac"}}
+        {"$project": {
+            "Id_exp": "$paciente.Id_exp",
+            "papell": "$paciente.papell",
+            "sapell": "$paciente.sapell",
+            "nom_pac": "$paciente.nom_pac"
+        }}
     ]
-    paciente = list(db['atencion'].aggregate(pipeline))[0] if list(db['atencion'].aggregate(pipeline)) else None
-    signos = list(db['signos_vitales'].find({"id_atencion": id_atencion}).sort("fecha_registro", -1))
+    paciente_result = list(db['atencion'].aggregate(pipeline_paciente))
+    paciente = paciente_result[0] if paciente_result else None
+
+    # Obtener signos vitales con TODOS los campos necesarios
+    signos = list(db['signos_vitales'].find(
+        {"id_atencion": id_atencion}
+    ).sort("fecha_registro", -1))
+
+    # Convertir ObjectId a string para cada signo (si es necesario)
+    for signo in signos:
+        signo['_id'] = str(signo['_id'])
+
     return render_template(
         'medico/impresiones/signos_vitales.html',
         paciente=paciente,
@@ -1373,43 +1481,117 @@ def imprimir_diagnostico(id_atencion):
         id_atencion=id_atencion
     )
 
+
 @app.route('/medico/imprimir/recetas/<int:id_atencion>')
 def imprimir_recetas(id_atencion):
     db = get_db_connection()
-    pipeline = [
+
+    # Obtener paciente
+    pipeline_pac = [
         {"$match": {"id_atencion": id_atencion}},
         {"$lookup": {"from": "pacientes", "localField": "Id_exp", "foreignField": "Id_exp", "as": "paciente"}},
         {"$unwind": "$paciente"},
-        {"$project": {"Id_exp": "$paciente.Id_exp", "papell": "$paciente.papell", "sapell": "$paciente.sapell", "nom_pac": "$paciente.nom_pac"}}
+        {"$project": {
+            "Id_exp": "$paciente.Id_exp",
+            "papell": "$paciente.papell",
+            "sapell": "$paciente.sapell",
+            "nom_pac": "$paciente.nom_pac"
+        }}
     ]
-    paciente = list(db['atencion'].aggregate(pipeline))[0] if list(db['atencion'].aggregate(pipeline)) else None
-    # RECETAS AGRUPADAS POR FECHA
-    pipeline_rec = [
-        {"$match": {"id_atencion": id_atencion}},
-        {"$group": {"_id": "$fecha_registro", "total_meds": {"$sum": 1}}},
-        {"$sort": {"_id": -1}}
-    ]
-    recetas = list(db['recetas'].aggregate(pipeline_rec))
-    for r in recetas:
-        r['fecha_registro'] = r['_id']
+    paciente_list = list(db['atencion'].aggregate(pipeline_pac))
+    paciente = paciente_list[0] if paciente_list else None
+
+    # Obtener recetas (cada documento es una receta con array de medicamentos)
+    recetas = list(db['recetas'].find(
+        {"id_atencion": id_atencion}
+    ).sort("fecha_registro", -1))
+
     return render_template(
         'medico/impresiones/recetas.html',
         paciente=paciente,
-        recetas=recetas,
+        recetas=recetas,  # Ahora recetas es una lista de documentos con id_receta
         id_atencion=id_atencion
     )
+
 
 @app.route('/medico/imprimir/laboratorio/<int:id_atencion>')
 def imprimir_laboratorio(id_atencion):
     db = get_db_connection()
-    pipeline = [
+
+    # Obtener paciente
+    pipeline_pac = [
         {"$match": {"id_atencion": id_atencion}},
         {"$lookup": {"from": "pacientes", "localField": "Id_exp", "foreignField": "Id_exp", "as": "paciente"}},
         {"$unwind": "$paciente"},
-        {"$project": {"Id_exp": "$paciente.Id_exp", "papell": "$paciente.papell", "sapell": "$paciente.sapell", "nom_pac": "$paciente.nom_pac"}}
+        {"$project": {
+            "Id_exp": "$paciente.Id_exp",
+            "papell": "$paciente.papell",
+            "sapell": "$paciente.sapell",
+            "nom_pac": "$paciente.nom_pac"
+        }}
     ]
-    paciente = list(db['atencion'].aggregate(pipeline))[0] if list(db['atencion'].aggregate(pipeline)) else None
-    examenes = list(db['examenes_laboratorio'].find({"id_atencion": id_atencion}).sort("fecha", -1))
+    paciente_list = list(db['atencion'].aggregate(pipeline_pac))
+    paciente = paciente_list[0] if paciente_list else None
+
+    # Obtener exámenes de laboratorio
+    pipeline_examenes = [
+        {"$match": {"id_atencion": id_atencion}},
+        {"$lookup": {
+            "from": "examenes_det",
+            "localField": "id_examen",
+            "foreignField": "id_examen",
+            "as": "detalles"
+        }},
+        {"$unwind": "$detalles"},
+        {"$lookup": {
+            "from": "catalogo_examenes",
+            "localField": "detalles.id_catalogo",
+            "foreignField": "id_catalogo",
+            "as": "catalogo"
+        }},
+        {"$unwind": "$catalogo"},
+        {"$match": {"catalogo.tipo": "LABORATORIO"}},
+        {"$group": {
+            "_id": "$id_examen",
+            "id_examen": {"$first": "$id_examen"},  # 👈 IMPORTANTE: incluir id_examen explícitamente
+            "fecha": {"$first": "$fecha"},
+            "observaciones": {"$first": "$observaciones"},
+            "examenes": {
+                "$push": {
+                    "nombre": "$catalogo.nombre",
+                    "estado": "$detalles.estado",
+                    "resultado": "$detalles.resultado"
+                }
+            },
+            "estados": {"$push": "$detalles.estado"}
+        }},
+        {"$addFields": {
+            "estado": {  # 👈 Estado general del grupo
+                "$cond": [
+                    {"$in": ["PENDIENTE", "$estados"]},
+                    "PENDIENTE",
+                    {
+                        "$cond": [
+                            {"$in": ["CANCELADO", "$estados"]},
+                            "CANCELADO",
+                            "REALIZADO"
+                        ]
+                    }
+                ]
+            }
+        }},
+        {"$project": {
+            "id_examen": 1,  # 👈 Asegurar que id_examen está en el resultado
+            "fecha": 1,
+            "estado": 1,
+            "observaciones": 1,
+            "examenes": 1
+        }},
+        {"$sort": {"fecha": -1}}
+    ]
+
+    examenes = list(db['examenes'].aggregate(pipeline_examenes))
+
     return render_template(
         'medico/impresiones/examenes_laboratorio.html',
         paciente=paciente,
@@ -1417,66 +1599,90 @@ def imprimir_laboratorio(id_atencion):
         id_atencion=id_atencion
     )
 
+
 @app.route('/medico/imprimir/gabinete/<int:id_atencion>')
 def imprimir_gabinete(id_atencion):
     db = get_db_connection()
-    pipeline = [
+
+    # Obtener paciente
+    pipeline_pac = [
         {"$match": {"id_atencion": id_atencion}},
         {"$lookup": {"from": "pacientes", "localField": "Id_exp", "foreignField": "Id_exp", "as": "paciente"}},
         {"$unwind": "$paciente"},
-        {"$project": {"Id_exp": "$paciente.Id_exp", "papell": "$paciente.papell", "sapell": "$paciente.sapell", "nom_pac": "$paciente.nom_pac"}}
+        {"$project": {
+            "Id_exp": "$paciente.Id_exp",
+            "papell": "$paciente.papell",
+            "sapell": "$paciente.sapell",
+            "nom_pac": "$paciente.nom_pac"
+        }}
     ]
-    paciente = list(db['atencion'].aggregate(pipeline))[0] if list(db['atencion'].aggregate(pipeline)) else None
-    pipeline_ex = [
-    {"$match": {"id_atencion": id_atencion}},
-    {"$lookup": {
-        "from": "examenes_gabinete_det",
-        "localField": "id_examen",
-        "foreignField": "id_examen",
-        "as": "det"
-    }},
-    {"$unwind": "$det"},
-    {"$group": {
-        "_id": "$id_examen",
-        "fecha": {"$first": "$fecha"},
-        "cancelados": {
-            "$sum": {
-                "$cond": [
-                    {"$eq": ["$det.estado", "CANCELADO"]},
-                    1,
-                    0
-                ]
-            }
-        },
-        "pendientes": {
-            "$sum": {
-                "$cond": [
-                    {"$eq": ["$det.estado", "PENDIENTE"]},
-                    1,
-                    0
-                ]
-            }
-        }
-    }},
-    {"$project": {
-        "fecha": 1,
-        "estado_general": {
-            "$cond": [
-                {"$gt": ["$cancelados", 0]},
-                "CANCELADO",
-                {
-                    "$cond": [
-                        {"$gt": ["$pendientes", 0]},
-                        "PENDIENTE",
-                        "REALIZADO"
-                    ]
+    paciente_list = list(db['atencion'].aggregate(pipeline_pac))
+    paciente = paciente_list[0] if paciente_list else None
+
+    # Obtener exámenes de gabinete
+    pipeline_examenes = [
+        {"$match": {"id_atencion": id_atencion}},
+        {"$lookup": {
+            "from": "examenes_det",
+            "localField": "id_examen",
+            "foreignField": "id_examen",
+            "as": "detalles"
+        }},
+        {"$unwind": "$detalles"},
+        {"$lookup": {
+            "from": "catalogo_examenes",
+            "localField": "detalles.id_catalogo",
+            "foreignField": "id_catalogo",
+            "as": "catalogo"
+        }},
+        {"$unwind": "$catalogo"},
+        {"$match": {"catalogo.tipo": "GABINETE"}},
+        {"$group": {
+            "_id": "$id_examen",
+            "id_examen": {"$first": "$id_examen"},
+            "fecha": {"$first": "$fecha"},
+            "observaciones": {"$first": "$observaciones"},
+            "examenes": {
+                "$push": {
+                    "nombre": "$catalogo.nombre",
+                    "estado": "$detalles.estado",
+                    "archivo": "$detalles.archivo_resultado"
                 }
-            ]
-        }
-    }},
-    {"$sort": {"fecha": -1}}
-]
-    examenes = list(db['examenes_gabinete'].aggregate(pipeline_ex))
+            },
+            "estados": {"$push": "$detalles.estado"}
+        }},
+        {"$addFields": {
+            "estado_general": {  # 👈 Cambiar de "estado" a "estado_general"
+                "$cond": [
+                    {"$in": ["PENDIENTE", "$estados"]},
+                    "PENDIENTE",
+                    {
+                        "$cond": [
+                            {"$in": ["CANCELADO", "$estados"]},
+                            "CANCELADO",
+                            "REALIZADO"
+                        ]
+                    }
+                ]
+            }
+        }},
+        {"$project": {
+            "id_examen": 1,
+            "fecha": 1,
+            "estado_general": 1,  # 👈 Asegurar que se llama estado_general
+            "observaciones": 1,
+            "examenes": 1
+        }},
+        {"$sort": {"fecha": -1}}
+    ]
+
+    examenes = list(db['examenes'].aggregate(pipeline_examenes))
+
+    # DEBUG: Imprimir para verificar (opcional)
+    print("Exámenes encontrados:", len(examenes))
+    for e in examenes:
+        print(f"ID: {e.get('id_examen')}, Estado: {e.get('estado_general')}")
+
     return render_template(
         'medico/impresiones/examenes_gabinete.html',
         paciente=paciente,
@@ -1504,6 +1710,7 @@ def signos_vitales(id_atencion):
     # ========= POST =========
     if request.method == 'POST':
         db['signos_vitales'].insert_one({
+            "id_signos": get_next_sequence('signos_vitales_id'),  # AGREGAR ESTO
             "id_atencion": id_atencion,
             "ta": request.form.get('ta'),
             "fc": request.form.get('fc'),
@@ -1530,12 +1737,13 @@ def nota_medica(id_atencion):
     db = get_db_connection()
     if request.method == 'POST':
         db['notas_medicas'].insert_one({
+            "id_nota": get_next_sequence('notas_medicas_id'),  # AGREGAR ESTO
             "id_atencion": id_atencion,
             "subjetivo": request.form['subjetivo'],
             "objetivo": request.form['objetivo'],
             "analisis": request.form['analisis'],
             "plan": request.form['plan'],
-            "id_medico": int(session['user_id']),
+            "id_medico": ObjectId(session['user_id']),
             "fecha_registro": datetime.now()
         })
         flash('Nota médica registrada correctamente', 'success')
@@ -1568,13 +1776,11 @@ def diagnostico(id_atencion):
         return redirect(url_for('dashboard'))
     # ===== POST =====
     if request.method == 'POST':
-        if atencion['status'] == 'CERRADA':
-            flash('La atención está cerrada, no se puede modificar el diagnóstico', 'danger')
-            return redirect(url_for('diagnostico', id_atencion=id_atencion))
         diagnostico_principal = request.form['diagnostico_principal']
         secundarios = request.form.get('diagnosticos_secundarios')
         observaciones = request.form.get('observaciones')
         diag_coll = db['diagnosticos']
+
         if diag_coll.find_one({"id_atencion": id_atencion}):
             diag_coll.update_one({"id_atencion": id_atencion}, {"$set": {
                 "diagnostico_principal": diagnostico_principal,
@@ -1583,21 +1789,13 @@ def diagnostico(id_atencion):
             }})
         else:
             diag_coll.insert_one({
+                "id_diagnostico": get_next_sequence('diagnosticos_id'),  # AGREGAR ESTO
                 "id_atencion": id_atencion,
                 "diagnostico_principal": diagnostico_principal,
                 "diagnosticos_secundarios": secundarios,
                 "observaciones": observaciones,
                 "fecha_registro": datetime.now()
             })
-        # ===== HISTORIAL =====
-        db['diagnosticos_historial'].insert_one({
-            "id_atencion": id_atencion,
-            "diagnostico_principal": diagnostico_principal,
-            "diagnosticos_secundarios": secundarios,
-            "observaciones": observaciones,
-            "id_medico": int(session['user_id']),
-            "fecha_registro": datetime.now()
-        })
         flash('Diagnóstico guardado correctamente', 'success')
         return redirect(url_for('diagnostico', id_atencion=id_atencion))
     # ===== GET =====
@@ -1617,43 +1815,65 @@ def diagnostico(id_atencion):
         status_atencion=atencion['status']
     )
 
+
 @app.route('/medico/receta/<int:id_atencion>', methods=['GET', 'POST'])
 def receta_medica(id_atencion):
     if 'user_id' not in session:
         flash('Sesión no válida', 'error')
         return redirect(url_for('dashboard'))
     db = get_db_connection()
-    # ================= GUARDAR RECETA =================
+
     if request.method == 'POST':
         medicamentos = request.form.getlist('medicamento[]')
         dosis = request.form.getlist('dosis[]')
         frecuencia = request.form.getlist('frecuencia[]')
         duracion = request.form.getlist('duracion[]')
         indicaciones = request.form.getlist('indicaciones[]')
+
+        # Crear UN SOLO documento con TODOS los medicamentos
         recetas_coll = db['recetas']
+
+        # Construir el array de medicamentos
+        medicamentos_array = []
         for i in range(len(medicamentos)):
+            if medicamentos[i].strip():  # Solo si no está vacío
+                medicamentos_array.append({
+                    "medicamento": medicamentos[i],
+                    "dosis": dosis[i] if i < len(dosis) else "",
+                    "frecuencia": frecuencia[i] if i < len(frecuencia) else "",
+                    "duracion": duracion[i] if i < len(duracion) else "",
+                    "indicaciones": indicaciones[i] if i < len(indicaciones) else ""
+                })
+
+        if medicamentos_array:
             recetas_coll.insert_one({
+                "id_receta": get_next_sequence('recetas_id'),
                 "id_atencion": id_atencion,
-                "medicamento": medicamentos[i],
-                "dosis": dosis[i],
-                "frecuencia": frecuencia[i],
-                "duracion": duracion[i],
-                "indicaciones": indicaciones[i],
-                "id_medico": int(session['user_id']),
+                "medicamentos": medicamentos_array,  # Array de medicamentos
+                "id_medico": ObjectId(session['user_id']),
                 "fecha_registro": datetime.now()
             })
-        flash('Receta guardada correctamente', 'success')
+            flash('Receta guardada correctamente', 'success')
+        else:
+            flash('No se ingresaron medicamentos', 'error')
+
         return redirect(url_for('receta_medica', id_atencion=id_atencion))
-    # ================= PACIENTE =================
+
+    # GET: Obtener paciente y recetas
     pipeline = [
         {"$match": {"id_atencion": id_atencion}},
         {"$lookup": {"from": "pacientes", "localField": "Id_exp", "foreignField": "Id_exp", "as": "paciente"}},
         {"$unwind": "$paciente"},
         {"$project": {"paciente": 1}}
     ]
-    paciente = list(db['atencion'].aggregate(pipeline))[0]['paciente'] if list(db['atencion'].aggregate(pipeline)) else None
-    # ================= RECETAS =================
-    recetas = list(db['recetas'].find({"id_atencion": id_atencion}).sort("fecha_registro", -1))
+    paciente = list(db['atencion'].aggregate(pipeline))
+    paciente = paciente[0]['paciente'] if paciente else None
+
+    # Obtener recetas (ahora cada una es un documento con array de medicamentos)
+    recetas = list(db['recetas'].find(
+        {"id_atencion": id_atencion}
+    ).sort("fecha_registro", -1))
+
     return render_template(
         'medico/forms/receta.html',
         paciente=paciente,
