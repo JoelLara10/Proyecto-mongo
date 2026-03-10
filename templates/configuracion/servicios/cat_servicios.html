@@ -1,144 +1,39 @@
 {% extends "configuracion/header_configuracion.html" %}
 
 {% block content %}
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Catálogo de Servicios</title>
-
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.0/css/all.css">
-
-    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"></script>
-
-    <style>
-        body { background: #f4f6f9; }
-
-        .price-badge {
-            background: #17a2b8;
-            color: #fff;
-            padding: 3px 8px;
-            border-radius: 10px;
-            font-size: 12px;
-        }
-    </style>
-</head>
-
-<body>
 
 <div class="container-fluid mt-4">
 
     <!-- ENCABEZADO -->
-    <div class="card mb-4">
-        <div class="card-body text-center">
+    <div class="card mb-4 shadow">
+        <div class="card-body text-center bg-primary text-white rounded">
             <h3><i class="fas fa-cogs"></i> CATÁLOGO DE SERVICIOS</h3>
         </div>
     </div>
 
     <!-- BOTÓN NUEVO -->
-    {% if session.get('login', {}).get('id_rol') == 5 %}
-    <div class="mb-3 text-right">
-        <button class="btn btn-primary" data-toggle="modal" data-target="#modalServicio">
+    {% if session.get('role') == 'admin' %}
+    <div class="mb-3 text-end">
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalServicio">
             <i class="fas fa-plus"></i> Nuevo Servicio
+        </button>
+        <!-- Botón de emergencia para pruebas -->
+        <button class="btn btn-success ms-2" onclick="abrirModalManual()">
+            <i class="fas fa-external-link-alt"></i> Abrir Modal (Prueba)
         </button>
     </div>
     {% endif %}
 
-    <!-- MODAL NUEVO SERVICIO -->
-    <div class="modal fade" id="modalServicio">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-
-                <form method="POST" action="{{ url_for('insertar_servicio') }}">
-                    <div class="modal-header bg-primary text-white">
-                        <h5 class="modal-title">Nuevo Servicio</h5>
-                        <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
-                    </div>
-
-                    <div class="modal-body">
-                        <div class="row">
-
-                            <div class="col-md-6">
-                                <label>Clave</label>
-                                <input name="clave" class="form-control" required>
-                            </div>
-
-                            <div class="col-md-6">
-                                <label>Descripción</label>
-                                <input name="descripcion" class="form-control" required>
-                            </div>
-
-                            {% for i in range(1,9) %}
-                            <div class="col-md-3 mt-3">
-                                <label>Precio {{ i }}</label>
-                                <input type="number" step="0.01" name="costo{{ i }}" class="form-control">
-                            </div>
-                            {% endfor %}
-
-                            <div class="col-md-6 mt-3">
-                                <label>Unidad de Medida</label>
-                                <select name="med" class="form-control" required>
-                                    <option value="">Seleccionar</option>
-                                    <option>CONSULTA</option>
-                                    <option>EQUIPO</option>
-                                    <option>ESTUDIO</option>
-                                    <option>HORA</option>
-                                    <option>SERVICIO</option>
-                                </select>
-                            </div>
-
-                            <div class="col-md-6 mt-3">
-                                <label>Tipo</label>
-                                <select name="tipo" class="form-control" required>
-                                    <option value="">Seleccionar</option>
-                                    {% for t in tipos %}
-                                        <option value="{{ t.tipo }}">{{ t.tipo }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-
-                            <div class="col-md-6 mt-3">
-                                <label>Proveedor</label>
-                                <input name="proveedor" class="form-control">
-                            </div>
-
-                            <div class="col-md-6 mt-3">
-                                <label>Grupo</label>
-                                <select name="grupo" class="form-control">
-                                    <option>SERVICIOS HOSPITALARIOS</option>
-                                    <option>IMAGENOLOGIA</option>
-                                </select>
-                            </div>
-
-                        </div>
-                    </div>
-
-                    <div class="modal-footer">
-                        <button class="btn btn-success">
-                            <i class="fas fa-save"></i> Guardar
-                        </button>
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">
-                            Cancelar
-                        </button>
-                    </div>
-
-                </form>
-
-            </div>
-        </div>
+    <!-- BUSCADOR -->
+    <div class="mb-3">
+        <input type="text" id="search" class="form-control" placeholder="🔍 Buscar servicio...">
     </div>
 
     <!-- TABLA -->
-    <div class="card">
+    <div class="card shadow">
         <div class="card-body table-responsive">
-
-            <input type="text" id="search" class="form-control mb-3"
-                   placeholder="🔍 Buscar servicio...">
-
             <table class="table table-bordered table-hover" id="tabla">
-                <thead class="thead-dark">
+                <thead class="table-dark">
                     <tr>
                         <th>ID</th>
                         <th>Clave</th>
@@ -147,12 +42,11 @@
                         <th>U.M.</th>
                         <th>Tipo</th>
                         <th>Estado</th>
-                        {% if session.get('login', {}).get('id_rol') == 5 %}
+                        {% if session.get('role') == 'admin' %}
                         <th>Acciones</th>
                         {% endif %}
                     </tr>
                 </thead>
-
                 <tbody>
                     {% for s in servicios %}
                     <tr>
@@ -160,21 +54,20 @@
                         <td>{{ s.serv_cve }}</td>
                         <td>{{ s.serv_desc }}</td>
                         <td>
-                            <span class="price-badge">
-                                ${{ "%.2f"|format(s.serv_costo) }}
+                            <span class="badge bg-info text-white">
+                                ${{ "%.2f"|format(s.serv_costo|float) }}
                             </span>
                         </td>
                         <td>{{ s.serv_umed }}</td>
-                        <td>{{ s.tipo }}</td>
+                        <td>{{ s.tip_insumo or s.tipo }}</td>
                         <td>
                             {% if s.serv_activo == 'NO' %}
-                                <span class="badge badge-danger">Inactivo</span>
+                                <span class="badge bg-danger">Inactivo</span>
                             {% else %}
-                                <span class="badge badge-success">Activo</span>
+                                <span class="badge bg-success">Activo</span>
                             {% endif %}
                         </td>
-
-                        {% if session.get('login', {}).get('id_rol') == 5 %}
+                        {% if session.get('role') == 'admin' %}
                         <td>
                             <a href="{{ url_for('editar_servicio', id=s.id_serv) }}"
                                class="btn btn-warning btn-sm">
@@ -182,26 +75,200 @@
                             </a>
                         </td>
                         {% endif %}
-
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="text-center text-muted">
+                            No hay servicios registrados
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
-
             </table>
         </div>
     </div>
 
 </div>
 
+<!-- MODAL NUEVO SERVICIO (Bootstrap 5) -->
+<div class="modal fade" id="modalServicio" tabindex="-1" aria-labelledby="modalServicioLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="modalServicioLabel">
+                    <i class="fas fa-plus-circle"></i> Nuevo Servicio
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+
+            <form action="{{ url_for('insertar_servicio') }}" method="POST">
+                <div class="modal-body">
+                    <div class="row">
+                        <!-- Columna 1 -->
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Clave <span class="text-danger">*</span></label>
+                                <input type="text" name="serv_cve" class="form-control" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Descripción <span class="text-danger">*</span></label>
+                                <input type="text" name="serv_desc" class="form-control" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Costo Principal <span class="text-danger">*</span></label>
+                                <input type="number" step="0.01" name="serv_costo" class="form-control" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Unidad de Medida <span class="text-danger">*</span></label>
+                                <select name="serv_umed" class="form-control" required>
+                                    <option value="">Seleccionar</option>
+                                    <option value="CONSULTA">CONSULTA</option>
+                                    <option value="EQUIPO">EQUIPO</option>
+                                    <option value="ESTUDIO">ESTUDIO</option>
+                                    <option value="HORA">HORA</option>
+                                    <option value="SERVICIO">SERVICIO</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Columna 2 -->
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Tipo <span class="text-danger">*</span></label>
+                                <select name="serv_tipo" class="form-control" required>
+                                    <option value="">Seleccionar</option>
+                                    {% for t in tipos %}
+                                        <option value="{{ t.ser_type_id }}">{{ t.ser_type_desc }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Proveedor</label>
+                                <select name="proveedor" class="form-control">
+                                    <option value="">Seleccionar</option>
+                                    {% for p in proveedores %}
+                                        <option value="{{ p.id_prov }}">{{ p.nom_prov }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Grupo</label>
+                                <select name="grupo" class="form-control">
+                                    <option value="SERVICIOS HOSPITALARIOS">SERVICIOS HOSPITALARIOS</option>
+                                    <option value="IMAGENOLOGIA">IMAGENOLOGIA</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Código SAT</label>
+                                <input type="text" name="codigo_sat" class="form-control">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Clave Unidad SAT</label>
+                                <input type="text" name="c_cveuni" class="form-control">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">IVA (%)</label>
+                                <input type="number" step="0.01" name="iva" class="form-control" value="16">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Costos adicionales -->
+                    <h6 class="text-primary mt-3">Costos adicionales (opcional)</h6>
+                    <div class="row">
+                        {% for i in range(2, 9) %}
+                        <div class="col-md-3 mb-2">
+                            <input type="number" step="0.01" name="serv_costo{{ i }}"
+                                   class="form-control" placeholder="Costo {{ i }}">
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Guardar Servicio
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
 <script>
-$("#search").on("keyup", function () {
-    var value = $(this).val().toLowerCase();
-    $("#tabla tbody tr").filter(function () {
-        $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+// Script de inicialización
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('=== SERVICIOS: Página cargada ===');
+
+    if (typeof bootstrap !== 'undefined') {
+        console.log('✓ Bootstrap 5 disponible');
+
+        // Verificar elementos
+        const modal = document.getElementById('modalServicio');
+        const btn = document.querySelector('[data-bs-target="#modalServicio"]');
+
+        if (modal) console.log('✓ Modal encontrado');
+        else console.error('✗ Modal NO encontrado');
+
+        if (btn) console.log('✓ Botón encontrado');
+        else console.error('✗ Botón NO encontrado');
+
+        // Agregar evento al botón
+        if (btn) {
+            btn.addEventListener('click', function(e) {
+                console.log('Botón clickeado');
+                try {
+                    const modalInstance = new bootstrap.Modal(modal);
+                    modalInstance.show();
+                } catch(error) {
+                    console.error('Error al mostrar modal:', error);
+                }
+            });
+        }
+    } else {
+        console.error('✗ Bootstrap NO disponible');
+    }
+});
+
+// Función para abrir modal manualmente
+function abrirModalManual() {
+    if (typeof bootstrap !== 'undefined') {
+        try {
+            const modal = new bootstrap.Modal(document.getElementById('modalServicio'));
+            modal.show();
+            console.log('Modal abierto manualmente');
+        } catch(e) {
+            console.error('Error:', e);
+            alert('Error al abrir modal. Revisa la consola (F12)');
+        }
+    } else {
+        alert('Bootstrap no está cargado');
+    }
+}
+
+// Script de búsqueda
+document.getElementById('search').addEventListener('keyup', function() {
+    let value = this.value.toLowerCase();
+    let rows = document.querySelectorAll('#tabla tbody tr');
+    rows.forEach(row => {
+        row.style.display = row.textContent.toLowerCase().includes(value) ? '' : 'none';
     });
 });
 </script>
 
-</body>
-</html>
 {% endblock %}

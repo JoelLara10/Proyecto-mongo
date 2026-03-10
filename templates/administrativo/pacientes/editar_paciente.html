@@ -7,214 +7,560 @@
 
     <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
     <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+
     <!-- Font Awesome -->
-    <link href="https://use.fontawesome.com/releases/v5.7.0/css/all.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
-        body { background-color: #f4f6f9; }
-        .navbar { background-color: #1e3c72; }
-        .card-main {
-            background: rgba(255,255,255,0.35);
-            backdrop-filter: blur(14px);
-            border-radius: 22px;
+        * {
+            font-family: 'Inter', sans-serif;
         }
-        .section-title {
-            font-size: 22px;
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px 0;
+        }
+
+        /* Navbar glassmorphism */
+        .navbar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+            padding: 0.8rem 0;
+            margin-bottom: 2rem;
+            border-radius: 0 0 20px 20px;
+        }
+
+        .navbar-brand {
+            color: #2d3748 !important;
+            font-weight: 700;
+            font-size: 1.5rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .navbar-text {
+            color: #4a5568 !important;
+            font-weight: 500;
+        }
+
+        .btn-outline-light {
+            border: 1px solid #e2e8f0;
+            color: #4a5568;
+            border-radius: 10px;
+            padding: 0.5rem 1.2rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-outline-light:hover {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: transparent;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Card principal */
+        .main-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: none;
+            border-radius: 25px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+            margin-bottom: 2rem;
+            animation: fadeInUp 0.6s ease forwards;
+        }
+
+        .card-header-custom {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 1.5rem;
+            color: white;
+        }
+
+        .card-header-custom h5 {
+            margin: 0;
             font-weight: 600;
+            font-size: 1.2rem;
+        }
+
+        .card-header-custom i {
+            margin-right: 0.8rem;
+        }
+
+        .card-body-custom {
+            padding: 2rem;
+        }
+
+        /* Títulos de sección */
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin: 1.5rem 0 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid;
+            display: flex;
+            align-items: center;
+        }
+
+        .section-title i {
+            margin-right: 0.8rem;
+            font-size: 1.3rem;
+        }
+
+        .section-title.paciente {
+            color: #4299e1;
+            border-bottom-color: #4299e1;
+        }
+
+        .section-title.atencion {
+            color: #48bb78;
+            border-bottom-color: #48bb78;
+        }
+
+        .section-title.medica {
+            color: #ed8936;
+            border-bottom-color: #ed8936;
+        }
+
+        .section-title.familiar {
+            color: #f56565;
+            border-bottom-color: #f56565;
+        }
+
+        /* Formulario */
+        .form-label-custom {
+            font-weight: 600;
+            color: #4a5568;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .form-label-custom i {
+            color: #667eea;
+            margin-right: 0.5rem;
+        }
+
+        .form-control-custom, .form-select-custom {
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 0.6rem 1rem;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .form-control-custom:focus, .form-select-custom:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+            outline: none;
+        }
+
+        /* Badges */
+        .badge-required {
+            background: #f56565;
+            color: white;
+            font-size: 0.7rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 10px;
+            margin-left: 0.5rem;
+        }
+
+        .badge-id {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 0.3rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        /* Botones */
+        .btn-custom {
+            padding: 0.8rem 2rem;
+            border-radius: 12px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: none;
+        }
+
+        .btn-custom i {
+            margin-right: 0.5rem;
+        }
+
+        .btn-update {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-update:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-cancel {
+            background: white;
+            color: #718096;
+            border: 2px solid #e2e8f0;
+        }
+
+        .btn-cancel:hover {
+            background: #f7fafc;
+            color: #4a5568;
+            transform: translateY(-2px);
+        }
+
+        /* Grid de médicos */
+        .medicos-grid {
+            background: #f7fafc;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Animaciones */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Info paciente */
+        .paciente-info {
+            background: #f7fafc;
+            border-radius: 15px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            border-left: 4px solid #667eea;
+        }
+
+        .paciente-info i {
+            font-size: 2rem;
+            color: #667eea;
+            margin-right: 1rem;
+        }
+
+        .paciente-info h6 {
+            margin: 0;
+            color: #2d3748;
+            font-weight: 600;
+        }
+
+        .paciente-info small {
+            color: #718096;
         }
     </style>
 </head>
 
 <body>
 
-<!-- NAVBAR -->
-<nav class="navbar navbar-expand-lg shadow">
-    <div class="container-fluid">
-        <a href="{{ url_for('gestion_pacientes') }}" class="btn btn-outline-light btn-sm me-3">
-            <i class="bi bi-arrow-left"></i> Regresar
+<!-- NAVBAR MEJORADO -->
+<nav class="navbar navbar-expand-lg">
+    <div class="container-fluid px-4">
+        <a href="{{ url_for('gestion_pacientes') }}" class="btn btn-outline-light me-3">
+            <i class="bi bi-arrow-left me-2"></i>Gestión Pacientes
         </a>
 
-        <div class="ms-auto">
-            <span class="navbar-text text-white me-3">
-                <i class="bi bi-person-circle"></i> {{ session['username'] }}
+        <span class="navbar-brand fw-semibold fs-4">
+            <i class="fas fa-user-edit me-2" style="color: #667eea;"></i>
+            Editar Paciente
+        </span>
+
+        <div class="ms-auto d-flex align-items-center">
+            <span class="navbar-text me-4">
+                <i class="bi bi-person-circle me-2" style="color: #667eea;"></i>
+                <span class="fw-medium">{{ session['username'] }}</span>
+                <span class="badge bg-primary ms-2" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;">
+                    {{ session['role']|capitalize }}
+                </span>
             </span>
-            <a href="{{ url_for('logout') }}" class="btn btn-outline-light btn-sm">
-                <i class="bi bi-box-arrow-right"></i> Cerrar sesión
+
+            <a href="{{ url_for('logout') }}" class="btn btn-outline-light">
+                <i class="bi bi-box-arrow-right me-2"></i>Salir
             </a>
         </div>
     </div>
 </nav>
 
-<!-- CONTENIDO -->
-<form method="POST" class="mt-4">
-
+<!-- CONTENIDO PRINCIPAL -->
 <div class="container">
-<div class="card shadow-lg border-0 mb-4 card-main">
-<div class="card-body p-4">
+    <form method="POST">
+        <div class="main-card">
+            <div class="card-header-custom">
+                <h5>
+                    <i class="fas fa-user-edit"></i>
+                    Editando Paciente
+                </h5>
+            </div>
 
-<!-- ================= DATOS PACIENTE ================= -->
-<h5 class="text-primary fw-bold mb-3">
-<i class="fas fa-user me-2"></i> Datos del Paciente
-</h5>
+            <div class="card-body-custom">
 
-<div class="row mb-3">
-    <div class="col-md-4">
-        <label class="form-label fw-semibold">CURP</label>
-        <input type="text" name="curp" class="form-control"
-               value="{{ paciente.curp }}" maxlength="18" required>
-    </div>
-    <div class="col-md-4">
-        <label class="form-label fw-semibold">Apellido Paterno</label>
-        <input type="text" name="papell" class="form-control"
-               value="{{ paciente.papell }}" required>
-    </div>
-    <div class="col-md-4">
-        <label class="form-label fw-semibold">Apellido Materno</label>
-        <input type="text" name="sapell" class="form-control"
-               value="{{ paciente.sapell }}">
-    </div>
+                <!-- Información del paciente -->
+                <div class="paciente-info">
+                    <i class="fas fa-id-card"></i>
+                    <div>
+                        <h6>Expediente: <span class="badge-id ms-2">{{ paciente.Id_exp }}</span></h6>
+                        <small>Última actualización: {{ paciente.fecha_ing_formateada or 'No disponible' }}</small>
+                    </div>
+                </div>
+
+                <!-- ================= DATOS DEL PACIENTE ================= -->
+                <div class="section-title paciente">
+                    <i class="fas fa-user-circle"></i>
+                    Datos del Paciente
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <label class="form-label-custom">
+                            <i class="fas fa-id-card"></i>
+                            CURP <span class="badge-required">Requerido</span>
+                        </label>
+                        <input type="text" name="curp" class="form-control form-control-custom"
+                               value="{{ paciente.curp }}" maxlength="18" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label-custom">
+                            <i class="fas fa-user-tag"></i>
+                            Apellido Paterno <span class="badge-required">Requerido</span>
+                        </label>
+                        <input type="text" name="papell" class="form-control form-control-custom"
+                               value="{{ paciente.papell }}" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label-custom">
+                            <i class="fas fa-user-tag"></i>
+                            Apellido Materno
+                        </label>
+                        <input type="text" name="sapell" class="form-control form-control-custom"
+                               value="{{ paciente.sapell }}">
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label-custom">
+                            <i class="fas fa-user"></i>
+                            Nombre(s) <span class="badge-required">Requerido</span>
+                        </label>
+                        <input type="text" name="nom_pac" class="form-control form-control-custom"
+                               value="{{ paciente.nom_pac }}" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label-custom">
+                            <i class="fas fa-calendar-alt"></i>
+                            Fecha de nacimiento <span class="badge-required">Requerido</span>
+                        </label>
+                        <input type="date" name="fecnac" class="form-control form-control-custom"
+                               value="{{ paciente.fecnac | formato_fecha('%d/%m/%Y') }}" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label-custom">
+                            <i class="fas fa-phone"></i>
+                            Teléfono
+                        </label>
+                        <input type="text" name="tel" class="form-control form-control-custom"
+                               value="{{ paciente.tel }}" placeholder="Teléfono de contacto">
+                    </div>
+                </div>
+
+                <!-- ================= ATENCIÓN MÉDICA ================= -->
+                <div class="section-title atencion">
+                    <i class="fas fa-hospital"></i>
+                    Atención Médica
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label-custom">
+                            <i class="fas fa-clinic-medical"></i>
+                            Área <span class="badge-required">Requerido</span>
+                        </label>
+                        <select name="area" class="form-select form-select-custom" required>
+                            <option value="Hospitalizado" {{ 'selected' if paciente.area=='Hospitalizado' else '' }}>🏥 Hospitalizado</option>
+                            <option value="Urgencias" {{ 'selected' if paciente.area=='Urgencias' else '' }}>🚑 Urgencias</option>
+                            <option value="Ambulatorio" {{ 'selected' if paciente.area=='Ambulatorio' else '' }}>🚶 Ambulatorio</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label-custom">
+                            <i class="fas fa-bed"></i>
+                            Habitación / Cama
+                        </label>
+                        <select name="id_cama" class="form-select form-select-custom">
+                            <option value="">Sin asignar</option>
+                            {% for c in camas %}
+                            <option value="{{ c.id_cama }}" {{ 'selected' if c.id_cama == paciente.id_cama else '' }}>
+                                Cama {{ c.numero }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label-custom">
+                            <i class="fas fa-notes-medical"></i>
+                            Motivo de atención <span class="badge-required">Requerido</span>
+                        </label>
+                        <select name="motivo" class="form-select form-select-custom" required>
+                            <option value="Consulta general" {{ 'selected' if paciente.motivo=='Consulta general' else '' }}>Consulta general</option>
+                            <option value="Urgencia" {{ 'selected' if paciente.motivo=='Urgencia' else '' }}>Urgencia</option>
+                            <option value="Cirugía" {{ 'selected' if paciente.motivo=='Cirugía' else '' }}>Cirugía</option>
+                            <option value="Chequeo rutinario" {{ 'selected' if paciente.motivo=='Chequeo rutinario' else '' }}>Chequeo rutinario</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label-custom">
+                            <i class="fas fa-stethoscope"></i>
+                            Especialidad <span class="badge-required">Requerido</span>
+                        </label>
+                        <select name="especialidad" class="form-select form-select-custom" required>
+                            <option value="Medicina general" {{ 'selected' if paciente.especialidad=='Medicina general' else '' }}>Medicina general</option>
+                            <option value="Cardiología" {{ 'selected' if paciente.especialidad=='Cardiología' else '' }}>Cardiología</option>
+                            <option value="Pediatría" {{ 'selected' if paciente.especialidad=='Pediatría' else '' }}>Pediatría</option>
+                            <option value="Cirugía" {{ 'selected' if paciente.especialidad=='Cirugía' else '' }}>Cirugía</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- ================= INFORMACIÓN MÉDICA ================= -->
+                <div class="section-title medica">
+                    <i class="fas fa-allergies"></i>
+                    Información Médica
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label-custom">
+                        <i class="fas fa-allergies"></i>
+                        Alergias
+                    </label>
+                    <textarea name="alergias" class="form-control form-control-custom"
+                              rows="3" placeholder="Especifique alergias del paciente">{{ paciente.alergias }}</textarea>
+                </div>
+
+                <div class="medicos-grid">
+                    <label class="form-label-custom mb-3">
+                        <i class="fas fa-user-md"></i>
+                        Médicos Tratantes
+                    </label>
+                    <div class="row g-3">
+                        {% for i in range(1,6) %}
+                        <div class="col-md-6">
+                            <label class="form-label-custom small">Médico {{ i }}</label>
+                            <select name="medico{{ i }}" class="form-select form-select-custom">
+                                <option value="">Seleccionar médico</option>
+                                {% for m in medicos %}
+                                <option value="{{ m.id }}"
+                                    {{ 'selected' if m.id in medicos_asignados else '' }}>
+                                    Dr. {{ m.username }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- ================= FAMILIAR RESPONSABLE ================= -->
+                <div class="section-title familiar">
+                    <i class="fas fa-users"></i>
+                    Familiar Responsable
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <label class="form-label-custom">
+                            <i class="fas fa-user"></i>
+                            Nombre completo <span class="badge-required">Requerido</span>
+                        </label>
+                        <input type="text" name="fam_nombre" class="form-control form-control-custom"
+                               value="{{ familiar.nombre }}" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label-custom">
+                            <i class="fas fa-users-between-lines"></i>
+                            Parentesco
+                        </label>
+                        <input type="text" name="fam_parentesco" class="form-control form-control-custom"
+                               value="{{ familiar.parentesco }}" placeholder="Ej: Padre, Madre, Hermano">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label-custom">
+                            <i class="fas fa-phone"></i>
+                            Teléfono
+                        </label>
+                        <input type="text" name="fam_tel" class="form-control form-control-custom"
+                               value="{{ familiar.telefono }}" placeholder="Teléfono de contacto">
+                    </div>
+                </div>
+
+                <!-- ================= BOTONES ================= -->
+                <div class="d-flex justify-content-end gap-3 mt-5">
+                    <a href="{{ url_for('gestion_pacientes') }}" class="btn btn-custom btn-cancel">
+                        <i class="fas fa-times"></i>
+                        Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-custom btn-update">
+                        <i class="fas fa-save"></i>
+                        Actualizar Paciente
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </form>
 </div>
 
-<div class="row mb-4">
-    <div class="col-md-6">
-        <label class="form-label fw-semibold">Nombre(s)</label>
-        <input type="text" name="nom_pac" class="form-control"
-               value="{{ paciente.nom_pac }}" required>
-    </div>
-    <div class="col-md-3">
-        <label class="form-label fw-semibold">Fecha de nacimiento</label>
-        <input type="date" name="fecnac" class="form-control"
-               value="{{ paciente.fecnac }}" required>
-    </div>
-    <div class="col-md-3">
-        <label class="form-label fw-semibold">Teléfono</label>
-        <input type="text" name="tel" class="form-control"
-               value="{{ paciente.tel }}">
-    </div>
-</div>
-
-<hr>
-
-<!-- ================= ATENCIÓN ================= -->
-<h5 class="text-success fw-bold mb-3">
-<i class="fas fa-hospital me-2"></i> Atención Médica
-</h5>
-
-<div class="row mb-4">
-    <div class="col-md-6">
-        <label class="form-label fw-semibold">Área</label>
-        <select name="area" class="form-select" required>
-            <option value="Hospitalizado" {{ 'selected' if paciente.area=='Hospitalizado' else '' }}>Hospitalizado</option>
-            <option value="Urgencias" {{ 'selected' if paciente.area=='Urgencias' else '' }}>Urgencias</option>
-            <option value="Ambulatorio" {{ 'selected' if paciente.area=='Ambulatorio' else '' }}>Ambulatorio</option>
-        </select>
-    </div>
-
-    <div class="col-md-6">
-        <label class="form-label fw-semibold">Habitación</label>
-        <select name="id_cama" class="form-select">
-            <option value="">Seleccionar</option>
-            {% for c in camas %}
-            <option value="{{ c.id_cama }}"
-                {{ 'selected' if c.id_cama == paciente.id_cama else '' }}>
-                {{ c.numero }}
-            </option>
-            {% endfor %}
-        </select>
-    </div>
-</div>
-
-<div class="row mb-4">
-    <div class="col-md-6">
-        <label class="form-label fw-semibold">Motivo de atención</label>
-        <select name="motivo" class="form-select" required>
-            <option value="Consulta general" {{ 'selected' if paciente.motivo=='Consulta general' else '' }}>Consulta general</option>
-            <option value="Urgencia" {{ 'selected' if paciente.motivo=='Urgencia' else '' }}>Urgencia</option>
-            <option value="Cirugía" {{ 'selected' if paciente.motivo=='Cirugía' else '' }}>Cirugía</option>
-            <option value="Chequeo rutinario" {{ 'selected' if paciente.motivo=='Chequeo rutinario' else '' }}>Chequeo rutinario</option>
-        </select>
-    </div>
-
-    <div class="col-md-6">
-        <label class="form-label fw-semibold">Especialidad</label>
-        <select name="especialidad" class="form-select" required>
-            <option value="Medicina general" {{ 'selected' if paciente.especialidad=='Medicina general' else '' }}>Medicina general</option>
-            <option value="Cardiología" {{ 'selected' if paciente.especialidad=='Cardiología' else '' }}>Cardiología</option>
-            <option value="Pediatría" {{ 'selected' if paciente.especialidad=='Pediatría' else '' }}>Pediatría</option>
-            <option value="Cirugía" {{ 'selected' if paciente.especialidad=='Cirugía' else '' }}>Cirugía</option>
-        </select>
-    </div>
-</div>
-
-<hr>
-
-<!-- ================= INFORMACIÓN MÉDICA ================= -->
-<h5 class="text-info fw-bold mb-3">
-<i class="fas fa-stethoscope me-2"></i> Información Médica
-</h5>
-
-<textarea name="alergias" class="form-control mb-4" rows="3">{{ paciente.alergias }}</textarea>
-
-<div class="row mb-4">
-{% for i in range(1,6) %}
-<div class="col-md-6 mb-3">
-    <label class="form-label fw-semibold">Médico tratante {{ i }}</label>
-    <select name="medico{{ i }}" class="form-select">
-        <option value="">Seleccionar</option>
-        {% for m in medicos %}
-        <option value="{{ m.id }}"
-            {{ 'selected' if m.id in medicos_asignados else '' }}>
-            {{ m.username }}
-        </option>
-        {% endfor %}
-    </select>
-</div>
-{% endfor %}
-</div>
-
-<hr>
-
-<!-- ================= FAMILIAR ================= -->
-<h5 class="text-warning fw-bold mb-3">
-<i class="fas fa-users me-2"></i> Familiar Responsable
-</h5>
-
-<div class="row mb-4">
-    <div class="col-md-4">
-        <label class="form-label fw-semibold">Nombre</label>
-        <input type="text" name="fam_nombre" class="form-control"
-               value="{{ familiar.nombre }}" required>
-    </div>
-    <div class="col-md-4">
-        <label class="form-label fw-semibold">Parentesco</label>
-        <input type="text" name="fam_parentesco" class="form-control"
-               value="{{ familiar.parentesco }}">
-    </div>
-    <div class="col-md-4">
-        <label class="form-label fw-semibold">Teléfono</label>
-        <input type="text" name="fam_tel" class="form-control"
-               value="{{ familiar.telefono }}">
-    </div>
-</div>
-
-<!-- ================= BOTONES ================= -->
-<div class="d-flex justify-content-end gap-2">
-    <a href="{{ url_for('gestion_pacientes') }}" class="btn btn-outline-secondary px-4">
-        <i class="fas fa-times me-1"></i> Cancelar
-    </a>
-
-    <button type="submit" class="btn btn-primary px-4">
-        <i class="fas fa-save me-1"></i> Actualizar Paciente
-    </button>
-</div>
-
-</div>
-</div>
-</div>
-</form>
-
+<!-- Scripts -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Toastr para notificaciones -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+
+<script>
+toastr.options = {
+    closeButton: true,
+    progressBar: true,
+    positionClass: "toast-top-right",
+    timeOut: 3000
+};
+
+// Confirmación antes de salir si hay cambios
+let formChanged = false;
+document.querySelectorAll('input, select, textarea').forEach(element => {
+    element.addEventListener('change', () => formChanged = true);
+});
+
+window.addEventListener('beforeunload', function(e) {
+    if (formChanged) {
+        e.preventDefault();
+        e.returnValue = '';
+    }
+});
+</script>
+
 </body>
 </html>

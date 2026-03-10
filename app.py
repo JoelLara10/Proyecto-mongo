@@ -3,9 +3,10 @@ import zipfile
 from datetime import datetime, date, timedelta
 from decimal import Decimal
 from bd import get_db_connection
-from bson.objectid import ObjectId  # Solo una vez
+from bson.objectid import ObjectId
 from bson.decimal128 import Decimal128
 from pymongo.errors import PyMongoError
+import re
 import psutil
 import time
 from flask import (
@@ -139,39 +140,166 @@ def registrar_log_global(accion):
 
 
 def calcular_edad(fecnac):
-    """Calcula edad aceptando string o fecha (Date/ISODate de MongoDB)"""
+    """Calcula edad con logs detallados para depuración"""
+    print(f"=== calcular_edad recibió: '{fecnac}' (tipo: {type(fecnac)}) ===")
+
     if not fecnac:
+        print("  → Valor vacío, retornando 0")
         return 0
 
     try:
-        # 1. Si viene como string (lo más común)
-        if isinstance(fecnac, str):
-            # Quitamos posible hora (2025-03-10T00:00:00Z)
-            fecha_str = fecnac.split('T')[0].split(' ')[0]
-            fecha_nac = datetime.strptime(fecha_str, '%Y-%m-%d').date()
-
-        # 2. Si ya es datetime (cuando Mongo lo devuelve como Date)
-        elif hasattr(fecnac, 'date'):
+        # Caso 1: Ya es datetime de Python
+        if isinstance(fecnac, datetime):
+            print(f"  → Es datetime, convirtiendo a date")
             fecha_nac = fecnac.date()
-        else:
+
+        # Caso 2: Ya es date
+        elif isinstance(fecnac, date):
+            print(f"  → Es date, usando directamente")
             fecha_nac = fecnac
 
-        # Cálculo de edad exacto
-        hoy = datetime.now().date()
-        edad = hoy.year - fecha_nac.year - ((hoy.month, hoy.day) < (fecha_nac.month, fecha_nac.day))
+        # Caso 3: Es string
+        elif isinstance(fecnac, str):
+            print(f"  → Es string, procesando: '{fecnac}'")
+
+            # Limpiar el string
+            fecha_limpia = fecnac.strip()
+
+            # Quitar hora si existe (formato ISO con T)
+            if 'T' in fecha_limpia:
+                fecha_limpia = fecha_limpia.split('T')[0]
+                print(f"  → Después de split T: '{fecha_limpia}'")
+
+            # Quitar hora si existe (formato con espacio)
+            elif ' ' in fecha_limpia:
+                fecha_limpia = fecha_limpia.split(' ')[0]
+                print(f"  → Después de split espacio: '{fecha_limpia}'")
+
+            # Convertir a datetime
+            try:
+                fecha_nac = datetime.strptime(fecha_limpia, '%Y-%m-%d').date()
+                print(f"  → Parseado con formato YYYY-MM-DD: {fecha_nac}")
+            except ValueError as e:
+                print(f"  → Error con formato YYYY-MM-DD: {e}")
+
+                # Intentar con formato DD/MM/YYYY
+                try:
+                    fecha_nac = datetime.strptime(fecha_limpia, '%d/%m/%Y').date()
+                    print(f"  → Parseado con formato DD/MM/YYYY: {fecha_nac}")
+                except ValueError as e2:
+                    print(f"  → Error con formato DD/MM/YYYY: {e2}")
+
+                    # Último intento: formato MM/DD/YYYY
+                    fecha_nac = datetime.strptime(fecha_limpia, '%m/%d/%Y').date()
+                    print(f"  → Parseado con formato MM/DD/YYYY: {fecha_nac}")
+
+        # Caso 4: Otro tipo
+        else:
+            print(f"  → Tipo no soportado: {type(fecnac)}")
+            return 0
+
+        # Calcular edad
+        hoy = date.today()
+        print(f"  → Fecha nacimiento: {fecha_nac}, Hoy: {hoy}")
+
+        if fecha_nac > hoy:
+            print(f"  → Fecha futura, retornando 0")
+            return 0
+
+        edad = hoy.year - fecha_nac.year
+        if (hoy.month, hoy.day) < (fecha_nac.month, fecha_nac.day):
+            edad -= 1
+
+        print(f"  → Edad calculada: {edad}")
         return edad
 
-    except (ValueError, TypeError, AttributeError):
+    except Exception as e:
+        print(f"  → EXCEPCIÓN: {e}")
+        import traceback
+        traceback.print_exc()
         return 0
+
+
+@app.template_filter('formato_fecha')
+def formato_fecha(valor, formato='%d/%m/%Y'):
+    """Filtro para formatear fechas desde cualquier tipo"""
+    if not valor:
+        return ''
+
+    try:
+        # Si es string con formato ISO
+        if isinstance(valor, str):
+            # Quitar hora si existe
+            if 'T' in valor:
+                valor = valor.split('T')[0]
+            if ' ' in valor:
+                valor = valor.split(' ')[0]
+
+            # Intentar convertir a datetime
+            try:
+                fecha_dt = datetime.strptime(valor, '%Y-%m-%d')
+                return fecha_dt.strftime(formato)
+            except ValueError:
+                return valor  # Si no se puede, devolver original
+
+        # Si es datetime o date
+        elif hasattr(valor, 'strftime'):
+            return valor.strftime(formato)
+
+        return str(valor)
+
+    except Exception as e:
+        print(f"Error en filtro formato_fecha: {e}")
+        return str(valor)
 
 # Filtro personalizado para strftime
 @app.template_filter('strftime')
-def _jinja2_filter_datetime(date, fmt='%d/%m/%Y'):
-    if isinstance(date, str):
-        # Asume formato de entrada si es string (ajusta según tu DB)
-        date = datetime.strptime(date, '%Y-%m-%d') if len(date) == 10 else datetime.strptime(date, '%Y-%m-%d %H:%M:%S')
-    return date.strftime(fmt)
+def _jinja2_filter_datetime(date, format='%d/%m/%Y'):
+    """Filtro de Jinja2 para formatear fechas"""
+    if date is None:
+        return ''
 
+    try:
+        # Si ya es datetime o date
+        if isinstance(date, (datetime, date)):
+            return date.strftime(format)
+
+        # Si es string
+        if isinstance(date, str):
+            # Limpiar el string (quitar T, Z, hora, etc.)
+            fecha_limpia = date.split('T')[0].split(' ')[0]
+
+            # Intentar diferentes formatos
+            formatos = [
+                '%Y-%m-%d',  # 2004-01-02
+                '%d/%m/%Y',  # 02/01/2004
+                '%Y%m%d',  # 20040102
+                '%d-%m-%Y',  # 02-01-2004
+                '%Y/%m/%d',  # 2004/01/02
+            ]
+
+            for fmt in formatos:
+                try:
+                    fecha_dt = datetime.strptime(fecha_limpia, fmt)
+                    return fecha_dt.strftime(format)
+                except ValueError:
+                    continue
+
+            # Si nada funciona, devolver el string original
+            return date
+
+        return str(date)
+
+    except Exception as e:
+        print(f"Error en filtro strftime: {e} - Valor: {date}")
+        return str(date)
+
+
+def to_float(valor, default=0.0):
+    try:
+        return float(valor)
+    except (TypeError, ValueError):
+        return default
 # ====================================================================================
 # ============================ INICIO ====================================
 # ====================================================================================
@@ -330,24 +458,77 @@ def login():
         if user:
             stored_password = user['password']
 
-            # 🔧 CORRECCIÓN CLAVE: limpiar hash mal guardado
-            # Caso: "b'$2b$12$...'"
-            if isinstance(stored_password, str):
-                if stored_password.startswith("b'") or stored_password.startswith('b"'):
-                    stored_password = stored_password[2:-1]
-                stored_password = stored_password.encode('utf-8')
+            print(f"Tipo de contraseña almacenada: {type(stored_password)}")
 
-            # Comparación correcta
-            if bcrypt.checkpw(password, stored_password):
-                session['user_id'] = str(user['_id'])
-                session['username'] = user['username']
-                session['role'] = user['role']
-                flash('Login exitoso!', 'success')
-                return redirect(url_for('dashboard'))
+            # === FUNCIÓN ULTRA ROBUSTA PARA NORMALIZAR CONTRASEÑAS ===
+            def extract_bcrypt_hash(pwd):
+                """Extrae un hash bcrypt válido de cualquier formato"""
+
+                # Caso 1: Ya es bytes
+                if isinstance(pwd, bytes):
+                    # Si empieza con b', quitarlo
+                    if pwd.startswith(b"b'") or pwd.startswith(b'b"'):
+                        pwd = pwd[2:-1]
+
+                    # Verificar si parece un hash bcrypt válido (debe empezar con $2b$)
+                    if pwd.startswith(b'$2b$'):
+                        return pwd
+
+                    # Si no, convertir a string para procesar
+                    try:
+                        pwd_str = pwd.decode('utf-8')
+                    except:
+                        pwd_str = str(pwd)
+
+                # Caso 2: Es string
+                elif isinstance(pwd, str):
+                    pwd_str = pwd
+
+                # Caso 3: Otro tipo
+                else:
+                    pwd_str = str(pwd)
+
+                # Limpiar el string
+                # Quitar b' del inicio y ' del final si existen
+                if pwd_str.startswith("b'") or pwd_str.startswith('b"'):
+                    pwd_str = pwd_str[2:-1]
+
+                # Si el string contiene el hash bcrypt (empieza con $2b$)
+                if '$2b$' in pwd_str:
+                    # Extraer solo el hash (desde $2b$ hasta el final)
+                    start = pwd_str.find('$2b$')
+                    if start != -1:
+                        pwd_str = pwd_str[start:]
+
+                # Quitar cualquier cosa después del hash (espacios, comillas, etc)
+                pwd_str = pwd_str.split()[0].strip('\'"')
+
+                return pwd_str.encode('utf-8')
+
+            try:
+                # Normalizar la contraseña
+                normalized = extract_bcrypt_hash(stored_password)
+                print(f"Hash normalizado: {normalized[:30]}...")
+
+                # Verificar
+                if bcrypt.checkpw(password, normalized):
+                    session['user_id'] = str(user['_id'])
+                    session['username'] = user['username']
+                    session['role'] = user['role']
+                    flash('Login exitoso!', 'success')
+                    return redirect(url_for('dashboard'))
+                else:
+                    print("Contraseña incorrecta")
+
+            except Exception as e:
+                print(f"Error en verificación: {e}")
+                import traceback
+                traceback.print_exc()
 
         flash('Usuario o contraseña incorrectos.', 'danger')
 
     return render_template('login.html')
+
 # ===============================
 # DASHBOARD
 # ===============================
@@ -404,7 +585,8 @@ def dashboard():
         menu_options=menu_options,
         lab_pendientes=lab_pendientes,
         gab_pendientes=gab_pendientes,
-        total_pendientes=total_pendientes
+        total_pendientes=total_pendientes,
+        now=datetime.now()
     )
 
 # ====================================================================================
@@ -593,11 +775,13 @@ def nuevo_paciente():
             flash(f'Error al registrar paciente: {e}', 'error')
     return render_template('administrativo/pacientes/nuevo_paciente.html', camas=camas, medicos=medicos)
 
+
 @app.route('/admin/editar_paciente/<int:id_exp>', methods=['GET', 'POST'])
 def editar_paciente(id_exp):
     if 'user_id' not in session or session['role'] != 'admin':
         flash('Acceso denegado.', 'error')
         return redirect(url_for('dashboard'))
+
     db = get_db_connection()
     camas_coll = db['camas']
     users_coll = db['users']
@@ -605,121 +789,205 @@ def editar_paciente(id_exp):
     atencion_coll = db['atencion']
     atencion_medicos_coll = db['atencion_medicos']
     familiares_coll = db['familiares']
+
     # ===== DATOS PARA SELECTS =====
     # Obtener id_cama actual del paciente para incluirla aunque esté ocupada
-    current_id_cama_query = list(atencion_coll.find({"Id_exp": id_exp}, {"id_cama": 1}))
-    current_id_camas = [item['id_cama'] for item in current_id_cama_query if 'id_cama' in item]
+    current_atencion = atencion_coll.find_one({"Id_exp": id_exp, "status": "ABIERTA"})
+    current_id_cama = current_atencion.get('id_cama') if current_atencion else None
+
+    # Camas disponibles (libres o la actual)
     camas = list(camas_coll.find({
         "$or": [
             {"ocupada": 0},
-            {"id_cama": {"$in": current_id_camas}}
+            {"id_cama": current_id_cama} if current_id_cama else {}
         ]
-    }, {"id_cama": 1, "numero": 1}))
-    medicos = list(users_coll.find({"role": "medico"}, {"_id": 1, "username": 1}))
+    }, {"id_cama": 1, "numero": 1}).sort("numero", 1))
+
+    # Médicos
+    medicos = list(
+        users_coll.find({"role": "medico"}, {"id": 1, "username": 1, "papell": 1, "nombre": 1}).sort("username", 1))
+
     # ===== GET =====
-    pipeline = [
-        {"$match": {"Id_exp": id_exp}},
-        {"$lookup": {"from": "atencion", "localField": "Id_exp", "foreignField": "Id_exp", "as": "atencion"}},
-        {"$unwind": {"path": "$atencion", "preserveNullAndEmptyArrays": True}},
-        {"$project": {
-            "_id": 0,
-            "curp": 1,
-            "papell": 1,
-            "sapell": 1,
-            "nom_pac": 1,
-            "fecnac": 1,
-            "tel": 1,
-            "area": "$atencion.area",
-            "id_cama": "$atencion.id_cama",
-            "motivo": "$atencion.motivo",
-            "especialidad": "$atencion.especialidad",
-            "alergias": "$atencion.alergias",
-            "id_atencion": "$atencion.id_atencion"  # Necesario para médicos
-        }}
-    ]
-    paciente_list = list(pacientes_coll.aggregate(pipeline))
-    paciente = paciente_list[0] if paciente_list else None
-    if paciente is None:
+    # Obtener datos del paciente
+    paciente = pacientes_coll.find_one({"Id_exp": id_exp})
+    if not paciente:
         flash('Paciente no encontrado.', 'error')
         return redirect(url_for('gestion_pacientes'))
-    # Manejar si no hay atencion
-    id_atencion = paciente.get('id_atencion')
-    medicos_asignados = [m['id_medico'] for m in atencion_medicos_coll.find({"id_atencion": id_atencion})] if id_atencion else []
-    familiar = familiares_coll.find_one({"Id_exp": id_exp}) or {}  # Default vacío si no existe
+
+    # Obtener atención activa
+    atencion = atencion_coll.find_one({"Id_exp": id_exp, "status": "ABIERTA"})
+
+    # Combinar datos
+    paciente_data = {
+        "Id_exp": paciente["Id_exp"],
+        "curp": paciente.get("curp", ""),
+        "papell": paciente.get("papell", ""),
+        "sapell": paciente.get("sapell", ""),
+        "nom_pac": paciente.get("nom_pac", ""),
+        "fecnac": paciente.get("fecnac"),
+        "tel": paciente.get("tel", ""),
+        "area": atencion.get("area") if atencion else "",
+        "id_cama": atencion.get("id_cama") if atencion else None,
+        "motivo": atencion.get("motivo") if atencion else "",
+        "especialidad": atencion.get("especialidad") if atencion else "",
+        "alergias": atencion.get("alergias") if atencion else "",
+        "id_atencion": atencion.get("id_atencion") if atencion else None
+    }
+
+    # Formatear fecha para el template
+    if paciente_data['fecnac']:
+        if isinstance(paciente_data['fecnac'], datetime):
+            paciente_data['fecnac_str'] = paciente_data['fecnac'].strftime('%Y-%m-%d')
+        elif isinstance(paciente_data['fecnac'], str):
+            paciente_data['fecnac_str'] = paciente_data['fecnac'].split('T')[0]
+        else:
+            paciente_data['fecnac_str'] = ''
+
+    # Médicos asignados
+    medicos_asignados = []
+    if paciente_data['id_atencion']:
+        medicos_asignados = [m['id_medico'] for m in atencion_medicos_coll.find(
+            {"id_atencion": paciente_data['id_atencion']}
+        )]
+
+    # Familiar
+    familiar = familiares_coll.find_one({"Id_exp": id_exp}) or {}
+
     if request.method == 'POST':
         try:
-            # ===== PACIENTE =====
-            pacientes_coll.update_one({"Id_exp": id_exp}, {"$set": {
-                "curp": request.form['curp'],
-                "papell": request.form['papell'],
-                "sapell": request.form['sapell'],
-                "nom_pac": request.form['nom_pac'],
-                "fecnac": datetime.strptime(request.form['fecnac'], '%Y-%m-%d'),
-                "tel": request.form['tel']
-            }})
-            # ===== ATENCION (upsert si no existe) =====
+            print("=== INICIANDO ACTUALIZACIÓN ===")
+            print(f"Datos recibidos: {request.form}")
+
+            # ===== 1. ACTUALIZAR PACIENTE =====
+            pacientes_coll.update_one(
+                {"Id_exp": id_exp},
+                {"$set": {
+                    "curp": request.form['curp'],
+                    "papell": request.form['papell'],
+                    "sapell": request.form['sapell'],
+                    "nom_pac": request.form['nom_pac'],
+                    "fecnac": datetime.strptime(request.form['fecnac'], '%Y-%m-%d'),
+                    "tel": request.form['tel']
+                }}
+            )
+            print("✓ Paciente actualizado")
+
+            # ===== 2. ACTUALIZAR ATENCIÓN =====
+            new_id_cama = int(request.form.get('id_cama')) if request.form.get('id_cama') else None
+
             atencion_data = {
                 "area": request.form['area'],
-                "id_cama": int(request.form.get('id_cama')) if request.form.get('id_cama') else None,
+                "id_cama": new_id_cama,
                 "motivo": request.form['motivo'],
                 "especialidad": request.form['especialidad'],
-                "alergias": request.form.get('alergias', '')
+                "alergias": request.form.get('alergias', ''),
+                "status": "ABIERTA"
             }
-            if id_atencion:
-                atencion_coll.update_one({"_id": id_atencion}, {"$set": atencion_data})
+
+            if paciente_data['id_atencion']:
+                # Actualizar atención existente
+                atencion_coll.update_one(
+                    {"id_atencion": paciente_data['id_atencion']},
+                    {"$set": atencion_data}
+                )
+                print(f"✓ Atención {paciente_data['id_atencion']} actualizada")
+                id_atencion = paciente_data['id_atencion']
             else:
-                # Crear nueva atencion si no existe
-                new_atencion = {
+                # Crear nueva atención
+                atencion_data.update({
                     "Id_exp": id_exp,
-                    "status": "ABIERTA",  # Asumiendo defaults
                     "fecha_ing": datetime.now(),
-                    **atencion_data
-                }
-                insert_result = atencion_coll.insert_one(new_atencion)
-                id_atencion = insert_result.inserted_id
-            # ===== MÉDICOS =====
-            atencion_medicos_coll.delete_many({"id_atencion": id_atencion})
-            for m in ['medico1', 'medico2', 'medico3', 'medico4', 'medico5']:
-                if request.form.get(m):
-                    atencion_medicos_coll.insert_one({
-                        "id_atencion": id_atencion,
-                        "id_medico": int(request.form[m])
-                    })
-            # ===== FAMILIAR =====
-            familiares_coll.update_one({"Id_exp": id_exp}, {"$set": {
-                "nombre": request.form['fam_nombre'],
-                "parentesco": request.form['fam_parentesco'],
-                "telefono": request.form['fam_tel']
-            }}, upsert=True)
-            # Actualizar ocupada de cama si cambia
-            new_id_cama = int(request.form.get('id_cama')) if request.form.get('id_cama') else None
-            old_id_cama = paciente.get('id_cama')
+                    "id_atencion": get_next_sequence('atencion_id_atencion')
+                })
+                result = atencion_coll.insert_one(atencion_data)
+                id_atencion = atencion_data['id_atencion']
+                print(f"✓ Nueva atención creada con ID: {id_atencion}")
+
+            # ===== 3. ACTUALIZAR MÉDICOS =====
+            if id_atencion:
+                # Eliminar médicos actuales
+                atencion_medicos_coll.delete_many({"id_atencion": id_atencion})
+
+                # Insertar nuevos médicos
+                medicos_insertados = 0
+                for i in range(1, 6):
+                    medico_id = request.form.get(f'medico{i}')
+                    if medico_id and medico_id.strip():
+                        atencion_medicos_coll.insert_one({
+                            "id_atencion": id_atencion,
+                            "id_medico": int(medico_id)
+                        })
+                        medicos_insertados += 1
+                print(f"✓ {medicos_insertados} médicos asignados")
+
+            # ===== 4. ACTUALIZAR CAMA =====
+            old_id_cama = paciente_data.get('id_cama')
+
             if new_id_cama != old_id_cama:
+                # Liberar cama anterior
                 if old_id_cama:
-                    camas_coll.update_one({"id_cama": old_id_cama}, {"$set": {"ocupada": 0}})
+                    camas_coll.update_one(
+                        {"id_cama": old_id_cama},
+                        {"$set": {"ocupada": 0}}
+                    )
+                    print(f"✓ Cama {old_id_cama} liberada")
+
+                # Ocupar nueva cama
                 if new_id_cama:
-                    camas_coll.update_one({"id_cama": new_id_cama}, {"$set": {"ocupada": 1}})
+                    camas_coll.update_one(
+                        {"id_cama": new_id_cama},
+                        {"$set": {"ocupada": 1}}
+                    )
+                    print(f"✓ Cama {new_id_cama} ocupada")
+
+            # ===== 5. ACTUALIZAR FAMILIAR =====
+            familiar_data = {
+                "nombre": request.form['fam_nombre'],
+                "parentesco": request.form.get('fam_parentesco', ''),
+                "telefono": request.form.get('fam_tel', '')
+            }
+
+            familiares_coll.update_one(
+                {"Id_exp": id_exp},
+                {"$set": familiar_data},
+                upsert=True
+            )
+            print("✓ Familiar actualizado")
+
             flash('Paciente actualizado correctamente.', 'success')
             return redirect(url_for('gestion_pacientes'))
+
         except Exception as e:
-            flash(f'Error al actualizar: {e}', 'error')
+            print(f"ERROR: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            flash(f'Error al actualizar: {str(e)}', 'error')
+
     return render_template(
         'administrativo/pacientes/editar_paciente.html',
-        paciente=paciente,
+        paciente=paciente_data,
         camas=camas,
         medicos=medicos,
         medicos_asignados=medicos_asignados,
         familiar=familiar
     )
 
+
 @app.route('/admin/documentos_pacientes')
 def documentos_pacientes():
     if 'user_id' not in session or session['role'] != 'admin':
         flash('Acceso denegado.', 'error')
         return redirect(url_for('dashboard'))
+
     db = get_db_connection()
+
     pipeline = [
-        {"$lookup": {"from": "atencion", "localField": "Id_exp", "foreignField": "Id_exp", "as": "atencion"}},
+        {"$lookup": {
+            "from": "atencion",
+            "localField": "Id_exp",
+            "foreignField": "Id_exp",
+            "as": "atencion"
+        }},
         {"$unwind": "$atencion"},
         {"$project": {
             "Id_exp": 1,
@@ -731,7 +999,38 @@ def documentos_pacientes():
         }},
         {"$sort": {"atencion.fecha_ing": -1}}
     ]
+
     pacientes = list(db['pacientes'].aggregate(pipeline))
+
+    # Formatear fechas en Python
+    for paciente in pacientes:
+        if paciente.get('fecha_ing'):
+            try:
+                # Si es string con formato ISO
+                if isinstance(paciente['fecha_ing'], str):
+                    if 'T' in paciente['fecha_ing']:
+                        fecha_str = paciente['fecha_ing'].split('T')[0]
+                        fecha_obj = datetime.strptime(fecha_str, '%Y-%m-%d')
+                        paciente['fecha_ing'] = fecha_obj.strftime('%d/%m/%Y')
+                    else:
+                        # Intentar otros formatos
+                        try:
+                            fecha_obj = datetime.strptime(paciente['fecha_ing'], '%Y-%m-%d')
+                            paciente['fecha_ing'] = fecha_obj.strftime('%d/%m/%Y')
+                        except:
+                            pass
+                # Si es datetime
+                elif isinstance(paciente['fecha_ing'], datetime):
+                    paciente['fecha_ing'] = paciente['fecha_ing'].strftime('%d/%m/%Y')
+                # Si es date
+                elif hasattr(paciente['fecha_ing'], 'strftime'):
+                    paciente['fecha_ing'] = paciente['fecha_ing'].strftime('%d/%m/%Y')
+            except Exception as e:
+                print(f"Error formateando fecha: {e}")
+                paciente['fecha_ing'] = 'Fecha inválida'
+        else:
+            paciente['fecha_ing'] = 'Sin fecha'
+
     return render_template(
         'administrativo/pacientes/doc_pacientes/documentos_pacientes.html',
         pacientes=pacientes
@@ -817,24 +1116,49 @@ def expediente(id_atencion, id_exp):
 # ====================================================================================
 @app.route('/medico/medico')
 def medico():
-    if 'user_id' not in session or session['role'] not in ['admin', 'medico']:
+
+    if 'user_id' not in session or session.get('role') not in ('admin', 'medico'):
         flash('Acceso denegado.', 'error')
         return redirect(url_for('dashboard'))
+
     db = get_db_connection()
     users_coll = db['users']
-    user_data = users_coll.find_one({"_id": ObjectId(session['user_id'])}, {"_id": 1, "papell": 1, "img_perfil": 1})
+
+    user_id = session['user_id']
+
+    # 🔥 BUSCAR COMO ObjectId O COMO STRING
+    user_data = None
+    try:
+        user_data = users_coll.find_one({"_id": ObjectId(user_id)})
+    except:
+        pass
+
+    if not user_data:
+        user_data = users_coll.find_one({"_id": user_id})
+
+    if not user_data:
+        flash('Usuario no encontrado.', 'error')
+        return redirect(url_for('dashboard'))
+
     usuario = {
         'id_usua': str(user_data['_id']),
-        'papell': user_data.get('papell') or session['username'],
+        'papell': user_data.get('papell', session.get('username')),
         'img_perfil': user_data.get('img_perfil')
     }
-    logo = {'img_base': 'logo.jpg'} # placeholder
-    # -------------------------------------------------
-    # 1. CONSULTA EXTERNA → área = 'Ambulatorio' (sin cama física)
-    # -------------------------------------------------
-    pipeline_consulta = [
+
+    logo = {'img_base': 'logo.jpg'}
+
+    # =============================
+    # CONSULTA EXTERNA
+    # =============================
+    beds_consulta = list(db['atencion'].aggregate([
         {"$match": {"area": "Ambulatorio", "status": "ABIERTA"}},
-        {"$lookup": {"from": "pacientes", "localField": "Id_exp", "foreignField": "Id_exp", "as": "paciente"}},
+        {"$lookup": {
+            "from": "pacientes",
+            "localField": "Id_exp",
+            "foreignField": "Id_exp",
+            "as": "paciente"
+        }},
         {"$unwind": "$paciente"},
         {"$project": {
             "id_atencion": 1,
@@ -844,69 +1168,75 @@ def medico():
             "papell": "$paciente.papell",
             "sapell": "$paciente.sapell",
             "Id_exp": "$paciente.Id_exp"
-        }},
-        {"$sort": {"fecha_ing": -1}}
-    ]
-    beds_consulta = list(db['atencion'].aggregate(pipeline_consulta))
-    # -------------------------------------------------
-    # 2. PREPARACIÓN → área = 'Urgencias'
-    # -------------------------------------------------
-    pipeline_preparacion = [
+        }}
+    ]))
+
+    # =============================
+    # URGENCIAS
+    # =============================
+    beds_preparacion = list(db['camas'].aggregate([
         {"$match": {"area": "Urgencias"}},
-        {"$lookup": {"from": "atencion", "localField": "id_cama", "foreignField": "id_cama", "as": "atencion", "pipeline": [{"$match": {"status": "ABIERTA"}}]}},
+        {"$lookup": {
+            "from": "atencion",
+            "localField": "id_cama",
+            "foreignField": "id_cama",
+            "as": "atencion"
+        }},
         {"$unwind": {"path": "$atencion", "preserveNullAndEmptyArrays": True}},
-        {"$lookup": {"from": "pacientes", "localField": "atencion.Id_exp", "foreignField": "Id_exp", "as": "paciente"}},
+        {"$lookup": {
+            "from": "pacientes",
+            "localField": "atencion.Id_exp",
+            "foreignField": "Id_exp",
+            "as": "paciente"
+        }},
         {"$unwind": {"path": "$paciente", "preserveNullAndEmptyArrays": True}},
         {"$project": {
             "id_cama": 1,
             "id_atencion": "$atencion.id_atencion",
             "num_cama": "$numero",
-            "estatus": {"$cond": [{"$ifNull": ["$atencion.id_atencion", False]}, "OCUPADA", "LIBRE"]},
+            "estatus": {
+                "$cond": [{"$ifNull": ["$atencion", False]}, "OCUPADA", "LIBRE"]
+            },
             "nom_pac": "$paciente.nom_pac",
             "papell": "$paciente.papell",
             "sapell": "$paciente.sapell",
             "Id_exp": "$paciente.Id_exp"
-        }},
-        {"$sort": {"numero": 1}}
-    ]
-    beds_preparacion = list(db['camas'].aggregate(pipeline_preparacion))
-    # -------------------------------------------------
-    # 3. RECUPERACIÓN → área = 'Hospitalizado'
-    # -------------------------------------------------
-    pipeline_recuperacion = [
+        }}
+    ]))
+
+    # =============================
+    # HOSPITALIZADO
+    # =============================
+    beds_recuperacion = list(db['camas'].aggregate([
         {"$match": {"area": "Hospitalizado"}},
-        {"$lookup": {"from": "atencion", "localField": "id_cama", "foreignField": "id_cama", "as": "atencion", "pipeline": [{"$match": {"status": "ABIERTA"}}]}},
+        {"$lookup": {
+            "from": "atencion",
+            "localField": "id_cama",
+            "foreignField": "id_cama",
+            "as": "atencion"
+        }},
         {"$unwind": {"path": "$atencion", "preserveNullAndEmptyArrays": True}},
-        {"$lookup": {"from": "pacientes", "localField": "atencion.Id_exp", "foreignField": "Id_exp", "as": "paciente"}},
+        {"$lookup": {
+            "from": "pacientes",
+            "localField": "atencion.Id_exp",
+            "foreignField": "Id_exp",
+            "as": "paciente"
+        }},
         {"$unwind": {"path": "$paciente", "preserveNullAndEmptyArrays": True}},
         {"$project": {
             "id_cama": 1,
             "id_atencion": "$atencion.id_atencion",
             "num_cama": "$numero",
-            "estatus": {"$cond": [{"$ifNull": ["$atencion.id_atencion", False]}, "OCUPADA", "LIBRE"]},
+            "estatus": {
+                "$cond": [{"$ifNull": ["$atencion", False]}, "OCUPADA", "LIBRE"]
+            },
             "nom_pac": "$paciente.nom_pac",
             "papell": "$paciente.papell",
             "sapell": "$paciente.sapell",
             "Id_exp": "$paciente.Id_exp"
-        }},
-        {"$sort": {"numero": 1}}
-    ]
-    beds_recuperacion = list(db['camas'].aggregate(pipeline_recuperacion))
-    # -------------------------------------------------
-    # Asignar hasta 5 médicos a cada cama ocupada
-    # -------------------------------------------------
-    def asignar_medicos(beds):
-        atencion_medicos_coll = db['atencion_medicos']
-        for bed in beds:
-            bed['id_usua'] = bed['id_usua2'] = bed['id_usua3'] = bed['id_usua4'] = bed['id_usua5'] = None
-            if bed.get('id_atencion'):
-                medicos = list(atencion_medicos_coll.find({"id_atencion": bed['id_atencion']}, {"id_medico": 1}).sort("_id", 1).limit(5))
-                for i, m in enumerate(medicos):
-                    bed[f'id_usua{"" if i==0 else i+1}'] = m['id_medico']
-        return beds
-    beds_consulta = asignar_medicos(beds_consulta)
-    beds_preparacion = asignar_medicos(beds_preparacion)
-    beds_recuperacion = asignar_medicos(beds_recuperacion)
+        }}
+    ]))
+
     return render_template(
         'medico/medico.html',
         usuario=usuario,
@@ -919,20 +1249,38 @@ def medico():
 # Ruta para vista de paciente seleccionado
 @app.route('/medico/paciente/<int:id_atencion>/<int:Id_exp>')
 def paciente(id_atencion, Id_exp):
-    if 'user_id' not in session or session['role'] not in ['admin', 'medico']:
+
+    if 'user_id' not in session or session.get('role') not in ['admin', 'medico']:
         flash('Acceso denegado.', 'error')
         return redirect(url_for('dashboard'))
+
     db = get_db_connection()
     users_coll = db['users']
-    user_data = users_coll.find_one({"_id": ObjectId(session['user_id'])}, {"papell": 1})
+
+    # ---------- USUARIO ----------
+    user_data = None
+    try:
+        user_data = users_coll.find_one({"_id": ObjectId(session['user_id'])}, {"papell": 1})
+    except:
+        pass
+
+    if not user_data:
+        user_data = users_coll.find_one({"_id": session['user_id']}, {"papell": 1})
+
     usuario = {
         'id_usua': session['user_id'],
-        'papell': user_data.get('papell', '')  # Use .get() with a default value
+        'papell': user_data.get('papell', '') if user_data else session.get('username', '')
     }
-    # Datos del paciente
+
+    # ---------- PACIENTE ----------
     pipeline = [
         {"$match": {"Id_exp": Id_exp}},
-        {"$lookup": {"from": "atencion", "localField": "Id_exp", "foreignField": "Id_exp", "as": "atencion"}},
+        {"$lookup": {
+            "from": "atencion",
+            "localField": "Id_exp",
+            "foreignField": "Id_exp",
+            "as": "atencion"
+        }},
         {"$unwind": "$atencion"},
         {"$match": {"atencion.id_atencion": id_atencion}},
         {"$project": {
@@ -941,28 +1289,51 @@ def paciente(id_atencion, Id_exp):
             "sapell": 1,
             "nom_pac": 1,
             "fecnac": 1,
+            "id_cama": "$atencion.id_cama",
             "area": "$atencion.area",
-            "motivo_atn": {"$ifNull": ["$atencion.motivo", ""]},  # Default to empty string if missing
+            "motivo_atn": {"$ifNull": ["$atencion.motivo", ""]},
             "alergias": {"$ifNull": ["$atencion.alergias", ""]},
             "fecha": "$atencion.fecha_ing"
         }}
     ]
-    paciente = list(db['pacientes'].aggregate(pipeline))[0] if list(db['pacientes'].aggregate(pipeline)) else None
+
+    resultado = list(db['pacientes'].aggregate(pipeline))
+    paciente = resultado[0] if resultado else None
+
     if paciente and 'fecnac' in paciente:
         paciente['edad'] = calcular_edad(paciente['fecnac'])
-    # Familiar
+
+    # ---------- FAMILIAR ----------
     familiar = db['familiares'].find_one({"Id_exp": Id_exp})
-    # Médicos
+
+    # ---------- MEDICOS ----------
     pipeline_med = [
         {"$match": {"id_atencion": id_atencion}},
-        {"$lookup": {"from": "users", "localField": "id_medico", "foreignField": "_id", "as": "user"}},
+        {"$lookup": {
+            "from": "users",
+            "localField": "id_medico",
+            "foreignField": "_id",
+            "as": "user"
+        }},
         {"$unwind": "$user"},
         {"$project": {"doctor": "$user.username"}}
     ]
+
     medicos = list(db['atencion_medicos'].aggregate(pipeline_med))
+
     diagnostico = paciente['motivo_atn'] if paciente else ''
-    # Cama
-    cama = db['camas'].find_one({"id_cama": paciente.get('atencion', {}).get('id_cama')}, {"num_cama": "$numero", "tipo": "$area"}) or {'num_cama': 'Sin Cama', 'tipo': ''}
+
+    # ---------- CAMA ----------
+    cama = {"num_cama": "Sin Cama", "tipo": ""}
+
+    if paciente and paciente.get("id_cama"):
+        cama_data = db['camas'].find_one({"id_cama": paciente['id_cama']})
+        if cama_data:
+            cama = {
+                "num_cama": cama_data.get("numero"),
+                "tipo": cama_data.get("area")
+            }
+
     return render_template(
         'medico/paciente.html',
         paciente=paciente,
@@ -1259,51 +1630,70 @@ def resultados_estudios(id_atencion):
 def ver_resultado_laboratorio(id_examen):
     if 'user_id' not in session:
         flash('Sesión no válida.', 'error')
-        return redirect(url_for('dashboard'))
+        return redirect(url_for('login'))
 
     db = get_db_connection()
+    print(f"=== VER RESULTADO LABORATORIO: {id_examen} ===")
 
-    # Obtener encabezado y paciente
-    pipeline_enc = [
-        {"$match": {"id_examen": id_examen}},
-        {"$lookup": {"from": "atencion", "localField": "id_atencion", "foreignField": "id_atencion", "as": "atencion"}},
-        {"$unwind": "$atencion"},
-        {"$lookup": {"from": "pacientes", "localField": "atencion.Id_exp", "foreignField": "Id_exp", "as": "paciente"}},
-        {"$unwind": "$paciente"},
-        {"$lookup": {"from": "users", "localField": "id_medico", "foreignField": "_id", "as": "user"}},
-        {"$unwind": "$user"},
-        {"$project": {
-            "fecha": 1,
-            "observaciones": 1,
-            "id_atencion": "$atencion.id_atencion",
-            "Id_exp": "$paciente.Id_exp",
-            "papell": "$paciente.papell",
-            "sapell": "$paciente.sapell",
-            "nom_pac": "$paciente.nom_pac",
-            "medico": {"$concat": ["$user.pnombre", " ", "$user.papell"]}
-        }}
-    ]
-
-    encabezado_list = list(db['examenes'].aggregate(pipeline_enc))
-    if not encabezado_list:
+    # Verificar que el examen existe
+    examen = db['examenes'].find_one({"id_examen": id_examen})
+    if not examen:
+        print(f"Examen {id_examen} no encontrado")
         flash('Resultado no encontrado.', 'error')
         return redirect(url_for('dashboard'))
 
-    encabezado = encabezado_list[0]
+    print(f"Examen encontrado: {examen}")
+
+    # Obtener encabezado y paciente - Versión simplificada primero
+    atencion = db['atencion'].find_one({"id_atencion": examen['id_atencion']})
+    if not atencion:
+        print(f"Atención no encontrada: {examen['id_atencion']}")
+        flash('Atención no encontrada.', 'error')
+        return redirect(url_for('dashboard'))
+
+    paciente = db['pacientes'].find_one({"Id_exp": atencion['Id_exp']})
+    if not paciente:
+        print(f"Paciente no encontrado: {atencion['Id_exp']}")
+        flash('Paciente no encontrado.', 'error')
+        return redirect(url_for('dashboard'))
+
+    medico = db['users'].find_one({"id": examen['id_medico']})
+    if not medico:
+        print(f"Médico no encontrado: {examen['id_medico']}")
+        medico = {"nombre": "No especificado", "papell": ""}
+
+    # Construir encabezado manualmente
+    encabezado = {
+        'id_examen': id_examen,
+        'fecha': examen.get('fecha'),
+        'observaciones': examen.get('observaciones'),
+        'id_atencion': examen['id_atencion'],
+        'Id_exp': paciente['Id_exp'],
+        'papell': paciente.get('papell', ''),
+        'sapell': paciente.get('sapell', ''),
+        'nom_pac': paciente.get('nom_pac', ''),
+        'medico': f"{medico.get('nombre', '')} {medico.get('papell', '')}".strip()
+    }
+
+    print(f"Encabezado construido: {encabezado}")
 
     # Crear objeto paciente para el template
-    paciente = {
-        'Id_exp': encabezado['Id_exp'],
-        'papell': encabezado['papell'],
-        'sapell': encabezado['sapell'],
-        'nom_pac': encabezado['nom_pac']
+    paciente_data = {
+        'Id_exp': paciente['Id_exp'],
+        'papell': paciente.get('papell', ''),
+        'sapell': paciente.get('sapell', ''),
+        'nom_pac': paciente.get('nom_pac', '')
     }
 
     # Obtener detalles de laboratorio
     pipeline_det = [
         {"$match": {"id_examen": id_examen}},
-        {"$lookup": {"from": "catalogo_examenes", "localField": "id_catalogo", "foreignField": "id_catalogo",
-                     "as": "cat"}},
+        {"$lookup": {
+            "from": "catalogo_examenes",
+            "localField": "id_catalogo",
+            "foreignField": "id_catalogo",
+            "as": "cat"
+        }},
         {"$unwind": "$cat"},
         {"$match": {"cat.tipo": "LABORATORIO"}},
         {"$project": {
@@ -1316,13 +1706,14 @@ def ver_resultado_laboratorio(id_examen):
     ]
 
     detalles = list(db['examenes_det'].aggregate(pipeline_det))
+    print(f"Detalles encontrados: {len(detalles)}")
 
     return render_template(
         'medico/res_estudios/ver_resultado_laboratorio.html',
         encabezado=encabezado,
-        paciente=paciente,  # 👈 AGREGAR ESTO
+        paciente=paciente_data,
         detalles=detalles,
-        id_atencion=encabezado['id_atencion']
+        id_atencion=examen['id_atencion']
     )
 
 
@@ -1330,51 +1721,66 @@ def ver_resultado_laboratorio(id_examen):
 def ver_resultado_gabinete(id_examen):
     if 'user_id' not in session:
         flash('Sesión no válida', 'error')
-        return redirect(url_for('dashboard'))
+        return redirect(url_for('login'))
 
     db = get_db_connection()
+    print(f"=== VER RESULTADO GABINETE: {id_examen} ===")
 
-    # Obtener encabezado y paciente
-    pipeline_enc = [
-        {"$match": {"id_examen": id_examen}},
-        {"$lookup": {"from": "atencion", "localField": "id_atencion", "foreignField": "id_atencion", "as": "atencion"}},
-        {"$unwind": "$atencion"},
-        {"$lookup": {"from": "pacientes", "localField": "atencion.Id_exp", "foreignField": "Id_exp", "as": "paciente"}},
-        {"$unwind": "$paciente"},
-        {"$lookup": {"from": "users", "localField": "id_medico", "foreignField": "_id", "as": "user"}},
-        {"$unwind": "$user"},
-        {"$project": {
-            "fecha": 1,
-            "observaciones": 1,
-            "id_atencion": "$atencion.id_atencion",
-            "Id_exp": "$paciente.Id_exp",
-            "papell": "$paciente.papell",
-            "sapell": "$paciente.sapell",
-            "nom_pac": "$paciente.nom_pac",
-            "medico": {"$concat": ["$user.pnombre", " ", "$user.papell"]}
-        }}
-    ]
-
-    encabezado_list = list(db['examenes'].aggregate(pipeline_enc))
-    if not encabezado_list:
+    # Verificar que el examen existe
+    examen = db['examenes'].find_one({"id_examen": id_examen})
+    if not examen:
+        print(f"Examen {id_examen} no encontrado")
         flash('Resultado no encontrado.', 'error')
         return redirect(url_for('dashboard'))
 
-    encabezado = encabezado_list[0]
+    # Obtener atención y paciente
+    atencion = db['atencion'].find_one({"id_atencion": examen['id_atencion']})
+    if not atencion:
+        print(f"Atención no encontrada: {examen['id_atencion']}")
+        flash('Atención no encontrada.', 'error')
+        return redirect(url_for('dashboard'))
 
-    # Crear objeto paciente para el template
-    paciente = {
-        'Id_exp': encabezado['Id_exp'],
-        'papell': encabezado['papell'],
-        'sapell': encabezado['sapell'],
-        'nom_pac': encabezado['nom_pac']
+    paciente = db['pacientes'].find_one({"Id_exp": atencion['Id_exp']})
+    if not paciente:
+        print(f"Paciente no encontrado: {atencion['Id_exp']}")
+        flash('Paciente no encontrado.', 'error')
+        return redirect(url_for('dashboard'))
+
+    medico = db['users'].find_one({"id": examen['id_medico']})
+    if not medico:
+        print(f"Médico no encontrado: {examen['id_medico']}")
+        medico = {"nombre": "No especificado", "papell": ""}
+
+    # Construir encabezado
+    encabezado = {
+        'id_examen': id_examen,
+        'fecha': examen.get('fecha'),
+        'observaciones': examen.get('observaciones'),
+        'id_atencion': examen['id_atencion'],
+        'Id_exp': paciente['Id_exp'],
+        'papell': paciente.get('papell', ''),
+        'sapell': paciente.get('sapell', ''),
+        'nom_pac': paciente.get('nom_pac', ''),
+        'medico': f"{medico.get('nombre', '')} {medico.get('papell', '')}".strip()
+    }
+
+    # Crear objeto paciente
+    paciente_data = {
+        'Id_exp': paciente['Id_exp'],
+        'papell': paciente.get('papell', ''),
+        'sapell': paciente.get('sapell', ''),
+        'nom_pac': paciente.get('nom_pac', '')
     }
 
     # Obtener detalles de gabinete
     pipeline_det = [
         {"$match": {"id_examen": id_examen}},
-        {"$lookup": {"from": "catalogo_examenes", "localField": "id_catalogo", "foreignField": "id_catalogo",
-                     "as": "cat"}},
+        {"$lookup": {
+            "from": "catalogo_examenes",
+            "localField": "id_catalogo",
+            "foreignField": "id_catalogo",
+            "as": "cat"
+        }},
         {"$unwind": "$cat"},
         {"$match": {"cat.tipo": "GABINETE"}},
         {"$project": {
@@ -1387,13 +1793,14 @@ def ver_resultado_gabinete(id_examen):
     ]
 
     detalles = list(db['examenes_det'].aggregate(pipeline_det))
+    print(f"Detalles encontrados: {len(detalles)}")
 
     return render_template(
         'medico/res_estudios/ver_resultado_gabinete.html',
         encabezado=encabezado,
-        paciente=paciente,  # 👈 AGREGAR ESTO
+        paciente=paciente_data,
         detalles=detalles,
-        id_atencion=encabezado['id_atencion']
+        id_atencion=examen['id_atencion']
     )
 
 # ==================== GESTIÓN DE CUENTAS ====================
@@ -2184,46 +2591,68 @@ def editar_cama(id):
     if 'user_id' not in session:
         flash('Debes iniciar sesión', 'error')
         return redirect(url_for('login'))
+
     db = get_db_connection()
     camas_coll = db['camas']
+
     if request.method == 'POST':
-        estatus = request.form['estatus']
+        numero = request.form['numero']
         area = request.form['area']
         tipo_habitacion = request.form['tipo_habitacion']
         piso = request.form.get('piso')
         seccion = request.form.get('seccion')
         ocupada = int(request.form.get('ocupada', 0))
+
         try:
-            camas_coll.update_one({"id_cama": id}, {"$set": {
-                "estatus": estatus,
-                "area": area,
-                "tipo_habitacion": tipo_habitacion,
-                "piso": piso,
-                "seccion": seccion,
-                "ocupada": ocupada
-            }})
+            camas_coll.update_one(
+                {"id_cama": id},
+                {"$set": {
+                    "numero": numero,
+                    "area": area,
+                    "tipo_habitacion": tipo_habitacion,
+                    "piso": piso,
+                    "seccion": seccion,
+                    "ocupada": ocupada
+                }}
+            )
+
             flash('Cama actualizada correctamente', 'success')
             return redirect(url_for('menu_camas'))
+
         except Exception as e:
             flash(f'Error al actualizar cama: {e}', 'error')
-    # GET → mostrar datos actuales
+
+    # GET
     cama = camas_coll.find_one({"id_cama": id})
+
     if not cama:
         flash('Cama no encontrada', 'error')
         return redirect(url_for('menu_camas'))
+
     return render_template('configuracion/camas/editar_cama.html', cama=cama)
 
 # ==================== ELIMINAR CAMA ====================
 @app.route('/configuracion/eliminar_cama/<int:id>', methods=['POST'])
 def eliminar_cama(id):
-    if 'user_id' not in session:
-        return jsonify({"success": False, "error": "No autorizado"}), 403
-    try:
-        db = get_db_connection()
-        db['camas'].delete_one({"id_cama": id})
-        return jsonify({"success": True})
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)})
+
+    if 'user_id' not in session or session.get('role') != 'admin':
+        return '', 403
+
+    db = get_db_connection()
+
+    # (opcional) validar que no esté ocupada
+    atencion = db['atencion'].find_one({
+        "id_cama": id,
+        "status": "ABIERTA"
+    })
+
+    if atencion:
+        return '', 400
+
+    db['camas'].delete_one({"id_cama": id})
+
+    return '', 200   # 🔥 SIEMPRE OK
+
 
 # ====================================================================================
 # ============================ PERSONAL ====================================
@@ -2231,13 +2660,22 @@ def eliminar_cama(id):
 @app.route('/configuracion/personal')
 def alta_usuarios():
     db = get_db_connection()
-    personal = list(db['users'].find({}, {"id": 1, "username": 1, "role": 1}).sort("id", -1))
+    personal = list(db['users'].find({}, {
+        "id": 1,
+        "username": 1,
+        "role": 1,
+        "nombre": 1,
+        "papell": 1,
+        "sapell": 1,
+        "curp_u": 1
+    }).sort("id", 1))
     roles = ['admin', 'medico', 'enfermero', 'administrativo']
     return render_template(
         'configuracion/personal/alta_usuario.html',
         personal=personal,
         roles=roles
     )
+
 
 # ====================================================================================
 # ============================ INSERTAR USUARIO ===============================
@@ -2248,6 +2686,10 @@ def insertar_usuario():
     users_coll = db['users']
 
     try:
+        # Obtener el último ID y generar uno nuevo
+        last_user = users_coll.find_one(sort=[("id", -1)])
+        new_id = (last_user["id"] + 1) if last_user else 1
+
         username = request.form['username'].strip()
         password = request.form['password']
         role = request.form['role']
@@ -2257,30 +2699,44 @@ def insertar_usuario():
             flash('El usuario ya existe', 'danger')
             return redirect(url_for('alta_usuarios'))
 
-        # Hashear contraseña (GUARDAR COMO BYTES)
+        # Hashear contraseña - GUARDAR COMO BYTES PUROS
         pw_hash = bcrypt.hashpw(
             password.encode('utf-8'),
             bcrypt.gensalt()
         )
 
+        # IMPORTANTE: pw_hash ya es bytes, NO lo conviertas a string
+
         # Insertar usuario
         users_coll.insert_one({
+            "id": new_id,
             "username": username,
-            "password": pw_hash,   # bytes
-            "role": role
+            "password": pw_hash,  # Esto ya es bytes, NO lo modifiques
+            "role": role,
+            "curp_u": request.form.get('curp_u', ''),
+            "nombre": request.form.get('nombre', ''),
+            "papell": request.form.get('papell', ''),
+            "sapell": request.form.get('sapell', ''),
+            "fecnac": request.form.get('fecnac'),
+            "cargo": request.form.get('cargo', ''),
+            "telefono": request.form.get('telefono', ''),
+            "email": request.form.get('email', ''),
+            "pregunta_seguridad": request.form.get('pregunta_seguridad', ''),
+            "matricula": request.form.get('matricula', ''),
+            "cedula": request.form.get('cedula', ''),
+            "img_perfil": None,
+            "firma": None
         })
 
-        # Log global
-        registrar_log_global(
-            f"Creó un nuevo usuario: {username}"
-        )
-
+        registrar_log_global(f"Creó un nuevo usuario: {username}")
         flash('Usuario creado correctamente', 'success')
         return redirect(url_for('alta_usuarios'))
 
     except Exception as e:
         flash(f'Error al crear usuario: {e}', 'danger')
         return redirect(url_for('alta_usuarios'))
+
+
 # ====================================================================================
 # ============================ EDITAR USUARIO ===============================
 # ====================================================================================
@@ -2288,27 +2744,57 @@ def insertar_usuario():
 def editar_usuario(user_id):
     db = get_db_connection()
     users_coll = db['users']
-    usuario = users_coll.find_one({"id": user_id}, {"id": 1, "username": 1, "role": 1})
-    if not usuario:
-        flash('Usuario no encontrado', 'danger')
-        return redirect(url_for('alta_usuarios'))
-    roles = ['admin', 'medico', 'enfermero', 'administrativo']
+
     if request.method == 'POST':
         try:
-            users_coll.update_one({"id": user_id}, {"$set": {
+            update_data = {
                 "username": request.form['username'],
-                "role": request.form['role']
-            }})
+                "role": request.form['role'],
+                "curp_u": request.form.get('curp_u', ''),
+                "nombre": request.form.get('nombre', ''),
+                "papell": request.form.get('papell', ''),
+                "sapell": request.form.get('sapell', ''),
+                "fecnac": request.form.get('fecnac'),
+                "cargo": request.form.get('cargo', ''),
+                "telefono": request.form.get('telefono', ''),
+                "email": request.form.get('email', ''),
+                "pregunta_seguridad": request.form.get('pregunta_seguridad', ''),
+                "matricula": request.form.get('matricula', ''),
+                "cedula": request.form.get('cedula', '')
+            }
+
+            # Si se proporciona nueva contraseña
+            if request.form.get('password'):
+                new_password = bcrypt.hashpw(
+                    request.form['password'].encode('utf-8'),
+                    bcrypt.gensalt()
+                )
+                update_data["password"] = new_password
+
+            users_coll.update_one(
+                {"id": user_id},
+                {"$set": update_data}
+            )
+
             flash('Usuario actualizado correctamente', 'success')
             return redirect(url_for('alta_usuarios'))
         except Exception as e:
             flash(f'Error al actualizar usuario: {e}', 'danger')
             return redirect(url_for('alta_usuarios'))
+
+    # GET request
+    usuario = users_coll.find_one({"id": user_id})
+    if not usuario:
+        flash('Usuario no encontrado', 'danger')
+        return redirect(url_for('alta_usuarios'))
+
+    roles = ['admin', 'medico', 'enfermero', 'administrativo']
     return render_template(
         'configuracion/personal/editar_usuario.html',
         usuario=usuario,
         roles=roles
     )
+
 
 # ====================================================================================
 # ============================ MOSTRAR USUARIO ===============================
@@ -2316,69 +2802,135 @@ def editar_usuario(user_id):
 @app.route('/configuracion/personal/mostrar/<int:user_id>')
 def mostrar_usuario(user_id):
     db = get_db_connection()
-    usuario = db['users'].find_one({"id": user_id}, {"username": 1, "role": 1})
+    usuario = db['users'].find_one({"id": user_id})
     if not usuario:
         flash('Usuario no encontrado', 'danger')
         return redirect(url_for('alta_usuarios'))
+
+    # Asegurar que todos los campos existan
+    default_fields = {
+        'nombre': '', 'papell': '', 'sapell': '', 'fecnac': '',
+        'curp_u': '', 'cargo': '', 'telefono': '', 'email': '',
+        'username': '', 'role': '', 'matricula': '', 'cedula': '',
+        'img_perfil': None, 'firma': None
+    }
+
+    for field, default_value in default_fields.items():
+        if field not in usuario:
+            usuario[field] = default_value
+
     return render_template(
         'configuracion/personal/mostrar_usuario.html',
         usuario=usuario
     )
 
+
+# ============================ LISTAR DIAGNÓSTICOS ============================
 @app.route('/configuracion/diagnostico')
 def listar_diagnosticos():
     db = get_db_connection()
-    diagnosticos = list(db['cat_diag'].find({}, {"id_diag": 1, "diag": 1, "id_cie10": 1}).sort("id_diag", -1))
+    diagnosticos = list(db['cat_diag'].find(
+        {},
+        {"id_diag": 1, "diag": 1, "id_cie10": 1}
+    ).sort("id_diag", 1))
+
     return render_template(
         'configuracion/diagnostico/cat_diagnostico.html',
         diagnosticos=diagnosticos
     )
 
+
 # ============================ INSERTAR DIAGNÓSTICO ============================
 @app.route('/configuracion/diagnostico/insertar', methods=['POST'])
 def insertar_diagnostico():
-    diag = request.form.get('diag')
-    id_cie10 = request.form.get('id_cie10')
-    if diag and id_cie10:
+    try:
+        diag = request.form.get('diag', '').strip()
+        id_cie10 = request.form.get('id_cie10', '').strip()
+
+        if not diag or not id_cie10:
+            flash('Todos los campos son obligatorios', 'danger')
+            return redirect(url_for('listar_diagnosticos'))
+
         db = get_db_connection()
         cat_diag_coll = db['cat_diag']
-        id_diag = get_next_sequence('cat_diag_id_diag')
+
+        # Obtener el último ID
+        last_doc = cat_diag_coll.find_one(sort=[("id_diag", -1)])
+        new_id = (last_doc["id_diag"] + 1) if last_doc else 1
+
+        # Insertar nuevo diagnóstico
         cat_diag_coll.insert_one({
-            "id_diag": id_diag,
+            "id_diag": new_id,
             "diag": diag,
             "id_cie10": id_cie10
         })
+
         flash('Diagnóstico registrado correctamente', 'success')
-    else:
-        flash('Todos los campos son obligatorios', 'danger')
+
+    except Exception as e:
+        flash(f'Error al registrar diagnóstico: {str(e)}', 'danger')
+
     return redirect(url_for('listar_diagnosticos'))
+
 
 # ============================ EDITAR DIAGNÓSTICO ============================
 @app.route('/configuracion/diagnostico/editar/<int:id>', methods=['GET', 'POST'])
 def editar_diagnostico(id):
     db = get_db_connection()
     cat_diag_coll = db['cat_diag']
+
     if request.method == 'POST':
-        diag = request.form['diag']
-        id_cie10 = request.form['id_cie10']
-        cat_diag_coll.update_one({"id_diag": id}, {"$set": {
-            "diag": diag,
-            "id_cie10": id_cie10
-        }})
-        flash('Diagnóstico actualizado correctamente', 'info')
-        return redirect(url_for('listar_diagnosticos'))
+        try:
+            diag = request.form.get('diag', '').strip()
+            id_cie10 = request.form.get('id_cie10', '').strip()
+
+            if not diag or not id_cie10:
+                flash('Todos los campos son obligatorios', 'danger')
+                return redirect(url_for('editar_diagnostico', id=id))
+
+            cat_diag_coll.update_one(
+                {"id_diag": id},
+                {"$set": {
+                    "diag": diag,
+                    "id_cie10": id_cie10
+                }}
+            )
+
+            flash('Diagnóstico actualizado correctamente', 'success')
+            return redirect(url_for('listar_diagnosticos'))
+
+        except Exception as e:
+            flash(f'Error al actualizar: {str(e)}', 'danger')
+            return redirect(url_for('editar_diagnostico', id=id))
+
+    # GET request
     diagnostico = cat_diag_coll.find_one({"id_diag": id})
+
+    if not diagnostico:
+        flash('Diagnóstico no encontrado', 'danger')
+        return redirect(url_for('listar_diagnosticos'))
+
     return render_template(
         'configuracion/diagnostico/edit_diagnostico.html',
         diagnostico=diagnostico
     )
 
+
 # ============================ ELIMINAR DIAGNÓSTICO ============================
 @app.route('/configuracion/diagnostico/eliminar/<int:id>')
 def eliminar_diagnostico(id):
-    db = get_db_connection()
-    db['cat_diag'].delete_one({"id_diag": id})
-    flash('Diagnóstico eliminado correctamente', 'warning')
+    try:
+        db = get_db_connection()
+        result = db['cat_diag'].delete_one({"id_diag": id})
+
+        if result.deleted_count > 0:
+            flash('Diagnóstico eliminado correctamente', 'warning')
+        else:
+            flash('Diagnóstico no encontrado', 'danger')
+
+    except Exception as e:
+        flash(f'Error al eliminar: {str(e)}', 'danger')
+
     return redirect(url_for('listar_diagnosticos'))
 
 # ====================================================================================
@@ -2388,9 +2940,15 @@ def eliminar_diagnostico(id):
 def cat_servicios():
     db = get_db_connection()
     pipeline = [
-        {"$lookup": {"from": "service_type", "localField": "tipo", "foreignField": "ser_type_id", "as": "t"}},
+        {"$lookup": {
+            "from": "service_type",
+            "localField": "tipo",
+            "foreignField": "ser_type_id",
+            "as": "t"
+        }},
         {"$unwind": {"path": "$t", "preserveNullAndEmptyArrays": True}},
         {"$project": {
+            "id_serv": 1,  # ✅ CLAVE
             "serv_cve": 1,
             "serv_desc": 1,
             "serv_costo": 1,
@@ -2412,7 +2970,7 @@ def cat_servicios():
             "iva": 1,
             "tip_insumo": "$t.ser_type_desc"
         }},
-        {"$sort": {"id_serv": -1}}
+        {"$sort": {"id_serv": 1}}
     ]
     servicios = list(db['cat_servicios'].aggregate(pipeline))
     tipos = list(db['service_type'].find())
@@ -2498,71 +3056,112 @@ def editar_servicio(id):
         proveedores=proveedores
     )
 
+
 # ==================== INSERTAR SERVICIO ====================
 @app.route('/insertar_servicio', methods=['POST'])
 def insertar_servicio():
-    if request.method == 'POST':
+    try:
         data = request.form
-        # ──────────────────────────────────────────────────────────────
-        # 1. Extraer todos los campos del formulario
-        # ──────────────────────────────────────────────────────────────
+        print("=== DATOS RECIBIDOS ===")
+        print(f"Form data: {dict(data)}")
+
+        db = get_db_connection()
+
+        # Verificar que la colección existe
+        colecciones = db.list_collection_names()
+        print(f"Colecciones disponibles: {colecciones}")
+
+        if 'cat_servicios' not in colecciones:
+            print("¡La colección 'cat_servicios' no existe!")
+            # Crear la colección
+            db.create_collection('cat_servicios')
+            print("Colección creada")
+
+        # Obtener último ID
+        last_serv = db['cat_servicios'].find_one(sort=[("id_serv", -1)])
+        new_id = (last_serv["id_serv"] + 1) if last_serv else 1
+        print(f"Nuevo ID: {new_id}")
+
+        # Validar campos obligatorios
         serv_cve = data.get('serv_cve')
         serv_desc = data.get('serv_desc')
         serv_costo = data.get('serv_costo')
-        serv_costo2 = data.get('serv_costo2')
-        serv_costo3 = data.get('serv_costo3')
-        serv_costo4 = data.get('serv_costo4')
-        serv_costo5 = data.get('serv_costo5')
-        serv_costo6 = data.get('serv_costo6')
-        serv_costo7 = data.get('serv_costo7')
-        serv_costo8 = data.get('serv_costo8')
         serv_umed = data.get('serv_umed')
-        serv_tipo = data.get('serv_tipo') # ← este es el ID del tipo
-        proveedor = data.get('proveedor')
-        grupo = data.get('grupo')
-        codigo_sat = data.get('codigo_sat')
-        c_cveuni = data.get('c_cveuni')
-        c_nombre = data.get('c_nombre')
-        tasa_iva = data.get('iva') # cambia el nombre si tu input se llama diferente
-        db = get_db_connection()
-        # ──────────────────────────────────────────────────────────────
-        # 2. Obtener la descripción del tipo de servicio
-        # ──────────────────────────────────────────────────────────────
-        tipo = db['service_type'].find_one({"ser_type_id": int(serv_tipo)}, {"ser_type_desc": 1})
+        serv_tipo = data.get('serv_tipo')
+
+        if not all([serv_cve, serv_desc, serv_costo, serv_umed, serv_tipo]):
+            print("ERROR: Faltan campos obligatorios")
+            flash('Todos los campos obligatorios deben ser llenados', 'danger')
+            return redirect(url_for('cat_servicios'))
+
+        # Convertir serv_tipo a entero
+        try:
+            serv_tipo_int = int(serv_tipo)
+            print(f"Tipo convertido a entero: {serv_tipo_int}")
+        except ValueError:
+            print(f"ERROR: serv_tipo no es un número válido: {serv_tipo}")
+            flash('El tipo de servicio debe ser un número válido', 'danger')
+            return redirect(url_for('cat_servicios'))
+
+        # Obtener descripción del tipo
+        tipo = db['service_type'].find_one({"ser_type_id": serv_tipo_int})
         tip_insumo = tipo['ser_type_desc'] if tipo else ''
-        # ──────────────────────────────────────────────────────────────
-        # 3. Insertar el servicio
-        # ──────────────────────────────────────────────────────────────
-        id_serv = get_next_sequence('cat_servicios_id_serv')
-        db['cat_servicios'].insert_one({
-            "id_serv": id_serv,
+        print(f"Tipo encontrado: {tip_insumo}")
+
+        if not tipo:
+            print(f"ADVERTENCIA: No se encontró tipo con ID {serv_tipo_int}")
+
+        # Función auxiliar para convertir a float
+        def to_float(valor, default=0):
+            if valor is None or valor == '':
+                return default
+            try:
+                return float(valor)
+            except (ValueError, TypeError):
+                return default
+
+        # Construir documento
+        servicio = {
+            "id_serv": new_id,
             "serv_cve": serv_cve,
             "serv_desc": serv_desc,
-            "serv_costo": serv_costo,
-            "serv_costo2": serv_costo2,
-            "serv_costo3": serv_costo3,
-            "serv_costo4": serv_costo4,
-            "serv_costo5": serv_costo5,
-            "serv_costo6": serv_costo6,
-            "serv_costo7": serv_costo7,
-            "serv_costo8": serv_costo8,
+            "serv_costo": to_float(serv_costo),
+            "serv_costo2": to_float(data.get('serv_costo2')),
+            "serv_costo3": to_float(data.get('serv_costo3')),
+            "serv_costo4": to_float(data.get('serv_costo4')),
+            "serv_costo5": to_float(data.get('serv_costo5')),
+            "serv_costo6": to_float(data.get('serv_costo6')),
+            "serv_costo7": to_float(data.get('serv_costo7')),
+            "serv_costo8": to_float(data.get('serv_costo8')),
             "serv_umed": serv_umed,
             "serv_activo": 'SI',
-            "tipo": serv_tipo,
+            "tipo": serv_tipo_int,  # Guardar como entero
             "tip_insumo": tip_insumo,
-            "proveedor": proveedor,
-            "grupo": grupo,
-            "codigo_sat": codigo_sat,
-            "c_cveuni": c_cveuni,
-            "c_nombre": c_nombre,
-            "iva": tasa_iva
-        })
-        flash('Servicio registrado correctamente', 'success')
-        return redirect(url_for('cat_servicios'))
-    # Por si acaso llega por GET (no debería)
-    flash('Método no permitido', 'danger')
-    return redirect(url_for('cat_servicios'))
+            "proveedor": data.get('proveedor'),
+            "grupo": data.get('grupo'),
+            "codigo_sat": data.get('codigo_sat'),
+            "c_cveuni": data.get('c_cveuni'),
+            "c_nombre": 'SERVICIO',
+            "iva": to_float(data.get('iva'), 16) / 100
+        }
 
+        print("Documento a insertar:")
+        print(servicio)
+        print(f"Tipo de 'tipo': {type(servicio['tipo'])}")  # Debe ser <class 'int'>
+
+        # Insertar
+        result = db['cat_servicios'].insert_one(servicio)
+        print(f"Insertado con ID: {result.inserted_id}")
+
+        flash('Servicio registrado correctamente', 'success')
+
+    except Exception as e:
+        print(f"ERROR: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        flash(f'Error al registrar servicio: {str(e)}', 'danger')
+
+    return redirect(url_for('cat_servicios'))
 # ==================== GESTIÓN DE CUENTAS (ACTIVOS) ====================
 @app.route('/admin/cuenta_pacientes')
 def cuenta_pacientes():

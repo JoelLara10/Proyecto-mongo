@@ -1,83 +1,355 @@
 {% extends 'medico/header_medico.html' %}
 
 {% block content %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
-<section class="content-header">
-  <h1 class="text-primary">
-    <i class="fas fa-x-ray"></i> Resultado de Gabinete
-  </h1>
-</section>
+<div class="container-fluid mt-3">
+  <!-- ENCABEZADO CON BOTÓN DE REGRESO -->
+  <div class="d-flex align-items-center mb-3">
+    <a href="{{ url_for('resultados_estudios', id_atencion=id_atencion) }}"
+       class="btn btn-outline-primary btn-sm d-flex align-items-center back-btn">
+      <i class="bi bi-arrow-left me-1"></i>Regresar a Resultados
+    </a>
+  </div>
 
-<section class="content">
-
-  <!-- ================= PACIENTE ================= -->
-  <div class="card card-primary mb-3">
-    <div class="card-header">
-      <h3 class="card-title">
-        Paciente: {{ encabezado.papell }} {{ encabezado.sapell }} {{ encabezado.nom_pac }}
-      </h3>
-    </div>
-
-    <div class="card-body">
-      <p><strong>Expediente:</strong> {{ encabezado.Id_exp }}</p>
-      <p><strong>Médico solicitante:</strong> {{ encabezado.medico }}</p>
-      <p><strong>Fecha solicitud:</strong> {{ encabezado.fecha.strftime('%d/%m/%Y %H:%M') }}</p>
-      <p><strong>Observaciones generales:</strong>
-        {{ encabezado.observaciones or 'Sin observaciones' }}
-      </p>
+  <!-- INFORMACIÓN DEL PACIENTE (CARD SUPERIOR) -->
+  <div class="row mb-3">
+    <div class="col-12">
+      <div class="card border-0 shadow-sm rounded-2 info-card">
+        <div class="card-body py-2">
+          <div class="d-flex align-items-center">
+            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2"
+                 style="width: 35px; height: 35px;">
+              <i class="bi bi-person"></i>
+            </div>
+            <div>
+              <h6 class="mb-0 fw-bold">{{ paciente.papell }} {{ paciente.sapell }} {{ paciente.nom_pac }}</h6>
+              <small class="text-muted">Expediente: {{ paciente.Id_exp }} • Solicitud: {{ encabezado.fecha.strftime('%d/%m/%Y %H:%M') if encabezado.fecha else 'N/A' }}</small>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- ================= ESTUDIOS DE GABINETE ================= -->
-  <div class="card card-success mb-3">
-    <div class="card-header">
-      <h3 class="card-title">Estudios realizados</h3>
-    </div>
-
-    <div class="card-body">
-      {% if detalles %}
-        <table class="table table-bordered table-striped">
-          <thead>
-            <tr>
-              <th>Estudio</th>
-              <th>Estado</th>
-              <th>Fecha realizado</th>
-              <th>Resultado</th>
-              <th>Observaciones</th>
-            </tr>
-          </thead>
-          <tbody>
+  <div class="row">
+    <!-- LISTA DE ARCHIVOS -->
+    <div class="col-md-5">
+      <div class="card border-0 shadow rounded-2 h-100">
+        <div class="card-header bg-primary text-white py-2 rounded-top">
+          <h6 class="mb-0">
+            <i class="bi bi-files me-1"></i>Archivos de Gabinete
+          </h6>
+        </div>
+        <div class="card-body p-0">
+          <div class="list-group list-group-flush">
             {% for d in detalles %}
-            <tr>
-              <td>{{ d.nombre }}</td>
-              <td>
-                <span class="badge badge-{{ 'success' if d.estado == 'REALIZADO' else 'warning' }}">
-                  {{ d.estado }}
-                </span>
-              </td>
-              <td>{{ d.fecha_realizado.strftime('%d/%m/%Y') if d.fecha_realizado else '—' }}</td>
-              <td>
-                {% if d.archivo_resultado %}
-                  <a href="{{ url_for('static', filename='resultados/' ~ d.archivo_resultado) }}"
-                     target="_blank"
-                     class="btn btn-sm btn-primary">
-                    <i class="fas fa-file-pdf"></i> Ver archivo
-                  </a>
-                {% else %}
-                  —
-                {% endif %}
-              </td>
-              <td>{{ d.observaciones or '—' }}</td>
-            </tr>
+              {% if d.archivo_resultado %}
+                {% set ext = d.archivo_resultado.split('.')[-1].lower() %}
+                <a href="#"
+                   class="list-group-item list-group-item-action resultado-link py-2"
+                   data-file="{{ d.archivo_resultado }}"
+                   data-ext="{{ ext }}">
+                  <div class="d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center">
+                      {% if ext == 'pdf' %}
+                        <i class="bi bi-file-earmark-pdf text-danger me-2"></i>
+                      {% elif ext in ['png', 'jpg', 'jpeg'] %}
+                        <i class="bi bi-file-earmark-image text-success me-2"></i>
+                      {% else %}
+                        <i class="bi bi-file-earmark me-2 text-primary"></i>
+                      {% endif %}
+                      <div>
+                        <span class="small fw-bold">{{ d.nombre }}</span>
+                        <br>
+                        <small class="text-muted">{{ d.fecha_realizado.strftime('%d/%m/%Y') if d.fecha_realizado else 'Sin fecha' }}</small>
+                      </div>
+                    </div>
+                    <span class="badge bg-light-blue text-primary border border-primary rounded-pill px-2 py-0 small">
+                      {{ ext.upper() }}
+                    </span>
+                  </div>
+                </a>
+              {% endif %}
+            {% else %}
+            <div class="text-center py-4">
+              <i class="bi bi-folder-x text-muted" style="font-size: 1.5rem;"></i>
+              <p class="text-muted small mt-2 mb-0">No hay archivos disponibles</p>
+            </div>
             {% endfor %}
-          </tbody>
-        </table>
-      {% else %}
-        <p class="text-muted">No hay estudios de gabinete registrados.</p>
-      {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VISTA PREVIA -->
+    <div class="col-md-7">
+      <div class="card border-0 shadow rounded-2 h-100">
+        <div class="card-header bg-primary text-white py-2 rounded-top">
+          <h6 class="mb-0">
+            <i class="bi bi-eye me-1"></i>Vista Previa
+          </h6>
+        </div>
+        <div class="card-body p-0">
+          <div id="preview-gabinete"
+               class="border rounded m-3 p-3 d-flex align-items-center justify-content-center"
+               style="min-height: 450px; background:#f8f9fa;">
+            <div class="text-center">
+              <i class="bi bi-file-earmark-text text-muted" style="font-size: 3rem;"></i>
+              <p class="text-muted mt-2">
+                Selecciona un archivo para visualizarlo
+              </p>
+              <small class="text-muted">
+                Formatos soportados: PDF, PNG, JPG, JPEG
+              </small>
+            </div>
+          </div>
+
+          <!-- Controles de vista -->
+          <div class="d-flex justify-content-between align-items-center border-top p-3 bg-light">
+            <div class="small text-muted">
+              <i class="bi bi-info-circle me-1"></i>
+              {{ detalles|length }} archivo(s) disponible(s)
+            </div>
+            <div class="d-flex gap-2">
+              <button id="zoom-in" class="btn btn-sm btn-outline-primary d-none">
+                <i class="bi bi-zoom-in"></i>
+              </button>
+              <button id="zoom-out" class="btn btn-sm btn-outline-primary d-none">
+                <i class="bi bi-zoom-out"></i>
+              </button>
+              <button id="download-gabinete-btn" class="btn btn-sm btn-outline-primary d-none">
+                <i class="bi bi-download me-1"></i>Descargar
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
+</div>
 
-</section>
+<style>
+  .bg-light-blue {
+    background-color: #e8f4fd !important;
+  }
+
+  .back-btn {
+    border: 1px solid #4dabf7;
+    color: #4dabf7;
+    font-weight: 500;
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+  }
+
+  .back-btn:hover {
+    background-color: #4dabf7;
+    color: white;
+    transform: translateX(-3px);
+  }
+
+  .info-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .info-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08) !important;
+  }
+
+  .card-header {
+    border-radius: 8px 8px 0 0 !important;
+    font-size: 0.875rem;
+  }
+
+  .list-group-item {
+    border-left: none;
+    border-right: none;
+    transition: all 0.2s ease;
+  }
+
+  .list-group-item:first-child {
+    border-top: none;
+  }
+
+  .list-group-item:hover {
+    background-color: #e8f4fd;
+    border-color: #dee2e6;
+  }
+
+  .list-group-item.active {
+    background-color: #4dabf7 !important;
+    border-color: #4dabf7 !important;
+    color: white !important;
+  }
+
+  .list-group-item.active .badge {
+    background-color: white !important;
+    color: #4dabf7 !important;
+  }
+
+  .list-group-item.active i {
+    color: white !important;
+  }
+
+  .badge.small {
+    font-size: 0.75rem;
+    padding: 1px 6px;
+  }
+
+  .btn-outline-primary {
+    border: 1px solid #4dabf7;
+    color: #4dabf7;
+    font-weight: 500;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    transition: all 0.2s ease;
+  }
+
+  .btn-outline-primary:hover {
+    background-color: #4dabf7;
+    color: white;
+  }
+
+  #preview-gabinete {
+    transition: all 0.3s ease;
+  }
+
+  .pdf-viewer {
+    width: 100%;
+    height: 100%;
+    min-height: 450px;
+    border: none;
+  }
+
+  .image-viewer {
+    max-width: 100%;
+    max-height: 450px;
+    object-fit: contain;
+    transition: transform 0.3s ease;
+  }
+
+  .unsupported-format {
+    padding: 2rem;
+    text-align: center;
+  }
+</style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const previewArea = document.getElementById('preview-gabinete');
+    const downloadBtn = document.getElementById('download-gabinete-btn');
+    const zoomInBtn = document.getElementById('zoom-in');
+    const zoomOutBtn = document.getElementById('zoom-out');
+    let currentScale = 1;
+    const maxScale = 3;
+    const minScale = 0.5;
+    const scaleStep = 0.1;
+
+    // Manejar clics en los enlaces de archivos
+    document.querySelectorAll('.resultado-link').forEach(link => {
+      link.addEventListener('click', function(e) {
+        e.preventDefault();
+
+        // Remover clase activa de todos los enlaces
+        document.querySelectorAll('.resultado-link').forEach(item => {
+          item.classList.remove('active');
+        });
+
+        // Agregar clase activa al enlace seleccionado
+        this.classList.add('active');
+
+        const archivo = this.dataset.file;
+        const ext = this.dataset.ext;
+        currentScale = 1; // Resetear escala
+
+        // Construir la URL
+        const url = `/static/resultados/gabinete/${archivo}`;
+
+        // Actualizar el botón de descarga
+        if (archivo) {
+          downloadBtn.classList.remove('d-none');
+          downloadBtn.onclick = function() {
+            window.open(url, '_blank');
+          };
+        }
+
+        // Limpiar área de vista previa
+        previewArea.innerHTML = '';
+
+        if (ext === 'pdf') {
+          previewArea.innerHTML = `
+            <iframe src="${url}#toolbar=0"
+                    class="pdf-viewer"
+                    width="100%"
+                    height="450px"
+                    style="border:none;"></iframe>
+          `;
+          zoomInBtn.classList.add('d-none');
+          zoomOutBtn.classList.add('d-none');
+        } else if (['png', 'jpg', 'jpeg'].includes(ext)) {
+          const imgContainer = document.createElement('div');
+          imgContainer.className = 'text-center';
+
+          const img = document.createElement('img');
+          img.src = url;
+          img.className = 'image-viewer';
+          img.id = 'preview-image';
+          img.style.transform = `scale(${currentScale})`;
+          img.style.transition = 'transform 0.3s ease';
+
+          imgContainer.appendChild(img);
+          previewArea.appendChild(imgContainer);
+
+          zoomInBtn.classList.remove('d-none');
+          zoomOutBtn.classList.remove('d-none');
+        } else {
+          previewArea.innerHTML = `
+            <div class="unsupported-format">
+              <i class="bi bi-exclamation-triangle text-danger" style="font-size: 2rem;"></i>
+              <p class="text-danger mt-2">Formato no soportado para vista previa</p>
+              <p class="text-muted small">Este tipo de archivo no puede mostrarse en el navegador.</p>
+              <a href="${url}"
+                 class="btn btn-sm btn-outline-primary mt-2"
+                 target="_blank">
+                <i class="bi bi-download me-1"></i>Descargar archivo
+              </a>
+            </div>
+          `;
+          zoomInBtn.classList.add('d-none');
+          zoomOutBtn.classList.add('d-none');
+        }
+      });
+    });
+
+    // Funcionalidad de zoom (solo para imágenes)
+    zoomInBtn.addEventListener('click', function() {
+      const img = document.getElementById('preview-image');
+      if (img && currentScale < maxScale) {
+        currentScale += scaleStep;
+        img.style.transform = `scale(${currentScale})`;
+      }
+    });
+
+    zoomOutBtn.addEventListener('click', function() {
+      const img = document.getElementById('preview-image');
+      if (img && currentScale > minScale) {
+        currentScale -= scaleStep;
+        img.style.transform = `scale(${currentScale})`;
+      }
+    });
+
+    // Seleccionar automáticamente el primer archivo si existe
+    const firstFileLink = document.querySelector('.resultado-link');
+    if (firstFileLink) {
+      setTimeout(() => {
+        firstFileLink.click();
+      }, 300);
+    }
+  });
+</script>
 
 {% endblock %}

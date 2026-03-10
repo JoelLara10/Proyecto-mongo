@@ -2,16 +2,17 @@
 
 {% block content %}
 
-<div class="container-fluid">
+<div class="container-fluid mt-4">
 
     <!-- HEADER -->
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h3>
+        <h4 class="text-primary">
             <i class="fas fa-diagnoses"></i>
             Catálogo de Diagnósticos
-        </h3>
+        </h4>
 
-        <button class="btn btn-primary" data-toggle="modal" data-target="#modalDiag">
+        <!-- Botón que abre el modal (Bootstrap 5) -->
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalDiagnostico">
             <i class="fas fa-plus"></i> Nuevo Diagnóstico
         </button>
     </div>
@@ -25,11 +26,11 @@
     </div>
 
     <!-- TABLA -->
-    <div class="card">
+    <div class="card shadow">
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover mb-0" id="mytable">
-                    <thead class="bg-primary text-white">
+                <table class="table table-hover mb-0" id="tablaDiagnosticos">
+                    <thead class="table-dark">
                         <tr>
                             <th>ID</th>
                             <th>Diagnóstico</th>
@@ -48,6 +49,11 @@
                                    class="btn btn-sm btn-warning">
                                     <i class="fas fa-edit"></i>
                                 </a>
+                                <a href="{{ url_for('eliminar_diagnostico', id=d.id_diag) }}"
+                                   class="btn btn-sm btn-danger"
+                                   onclick="return confirm('¿Eliminar diagnóstico?')">
+                                    <i class="fas fa-trash"></i>
+                                </a>
                             </td>
                         </tr>
                         {% else %}
@@ -65,17 +71,76 @@
 
 </div>
 
-<!-- BUSCADOR SCRIPT (compatible con Bootstrap 4) -->
+<!-- ===== MODAL NUEVO DIAGNÓSTICO ===== -->
+<div class="modal fade" id="modalDiagnostico" tabindex="-1" aria-labelledby="modalDiagnosticoLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="modalDiagnosticoLabel">
+                    <i class="fas fa-plus-circle"></i> Nuevo Diagnóstico
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <form action="{{ url_for('insertar_diagnostico') }}" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Diagnóstico <span class="text-danger">*</span></label>
+                        <input type="text" name="diag" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Código CIE-10 <span class="text-danger">*</span></label>
+                        <input type="text" name="id_cie10" class="form-control" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Guardar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Script para búsqueda -->
 <script>
 document.getElementById("search").addEventListener("keyup", function () {
     let value = this.value.toLowerCase();
-    let rows = document.querySelectorAll("#mytable tbody tr");
+    let rows = document.querySelectorAll("#tablaDiagnosticos tbody tr");
 
     rows.forEach(row => {
         row.style.display =
             row.textContent.toLowerCase().includes(value) ? "" : "none";
     });
 });
+</script>
+
+<!-- jQuery y Bootstrap JS -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+$(document).ready(function() {
+    console.log('✓ jQuery y página cargados');
+
+    // Abrir modal con jQuery
+    $('#modalDiagnostico').on('show.bs.modal', function() {
+        console.log('Modal abriéndose');
+    });
+
+    // Verificar que el botón funciona
+    $('[data-bs-target="#modalDiagnostico"]').on('click', function() {
+        console.log('Botón clickeado');
+    });
+});
+
+// Función para abrir modal manualmente
+function abrirModalJQ() {
+    $('#modalDiagnostico').modal('show');
+}
 </script>
 
 {% endblock %}

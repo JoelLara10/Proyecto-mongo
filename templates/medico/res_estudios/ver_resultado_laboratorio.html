@@ -1,83 +1,253 @@
 {% extends 'medico/header_medico.html' %}
 
 {% block content %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
-<section class="content-header">
-  <h1 class="text-primary">
-    <i class="fas fa-flask"></i> Resultado de Laboratorio
-  </h1>
-</section>
+<div class="container-fluid mt-3">
+  <!-- ENCABEZADO CON BOTÓN DE REGRESO -->
+  <div class="d-flex align-items-center mb-3">
+    <a href="{{ url_for('resultados_estudios', id_atencion=id_atencion) }}"
+       class="btn btn-outline-primary btn-sm d-flex align-items-center back-btn">
+      <i class="bi bi-arrow-left me-1"></i>Regresar a Resultados
+    </a>
+  </div>
 
-<section class="content">
-
-  <!-- ================= PACIENTE ================= -->
-  <div class="card card-primary mb-3">
-    <div class="card-header">
-      <h3 class="card-title">
-        Paciente: {{ encabezado.papell }} {{ encabezado.sapell }} {{ encabezado.nom_pac }}  <!-- Cambiado de paciente a encabezado -->
-      </h3>
-    </div>
-
-    <div class="card-body">
-      <p><strong>Expediente:</strong> {{ encabezado.Id_exp }}</p>  <!-- Cambiado de paciente a encabezado -->
-      <p><strong>Médico solicitante:</strong> {{ encabezado.medico }}</p>
-      <p><strong>Fecha solicitud:</strong> {{ encabezado.fecha.strftime('%d/%m/%Y %H:%M') }}</p>
+  <!-- INFORMACIÓN DEL PACIENTE (CARD SUPERIOR) -->
+  <div class="row mb-3">
+    <div class="col-12">
+      <div class="card border-0 shadow-sm rounded-2 info-card">
+        <div class="card-body py-2">
+          <div class="d-flex align-items-center">
+            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2"
+                 style="width: 35px; height: 35px;">
+              <i class="bi bi-person"></i>
+            </div>
+            <div>
+              <h6 class="mb-0 fw-bold">{{ paciente.papell }} {{ paciente.sapell }} {{ paciente.nom_pac }}</h6>
+              <small class="text-muted">Expediente: {{ paciente.Id_exp }} • Solicitud: {{ encabezado.fecha.strftime('%d/%m/%Y %H:%M') if encabezado.fecha else 'N/A' }}</small>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- ================= ESTUDIOS ================= -->
-  <div class="card card-success mb-3">
-    <div class="card-header">
-      <h3 class="card-title">Resultados de Estudios</h3>
-    </div>
-
-    <div class="card-body">
-      {% if detalles %}
-        <table class="table table-bordered table-striped">
-          <thead>
-            <tr>
-              <th>Estudio</th>
-              <th>Estado</th>
-              <th>Resultado</th>
-              <th>Fecha realizado</th>
-              <th>Observaciones</th>
-            </tr>
-          </thead>
-          <tbody>
+  <div class="row">
+    <!-- LISTA DE RESULTADOS -->
+    <div class="col-md-5">
+      <div class="card border-0 shadow rounded-2 h-100">
+        <div class="card-header bg-primary text-white py-2 rounded-top">
+          <h6 class="mb-0">
+            <i class="bi bi-files me-1"></i>Estudios de Laboratorio
+          </h6>
+        </div>
+        <div class="card-body p-0">
+          <div class="list-group list-group-flush">
             {% for d in detalles %}
-            <tr>
-              <td>{{ d.nombre }}</td>
-              <td>
-                <span class="badge badge-{{ 'success' if d.estado == 'REALIZADO' else 'warning' }}">
-                  {{ d.estado }}
-                </span>
-              </td>
-              <td>{{ d.resultado or '—' }}</td>
-              <td>{{ d.fecha_realizado.strftime('%d/%m/%Y') if d.fecha_realizado else '—' }}</td>
-              <td>{{ d.observaciones or '—' }}</td>
-            </tr>
+              <a href="#"
+                 class="list-group-item list-group-item-action resultado-link py-2"
+                 data-resultado="{{ d.resultado }}"
+                 data-nombre="{{ d.nombre }}">
+                <div class="d-flex align-items-center justify-content-between">
+                  <div class="d-flex align-items-center">
+                    <i class="bi bi-flask me-2 text-primary"></i>
+                    <div>
+                      <span class="small fw-bold">{{ d.nombre }}</span>
+                      <br>
+                      <small class="text-muted">{{ d.fecha_realizado.strftime('%d/%m/%Y') if d.fecha_realizado else 'Sin fecha' }}</small>
+                    </div>
+                  </div>
+                  <span class="badge {% if d.estado == 'REALIZADO' %}bg-success{% else %}bg-warning{% endif %} text-white rounded-pill px-2 py-0 small">
+                    {{ d.estado }}
+                  </span>
+                </div>
+              </a>
+            {% else %}
+            <div class="text-center py-4">
+              <i class="bi bi-folder-x text-muted" style="font-size: 1.5rem;"></i>
+              <p class="text-muted small mt-2 mb-0">No hay estudios disponibles</p>
+            </div>
             {% endfor %}
-          </tbody>
-        </table>
-      {% else %}
-        <p>No hay estudios disponibles</p>
-      {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VISTA DEL RESULTADO -->
+    <div class="col-md-7">
+      <div class="card border-0 shadow rounded-2 h-100">
+        <div class="card-header bg-primary text-white py-2 rounded-top">
+          <h6 class="mb-0">
+            <i class="bi bi-eye me-1"></i>Resultado del Estudio
+          </h6>
+        </div>
+        <div class="card-body p-0">
+          <div id="preview-laboratorio"
+               class="border rounded m-3 p-4"
+               style="min-height: 450px; background:#f8f9fa;">
+            <div class="text-center">
+              <i class="bi bi-flask text-muted" style="font-size: 3rem;"></i>
+              <p class="text-muted mt-2">
+                Selecciona un estudio para ver su resultado
+              </p>
+            </div>
+          </div>
+
+          <!-- Información adicional -->
+          <div class="d-flex justify-content-between align-items-center border-top p-3 bg-light">
+            <div class="small text-muted">
+              <i class="bi bi-info-circle me-1"></i>
+              {{ detalles|length }} estudio(s) disponible(s)
+            </div>
+            <div>
+              <small class="text-muted">
+                <i class="bi bi-calendar me-1"></i>
+                Médico: {{ encabezado.medico }}
+              </small>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- ================= OBSERVACIONES GENERALES ================= -->
+  <!-- OBSERVACIONES GENERALES (si existen) -->
   {% if encabezado.observaciones %}
-  <div class="card card-info">
-    <div class="card-header">
-      <h3 class="card-title">Observaciones generales</h3>
-    </div>
-
-    <div class="card-body">
-      <p>{{ encabezado.observaciones }}</p>
+  <div class="row mt-3">
+    <div class="col-12">
+      <div class="card border-0 shadow-sm rounded-2">
+        <div class="card-body py-2">
+          <small class="text-muted">
+            <i class="bi bi-chat-text me-1"></i>
+            <strong>Observaciones generales:</strong> {{ encabezado.observaciones }}
+          </small>
+        </div>
+      </div>
     </div>
   </div>
   {% endif %}
+</div>
 
-</section>
+<style>
+  .back-btn {
+    border: 1px solid #4dabf7;
+    color: #4dabf7;
+    font-weight: 500;
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+  }
+
+  .back-btn:hover {
+    background-color: #4dabf7;
+    color: white;
+    transform: translateX(-3px);
+  }
+
+  .info-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .info-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08) !important;
+  }
+
+  .card-header {
+    border-radius: 8px 8px 0 0 !important;
+    font-size: 0.875rem;
+  }
+
+  .list-group-item {
+    border-left: none;
+    border-right: none;
+    transition: all 0.2s ease;
+  }
+
+  .list-group-item:first-child {
+    border-top: none;
+  }
+
+  .list-group-item:hover {
+    background-color: #e8f4fd;
+  }
+
+  .list-group-item.active {
+    background-color: #4dabf7 !important;
+    border-color: #4dabf7 !important;
+    color: white !important;
+  }
+
+  .list-group-item.active i {
+    color: white !important;
+  }
+
+  .badge {
+    font-size: 0.7rem;
+    padding: 3px 8px;
+  }
+
+  #preview-laboratorio {
+    transition: all 0.3s ease;
+    overflow-y: auto;
+  }
+
+  .resultado-valor {
+    font-size: 1.1rem;
+    padding: 1rem;
+    background: white;
+    border-radius: 8px;
+    border-left: 4px solid #4dabf7;
+  }
+</style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const previewArea = document.getElementById('preview-laboratorio');
+
+    // Manejar clics en los enlaces de estudios
+    document.querySelectorAll('.resultado-link').forEach(link => {
+      link.addEventListener('click', function(e) {
+        e.preventDefault();
+
+        // Remover clase activa de todos los enlaces
+        document.querySelectorAll('.resultado-link').forEach(item => {
+          item.classList.remove('active');
+        });
+
+        // Agregar clase activa al enlace seleccionado
+        this.classList.add('active');
+
+        const nombreEstudio = this.dataset.nombre;
+        const resultado = this.dataset.resultado;
+
+        // Mostrar el resultado
+        previewArea.innerHTML = `
+          <div class="p-3">
+            <h6 class="text-primary fw-bold mb-3">
+              <i class="bi bi-flask me-2"></i>${nombreEstudio}
+            </h6>
+            <div class="resultado-valor">
+              ${resultado || '<span class="text-muted">Sin resultado disponible</span>'}
+            </div>
+            <small class="text-muted d-block mt-3">
+              <i class="bi bi-info-circle"></i>
+              Resultado de laboratorio
+            </small>
+          </div>
+        `;
+      });
+    });
+
+    // Seleccionar automáticamente el primer estudio si existe
+    const firstLink = document.querySelector('.resultado-link');
+    if (firstLink) {
+      setTimeout(() => {
+        firstLink.click();
+      }, 300);
+    }
+  });
+</script>
 
 {% endblock %}

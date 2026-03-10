@@ -20,7 +20,7 @@ import bcrypt
 from flask import current_app
 from bd import get_db_connection
 from datetime import datetime, date  # Ya debe estar
-
+import re
 # Constantes
 RUTA_CONFIG_AUTO = os.path.join('configuracion', 'copias', 'config_auto.json')
 RUTA_CONTROL = os.path.join('configuracion', 'copias', 'control_backups.json')
@@ -94,7 +94,7 @@ def guardar_config_auto(config):
 
 
 def validar_admin(username, password):
-    """Valida credenciales de administrador"""
+    """Valida credenciales de administrador - VERSIÓN CORREGIDA"""
     db = get_db_connection()
     user = db['users'].find_one({"username": username})
 
@@ -104,22 +104,40 @@ def validar_admin(username, password):
     # Obtener la contraseña almacenada
     stored_password = user['password']
 
-    # Si es string, convertir a bytes
-    if isinstance(stored_password, str):
-        stored_password = stored_password.encode('utf-8')
+    # Función para extraer hash bcrypt
+    def extract_hash(pwd):
+        if isinstance(pwd, bytes):
+            if pwd.startswith(b"b'") or pwd.startswith(b'b"'):
+                pwd = pwd[2:-1]
+            if pwd.startswith(b'$2b$'):
+                return pwd
+            try:
+                pwd_str = pwd.decode('utf-8')
+            except:
+                pwd_str = str(pwd)
+        else:
+            pwd_str = str(pwd)
 
-    # La contraseña ingresada siempre debe ser bytes
-    password_bytes = password.encode('utf-8')
+        if '$2b$' in pwd_str:
+            start = pwd_str.find('$2b$')
+            if start != -1:
+                pwd_str = pwd_str[start:]
 
-    # Verificar contraseña con bcrypt
-    if not bcrypt.checkpw(password_bytes, stored_password):
-        return False
+        return pwd_str.encode('utf-8')
 
-    # Verificar rol de admin
-    if user.get('role') != 'admin':
-        return False
+    try:
+        # Normalizar
+        normalized = extract_hash(stored_password)
 
-    return True
+        # Verificar contraseña
+        if bcrypt.checkpw(password.encode('utf-8'), normalized):
+            # Verificar rol de admin
+            if user.get('role') == 'admin':
+                return True
+    except Exception as e:
+        print(f"Error validando admin: {e}")
+
+    return False
 
 
 def limpiar_backups(max_por_tipo=4):
@@ -489,6 +507,7 @@ def realizar_backup(tipo, formato, colecciones_seleccionadas, es_auto=False):
         traceback.print_exc()
         raise e
 
+
 def restaurar_backup(nombre_archivo):
     try:
         carpeta = os.path.join(current_app.root_path, 'configuracion', 'copias')
@@ -500,48 +519,238 @@ def restaurar_backup(nombre_archivo):
         db = get_db_connection()
         ext = os.path.splitext(nombre_archivo)[1].lower()
 
+        current_app.logger.info(f"Iniciando restauración de {nombre_archivo}")
+
+        # ============= RESTAURAR DESDE JSON =============
         if ext == '.json':
             with open(ruta_archivo, 'r', encoding='utf-8') as f:
                 data = json.load(f)
+
             for coll, docs in data.items():
                 if docs:
+                    current_app.logger.info(f"Restaurando colección {coll} con {len(docs)} documentos")
                     db[coll].delete_many({})
-                    db[coll].insert_many(docs)
 
+                    # Restaurar documentos
+                    for doc in docs:
+                        # Intentar convertir campos que parecen fechas
+                        for key, value in doc.items():
+                            # Buscar campos que podrían ser fechas (por nombre)
+                            if key in ['fecnac', 'fecha_ing', 'fecha', 'fecha_nac', 'fecha_registro',
+                                       'created_at', 'updated_at', 'fecha_alta', 'fecha_baja']:
+                                if value and isinstance(value, str):
+                                    try:
+                                        # Limpiar el string
+                                        fecha_str = value.strip()
+
+                                        # Quitar hora si existe (formato ISO)
+                                        if 'T' in fecha_str:
+                                            fecha_str = fecha_str.split('T')[0]
+                                        if ' ' in fecha_str:
+                                            fecha_str = fecha_str.split(' ')[0]
+
+                                        # Convertir a datetime
+                                        from datetime import datetime
+                                        fecha_obj = datetime.strptime(fecha_str, '%Y-%m-%d')
+                                        doc[key] = fecha_obj
+                                        current_app.logger.info(f"  ✓ Fecha convertida: {key} = {fecha_obj}")
+                                    except Exception as e:
+                                        current_app.logger.warning(f"  ✗ No se pudo convertir {key}: {value} - {e}")
+
+                        # Restaurar ObjectId si existe
+                        if '_id' in doc and isinstance(doc['_id'], str):
+                            try:
+                                from bson import ObjectId
+                                doc['_id'] = ObjectId(doc['_id'])
+                            except:
+                                pass
+
+                    # Insertar documentos
+                    db[coll].insert_many(docs)
+                    current_app.logger.info(f"  ✓ {len(docs)} documentos insertados")
+
+        # ============= RESTAURAR DESDE ZIP (CSV) =============
         elif ext == '.zip':
             with zipfile.ZipFile(ruta_archivo, 'r') as zipf:
                 for name in zipf.namelist():
                     if name.endswith('.csv'):
                         coll = name.replace('.csv', '')
+                        current_app.logger.info(f"Restaurando colección {coll} desde {name}")
+
                         with zipf.open(name) as csvfile:
-                            reader = csv.DictReader(io.TextIOWrapper(csvfile, 'utf-8'))
+                            content = csvfile.read().decode('utf-8-sig')
+                            reader = csv.DictReader(io.StringIO(content))
                             docs = list(reader)
+
                             if docs:
+                                # Procesar documentos
+                                for doc in docs:
+                                    for key, value in doc.items():
+                                        # Convertir fechas
+                                        if key in ['fecnac', 'fecha_ing', 'fecha', 'fecha_nac', 'fecha_registro']:
+                                            if value and isinstance(value, str):
+                                                try:
+                                                    fecha_str = value.strip()
+                                                    if 'T' in fecha_str:
+                                                        fecha_str = fecha_str.split('T')[0]
+                                                    if ' ' in fecha_str:
+                                                        fecha_str = fecha_str.split(' ')[0]
+
+                                                    from datetime import datetime
+                                                    doc[key] = datetime.strptime(fecha_str, '%Y-%m-%d')
+                                                except:
+                                                    pass
+
+                                        # Convertir números
+                                        if value and isinstance(value, str):
+                                            try:
+                                                if '.' in value:
+                                                    doc[key] = float(value)
+                                                elif value.isdigit():
+                                                    doc[key] = int(value)
+                                            except:
+                                                pass
+
+                                # Insertar
                                 db[coll].delete_many({})
                                 db[coll].insert_many(docs)
+                                current_app.logger.info(f"  ✓ {len(docs)} documentos insertados")
 
+        # ============= RESTAURAR DESDE EXCEL =============
         elif ext == '.xlsx':
             from openpyxl import load_workbook
-            wb = load_workbook(ruta_archivo)
+            from datetime import datetime, date
+
+            wb = load_workbook(ruta_archivo, data_only=True)
+
             for sheet_name in wb.sheetnames:
                 ws = wb[sheet_name]
-                headers = [cell.value for cell in ws[1]]
+                current_app.logger.info(f"Restaurando colección {sheet_name} desde Excel")
+
+                # Obtener encabezados
+                headers = []
+                for cell in ws[1]:
+                    if cell.value:
+                        headers.append(str(cell.value))
+
+                if not headers:
+                    current_app.logger.warning(f"  → No hay encabezados en la hoja {sheet_name}")
+                    continue
+
+                # Leer datos
                 docs = []
                 for row in ws.iter_rows(min_row=2):
                     doc = {}
+                    has_data = False
+
                     for i, cell in enumerate(row):
-                        if i < len(headers) and headers[i]:
-                            doc[headers[i]] = cell.value
-                    if doc:
+                        if i < len(headers) and cell.value is not None:
+                            value = cell.value
+
+                            # Si es fecha de Excel, convertir a datetime
+                            if isinstance(value, (datetime, date)):
+                                value = datetime.combine(value, datetime.min.time())
+
+                            doc[headers[i]] = value
+                            has_data = True
+
+                    if has_data:
                         docs.append(doc)
+
                 if docs:
+                    # Insertar
                     db[sheet_name].delete_many({})
                     db[sheet_name].insert_many(docs)
+                    current_app.logger.info(f"  ✓ {len(docs)} documentos insertados")
 
+        # ============= CONVERSIÓN ADICIONAL DE FECHAS EN COLECCIONES ESPECÍFICAS =============
+        current_app.logger.info("Realizando conversión adicional de fechas...")
+
+        # Convertir fecnac en pacientes
+        result_pac = db.pacientes.update_many(
+            {"fecnac": {"$type": "string"}},
+            [{
+                "$set": {
+                    "fecnac": {
+                        "$dateFromString": {
+                            "dateString": {
+                                "$substr": ["$fecnac", 0, 10]
+                            },
+                            "format": "%Y-%m-%d"
+                        }
+                    }
+                }
+            }]
+        )
+        if result_pac.modified_count > 0:
+            current_app.logger.info(f"  ✓ {result_pac.modified_count} fechas convertidas en pacientes.fecnac")
+
+        # Convertir fecha_ing en atencion
+        result_ate = db.atencion.update_many(
+            {"fecha_ing": {"$type": "string"}},
+            [{
+                "$set": {
+                    "fecha_ing": {
+                        "$dateFromString": {
+                            "dateString": {
+                                "$cond": [
+                                    {"$regexMatch": {"input": "$fecha_ing", "regex": "T"}},
+                                    {"$substr": ["$fecha_ing", 0, 19]},
+                                    "$fecha_ing"
+                                ]
+                            },
+                            "format": {
+                                "$cond": [
+                                    {"$regexMatch": {"input": "$fecha_ing", "regex": "T"}},
+                                    "%Y-%m-%dT%H:%M:%S",
+                                    "%Y-%m-%d %H:%M:%S"
+                                ]
+                            }
+                        }
+                    }
+                }
+            }]
+        )
+        if result_ate.modified_count > 0:
+            current_app.logger.info(f"  ✓ {result_ate.modified_count} fechas convertidas en atencion.fecha_ing")
+
+        # Convertir otras fechas comunes
+        colecciones_fechas = {
+            'users': ['fecha_registro', 'fecha_actualizacion'],
+            'citas': ['fecha_cita', 'fecha_creacion'],
+            'historial': ['fecha_consulta'],
+            'recetas': ['fecha_receta'],
+            'ingresos': ['fecha_ingreso', 'fecha_alta']
+        }
+
+        for coll, campos in colecciones_fechas.items():
+            if coll in db.list_collection_names():
+                for campo in campos:
+                    result = db[coll].update_many(
+                        {campo: {"$type": "string"}},
+                        [{
+                            "$set": {
+                                campo: {
+                                    "$dateFromString": {
+                                        "dateString": {
+                                            "$substr": ["$" + campo, 0, 10]
+                                        },
+                                        "format": "%Y-%m-%d"
+                                    }
+                                }
+                            }
+                        }]
+                    )
+                    if result.modified_count > 0:
+                        current_app.logger.info(f"  ✓ {result.modified_count} fechas convertidas en {coll}.{campo}")
+
+        current_app.logger.info(f"Restauración de {nombre_archivo} completada exitosamente")
         return True
 
     except Exception as e:
-        current_app.logger.error(f"Error restaurando: {str(e)}")
+        current_app.logger.error(f"Error restaurando {nombre_archivo}: {str(e)}")
+        import traceback
+        traceback.print_exc()
         raise e
 
 

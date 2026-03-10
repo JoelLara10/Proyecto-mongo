@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Dashboard - INEO</title>
+  <title>Dashboard Administrativo - INEO</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <!-- Bootstrap 5 -->
@@ -11,189 +11,457 @@
   <!-- Bootstrap Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
 
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
   <style>
+    * {
+      font-family: 'Inter', sans-serif;
+    }
+
     body {
-      background-color: #f4f6f9;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
     }
 
+    /* Navbar glassmorphism */
     .navbar {
-      background-color: #1e3c72;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+      padding: 0.8rem 0;
     }
 
-    .navbar-brand,
+    .navbar-brand {
+      color: #2d3748 !important;
+      font-weight: 700;
+      font-size: 1.5rem;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
     .navbar-text {
-      color: #ffffff !important;
+      color: #4a5568 !important;
+      font-weight: 500;
     }
 
-    .dashboard-card {
-      border-radius: 15px;
+    .btn-outline-light {
+      border: 1px solid #e2e8f0;
+      color: #4a5568;
+      border-radius: 10px;
+      padding: 0.5rem 1.2rem;
+      font-weight: 500;
       transition: all 0.3s ease;
     }
 
-    .dashboard-card:hover {
-      transform: translateY(-6px);
-      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    .btn-outline-light:hover {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-color: transparent;
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
     }
 
+    /* Tarjetas principales */
+    .dashboard-card {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border: none;
+      border-radius: 20px;
+      overflow: hidden;
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      cursor: pointer;
+      position: relative;
+      z-index: 1;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+      height: 100%;
+    }
+
+    .dashboard-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #667eea, #764ba2);
+      z-index: 2;
+    }
+
+    .dashboard-card:hover {
+      transform: translateY(-10px) scale(1.02);
+      box-shadow: 0 30px 60px rgba(102, 126, 234, 0.25);
+    }
+
+    .card-body {
+      padding: 2rem 1.5rem;
+      text-align: center;
+    }
+
+    /* Círculos de icono con gradiente */
     .icon-circle {
-      width: 110px;
-      height: 110px;
+      width: 100px;
+      height: 100px;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      margin: 0 auto 15px;
+      margin: 0 auto 1.5rem;
+      position: relative;
+      transition: all 0.3s ease;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+    }
+
+    .icon-circle i, .icon-circle .bi {
+      font-size: 2.5rem;
+      color: white;
+      transition: all 0.3s ease;
+    }
+
+    .dashboard-card:hover .icon-circle {
+      transform: scale(1.1) rotate(5deg);
+      box-shadow: 0 15px 35px rgba(102, 126, 234, 0.4);
+    }
+
+    .dashboard-card:hover .icon-circle i {
+      transform: scale(1.1);
+    }
+
+    .card-title {
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: #2d3748;
+      margin-bottom: 0.5rem;
+      transition: all 0.3s ease;
+    }
+
+    .dashboard-card:hover .card-title {
+      color: #667eea;
+    }
+
+    .card-description {
+      color: #718096;
+      font-size: 0.85rem;
+      margin-top: 0.5rem;
+    }
+
+    /* Badge de acceso */
+    .access-badge {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 0.2rem 0.8rem;
+      border-radius: 20px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      box-shadow: 0 4px 10px rgba(102, 126, 234, 0.3);
+      z-index: 3;
+    }
+
+    /* Modal con glassmorphism */
+    .modal-content {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border: none;
+      border-radius: 25px;
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+    }
+
+    .modal-header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 25px 25px 0 0;
+      padding: 1.2rem 1.5rem;
+    }
+
+    .modal-header .modal-title {
+      color: white;
+      font-weight: 600;
+      font-size: 1.2rem;
+    }
+
+    .modal-header .btn-close {
+      filter: brightness(0) invert(1);
+    }
+
+    .modal-footer {
+      border-top: 1px solid rgba(102, 126, 234, 0.2);
+      padding: 1.2rem;
+    }
+
+    /* Tarjetas del modal */
+    .modal-card {
+      background: white;
+      border: none;
+      border-radius: 15px;
+      transition: all 0.3s ease;
+      height: 100%;
+      border: 1px solid rgba(102, 126, 234, 0.1);
+    }
+
+    .modal-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 30px rgba(102, 126, 234, 0.15);
+      border-color: transparent;
+    }
+
+    .modal-card .icon-circle.small {
+      width: 70px;
+      height: 70px;
+      margin-bottom: 1rem;
+    }
+
+    .modal-card .icon-circle.small i {
+      font-size: 1.8rem;
+    }
+
+    /* Animación de entrada */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .col-md-4 {
+      animation: fadeInUp 0.6s ease forwards;
+    }
+
+    .col-md-4:nth-child(1) { animation-delay: 0.1s; }
+    .col-md-4:nth-child(2) { animation-delay: 0.2s; }
+    .col-md-4:nth-child(3) { animation-delay: 0.3s; }
+
+    /* Título de sección */
+    .section-title {
+      color: white;
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+      display: flex;
+      align-items: center;
+    }
+
+    .section-title i {
+      margin-right: 1rem;
+      font-size: 2rem;
+      background: rgba(255, 255, 255, 0.2);
+      padding: 0.5rem;
+      border-radius: 15px;
+    }
+
+    /* Estilo para los enlaces */
+    a {
+      text-decoration: none;
     }
   </style>
 </head>
 
 <body>
 
-<!-- NAVBAR SUPERIOR -->
-<nav class="navbar navbar-expand-lg shadow">
-  <div class="container-fluid">
-
-    <!-- BOTÓN REGRESAR -->
-    <a href="{{ url_for('dashboard') }}" class="btn btn-outline-light btn-sm me-3">
-      <i class="bi bi-arrow-left"></i> Regresar
+<!-- NAVBAR MEJORADO -->
+<nav class="navbar navbar-expand-lg">
+  <div class="container-fluid px-4">
+    <a href="{{ url_for('dashboard') }}" class="btn btn-outline-light me-3">
+      <i class="bi bi-arrow-left me-2"></i>Dashboard
     </a>
 
-    <div class="ms-auto">
-      <span class="navbar-text me-3">
-        <i class="bi bi-person-circle"></i>
-        {{ session['username'] }}
+    <span class="navbar-brand fw-semibold fs-4">
+      <i class="fas fa-hospital-user me-2" style="color: #667eea;"></i>
+      Panel Administrativo
+    </span>
+
+    <div class="ms-auto d-flex align-items-center">
+      <span class="navbar-text me-4">
+        <i class="bi bi-person-circle me-2" style="color: #667eea;"></i>
+        <span class="fw-medium">{{ session['username'] }}</span>
+        <span class="badge bg-primary ms-2" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;">
+          Admin
+        </span>
       </span>
 
-      <a href="{{ url_for('logout') }}" class="btn btn-outline-light btn-sm">
-        <i class="bi bi-box-arrow-right"></i> Cerrar sesión
+      <a href="{{ url_for('logout') }}" class="btn btn-outline-light">
+        <i class="bi bi-box-arrow-right me-2"></i>Salir
       </a>
     </div>
   </div>
 </nav>
 
-<!-- CONTENIDO -->
+<!-- CONTENIDO PRINCIPAL -->
 <div class="container mt-5">
-  <div class="row">
 
+  <!-- Título de sección -->
+  <div class="section-title">
+    <i class="fas fa-th-large"></i>
+    Módulos Administrativos
+  </div>
+
+  <div class="row g-4">
     <!-- GESTIÓN DE PACIENTES -->
-    <div class="col-md-4 mb-4">
-      <a href="{{ url_for('gestion_pacientes') }}" title="Gestión de Pacientes" style="text-decoration: none;">
-        <div class="card dashboard-card text-center shadow-sm">
+    <div class="col-md-4">
+      <a href="{{ url_for('gestion_pacientes') }}">
+        <div class="dashboard-card">
+          <span class="access-badge">Principal</span>
           <div class="card-body">
-            <div class="icon-circle" style="background:#B3E5FC;">
-              <i class="bi bi-people-fill fs-1 text-primary"></i>
+            <div class="icon-circle" style="background: linear-gradient(135deg, #4299e1 0%, #2b6cb0 100%);">
+              <i class="fas fa-wheelchair"></i>
             </div>
-            <h5 class="mt-3">Gestión de Pacientes</h5>
+            <h5 class="card-title">Gestión de Pacientes</h5>
+            <p class="card-description">Registro, expedientes y control de pacientes</p>
           </div>
         </div>
       </a>
     </div>
 
-       <!-- GESTIÓN DE CUENTAS -->
-<div class="col-md-4 mb-4">
-  <a href="#"
-     class="text-decoration-none"
-     data-bs-toggle="modal"
-     data-bs-target="#modalGestionCuentas">
-    <div class="card dashboard-card text-center shadow-sm">
-      <div class="card-body">
-        <div class="icon-circle" style="background:#F8BBD0;">
-          <i class="bi bi-wallet2 fs-1 text-danger"></i>
+    <!-- GESTIÓN DE CUENTAS -->
+    <div class="col-md-4">
+      <a href="#" data-bs-toggle="modal" data-bs-target="#modalGestionCuentas">
+        <div class="dashboard-card">
+          <span class="access-badge" style="background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);">Financiero</span>
+          <div class="card-body">
+            <div class="icon-circle" style="background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);">
+              <i class="fas fa-wallet"></i>
+            </div>
+            <h5 class="card-title">Gestión de Cuentas</h5>
+            <p class="card-description">Facturación, presupuestos y cortes de caja</p>
+          </div>
         </div>
-        <h5 class="mt-3">Gestión de Cuentas</h5>
-      </div>
+      </a>
     </div>
-  </a>
-</div>
-
-
-    <!-- MODAL GESTIÓN DE CUENTAS -->
-<div class="modal fade" id="modalGestionCuentas" tabindex="-1">
-  <div class="modal-dialog modal-xl modal-dialog-centered">
-    <div class="modal-content" style="border-radius:20px;">
-
-      <!-- HEADER -->
-      <div class="modal-header text-white" style="background:#1e3c72;">
-        <h5 class="modal-title">
-          <i class="bi bi-wallet2"></i> Gestión de Cuentas
-        </h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-      </div>
-
-      <!-- BODY -->
-      <div class="modal-body">
-        <div class="row text-center">
-
-          <!-- CUENTA DE PACIENTES -->
-          <div class="col-md-4 mb-3">
-            <a href="{{ url_for('cuenta_pacientes') }}" class="text-decoration-none">
-              <div class="card shadow-sm p-4">
-                <div class="icon-circle mx-auto" style="background:#E3F2FD;">
-                  <i class="bi bi-file-earmark-text fs-1 text-primary"></i>
-                </div>
-                <h6 class="mt-3 text-primary">CUENTA DE PACIENTES</h6>
-              </div>
-            </a>
-          </div>
-
-          <!-- PRESUPUESTOS -->
-          <div class="col-md-4 mb-3">
-            <a href="{{ url_for('presupuestos') }}" class="text-decoration-none">
-              <div class="card shadow-sm p-4">
-                <div class="icon-circle mx-auto" style="background:#FFF3CD;">
-                  <i class="bi bi-cash-stack fs-1 text-warning"></i>
-                </div>
-                <h6 class="mt-3 text-warning">PRESUPUESTOS</h6>
-              </div>
-            </a>
-          </div>
-
-          <!-- CORTE DE CAJA -->
-          <div class="col-md-4 mb-3">
-            <a href="{{ url_for('corte_caja') }}" class="text-decoration-none">
-              <div class="card shadow-sm p-4">
-                <div class="icon-circle mx-auto" style="background:#E8F5E9;">
-                  <i class="bi bi-receipt fs-1 text-success"></i>
-                </div>
-                <h6 class="mt-3 text-success">CORTE DE CAJA</h6>
-              </div>
-            </a>
-          </div>
-
-        </div>
-      </div>
-
-      <!-- FOOTER -->
-      <div class="modal-footer">
-        <button class="btn btn-secondary" data-bs-dismiss="modal">
-          <i class="bi bi-x-circle"></i> Cerrar
-        </button>
-      </div>
-
-    </div>
-  </div>
-</div>
 
     <!-- CENSO -->
-<div class="col-md-4 mb-4">
-  <a href="{{ url_for('censo') }}" class="text-decoration-none">
-    <div class="card dashboard-card text-center shadow-sm">
-      <div class="card-body">
-        <div class="icon-circle" style="background:#FFE0B2;">
-          <i class="bi bi-list-check fs-1 text-warning"></i>
+    <div class="col-md-4">
+      <a href="{{ url_for('censo') }}">
+        <div class="dashboard-card">
+          <span class="access-badge" style="background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);">Estadístico</span>
+          <div class="card-body">
+            <div class="icon-circle" style="background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);">
+              <i class="fas fa-clipboard-list"></i>
+            </div>
+            <h5 class="card-title">Censo</h5>
+            <p class="card-description">Censo hospitalario y ocupación de camas</p>
+          </div>
         </div>
-        <h5 class="mt-3">Censo</h5>
+      </a>
+    </div>
+  </div>
+
+  <!-- MODAL GESTIÓN DE CUENTAS MEJORADO -->
+  <div class="modal fade" id="modalGestionCuentas" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+      <div class="modal-content">
+
+        <!-- HEADER -->
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <i class="fas fa-wallet me-2"></i>
+            Gestión de Cuentas
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+
+        <!-- BODY -->
+        <div class="modal-body p-4">
+          <div class="row g-4">
+
+            <!-- CUENTA DE PACIENTES -->
+            <div class="col-md-4">
+              <a href="{{ url_for('cuenta_pacientes') }}" class="text-decoration-none">
+                <div class="modal-card card p-4 text-center">
+                  <div class="icon-circle small mx-auto" style="background: linear-gradient(135deg, #4299e1 0%, #2b6cb0 100%);">
+                    <i class="fas fa-file-invoice"></i>
+                  </div>
+                  <h6 class="fw-bold text-primary mb-2">CUENTA DE PACIENTES</h6>
+                  <p class="small text-muted mb-0">Gestión de cuentas por paciente</p>
+                </div>
+              </a>
+            </div>
+
+            <!-- PRESUPUESTOS -->
+            <div class="col-md-4">
+              <a href="{{ url_for('presupuestos') }}" class="text-decoration-none">
+                <div class="modal-card card p-4 text-center">
+                  <div class="icon-circle small mx-auto" style="background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);">
+                    <i class="fas fa-calculator"></i>
+                  </div>
+                  <h6 class="fw-bold text-warning mb-2">PRESUPUESTOS</h6>
+                  <p class="small text-muted mb-0">Elaboración de presupuestos</p>
+                </div>
+              </a>
+            </div>
+
+            <!-- CORTE DE CAJA -->
+            <div class="col-md-4">
+              <a href="{{ url_for('corte_caja') }}" class="text-decoration-none">
+                <div class="modal-card card p-4 text-center">
+                  <div class="icon-circle small mx-auto" style="background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);">
+                    <i class="fas fa-cash-register"></i>
+                  </div>
+                  <h6 class="fw-bold text-success mb-2">CORTE DE CAJA</h6>
+                  <p class="small text-muted mb-0">Cierres y reportes de caja</p>
+                </div>
+              </a>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- FOOTER -->
+        <div class="modal-footer">
+          <button class="btn btn-secondary" data-bs-dismiss="modal">
+            <i class="bi bi-x-circle me-2"></i>Cerrar
+          </button>
+        </div>
+
       </div>
     </div>
-  </a>
-</div>
-
-
   </div>
+
+  <!-- Footer informativo -->
+  <div class="row mt-5">
+    <div class="col-12">
+      <div class="text-center text-white-50 py-4">
+        <small>
+          <i class="fas fa-shield-alt me-2"></i>
+          INEO v2.0 - Panel Administrativo
+        </small>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Script adicional para efectos -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Efecto de hover adicional
+    const cards = document.querySelectorAll('.dashboard-card, .modal-card');
+    cards.forEach(card => {
+      card.addEventListener('mouseenter', function() {
+        this.style.transform = 'translateY(-5px)';
+      });
+      card.addEventListener('mouseleave', function() {
+        this.style.transform = 'translateY(0)';
+      });
+    });
+  });
+</script>
 
 </body>
 </html>

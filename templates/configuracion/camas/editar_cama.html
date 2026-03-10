@@ -45,11 +45,6 @@ body {background:#f8f9fa; font-family:'Segoe UI',Tahoma;}
       </div>
 
       <div class="form-group">
-        <label class="form-label-modern"><i class="fas fa-flag"></i> Estatus</label>
-        <input type="text" name="estatus" class="form-control-modern" value="{{ cama.estatus }}" required>
-      </div>
-
-      <div class="form-group">
         <label class="form-label-modern"><i class="fas fa-hospital"></i> Área</label>
         <input type="text" name="area" class="form-control-modern" value="{{ cama.area }}" required>
       </div>
@@ -66,7 +61,7 @@ body {background:#f8f9fa; font-family:'Segoe UI',Tahoma;}
 
       <div class="form-group">
         <label class="form-label-modern"><i class="fas fa-th-large"></i> Sección</label>
-        <input type="number" name="seccion" class="form-control-modern" value="{{ cama.seccion }}" required>
+        <input name="seccion" class="form-control-modern" value="{{ cama.seccion }}" required>
       </div>
 
       <div class="form-group">

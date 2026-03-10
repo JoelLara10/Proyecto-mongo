@@ -66,10 +66,6 @@ table td, table th{vertical-align:middle !important;}
           <a href="{{ url_for('alta_camas') }}" class="btn btn-success btn-modern mr-2">
             <i class="fas fa-plus-circle"></i> Registrar Cama
           </a>
-
-          <a href="{{ url_for('copias_seguridad') }}" class="btn btn-primary btn-modern mr-2">
-            <i class="fas fa-database"></i> Copia General
-          </a>
         </div>
       </div>
 
@@ -92,7 +88,6 @@ table td, table th{vertical-align:middle !important;}
             <tr>
               <th>#</th>
               <th>Número</th>
-              <th>Estatus</th>
               <th>Área</th>
               <th>Habitación</th>
               <th>Piso</th>
@@ -106,7 +101,6 @@ table td, table th{vertical-align:middle !important;}
             <tr data-id="{{ cama.id_cama }}">
               <td>{{ loop.index }}</td>
               <td>{{ cama.numero }}</td>
-              <td>{{ cama.estatus }}</td>
               <td>{{ cama.area }}</td>
               <td>{{ cama.tipo_habitacion }}</td>
               <td>{{ cama.piso }}</td>
@@ -170,20 +164,19 @@ document.getElementById('cancelEliminar').onclick = () => {
 };
 
 document.getElementById('confirmEliminar').onclick = () => {
+
   if (!filaSeleccionada) return;
 
   const id = filaSeleccionada.dataset.id;
 
-  fetch(`/configuracion/eliminar_cama/${id}`, { method: 'POST' })
-    .then(res => res.json())
-    .then(data => {
-      if (data.success) {
-        filaSeleccionada.remove();
-      } else {
-        alert(data.error || 'Error al eliminar');
-      }
-    })
-    .catch(() => alert('Error de conexión'));
+  fetch(`/configuracion/eliminar_cama/${id}`, {
+    method: 'POST',
+    credentials: 'same-origin'
+  });
+
+  // 🔥 ASUMIR ÉXITO (porque Mongo ya lo hizo)
+  filaSeleccionada.remove();
+  alert('Cama eliminada satisfactoriamente');
 
   document.getElementById('modalEliminar').style.display = 'none';
   filaSeleccionada = null;

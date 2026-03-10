@@ -26,9 +26,40 @@
             <i class="fas fa-id-card"></i> Datos personales
         </h5>
 
-        <div class="form-group">
-            <label>CURP</label>
-            <input class="form-control" value="{{ usuario.curp }}" disabled>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group mb-3">
+                    <label><strong>CURP</strong></label>
+                    <p class="form-control-static">{{ usuario.curp_u }}</p>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label><strong>Matrícula</strong></label>
+                    <p class="form-control-static">{{ usuario.matricula or 'No especificada' }}</p>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label><strong>Cédula Profesional</strong></label>
+                    <p class="form-control-static">{{ usuario.cedula or 'No especificada' }}</p>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="form-group mb-3">
+                    <label><strong>Cargo</strong></label>
+                    <p class="form-control-static">{{ usuario.cargo }}</p>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label><strong>Teléfono</strong></label>
+                    <p class="form-control-static">{{ usuario.telefono }}</p>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label><strong>Email</strong></label>
+                    <p class="form-control-static">{{ usuario.email }}</p>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -38,14 +69,19 @@
             <i class="fas fa-cogs"></i> Datos del sistema
         </h5>
 
-        <div class="form-group">
-            <label>Usuario</label>
-            <input class="form-control" value="{{ usuario.username }}" disabled>
-        </div>
-
-        <div class="form-group">
-            <label>Rol</label>
-            <input class="form-control" value="{{ usuario.role }}" disabled>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group mb-3">
+                    <label><strong>Usuario</strong></label>
+                    <p class="form-control-static">{{ usuario.username }}</p>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group mb-3">
+                    <label><strong>Rol</strong></label>
+                    <p class="form-control-static">{{ usuario.role|capitalize }}</p>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -57,28 +93,34 @@
 
         <div class="row text-center">
             <div class="col-md-6">
-                <p>Imagen de perfil</p>
+                <p><strong>Imagen de perfil</strong></p>
                 {% if usuario.img_perfil %}
                     <img src="{{ url_for('static', filename='imagenes/' ~ usuario.img_perfil) }}"
                          class="img-thumbnail" width="150">
                 {% else %}
-                    <p class="text-muted">No disponible</p>
+                    <div class="border p-3 bg-light">
+                        <i class="fas fa-user fa-3x text-muted"></i>
+                        <p class="text-muted mt-2">No disponible</p>
+                    </div>
                 {% endif %}
             </div>
 
             <div class="col-md-6">
-                <p>Firma</p>
+                <p><strong>Firma</strong></p>
                 {% if usuario.firma %}
                     <img src="{{ url_for('static', filename='imgfirma/' ~ usuario.firma) }}"
                          class="img-thumbnail" width="200">
                 {% else %}
-                    <p class="text-muted">No disponible</p>
+                    <div class="border p-3 bg-light">
+                        <i class="fas fa-signature fa-3x text-muted"></i>
+                        <p class="text-muted mt-2">No disponible</p>
+                    </div>
                 {% endif %}
             </div>
         </div>
     </div>
 
-    <div class="text-center">
+    <div class="text-center mb-4">
         <a href="{{ url_for('alta_usuarios') }}" class="btn btn-danger">
             <i class="fas fa-arrow-left"></i> Regresar
         </a>
