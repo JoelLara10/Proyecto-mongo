@@ -1,4 +1,3 @@
-# estudios.py - Versión final con correcciones de joins y manejo de archivos
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from bd import get_db_connection
 from werkzeug.utils import secure_filename
@@ -83,28 +82,55 @@ def estudios_home():
 
     # -------- LABORATORIO PENDIENTES --------
     if vista == 'solicitudes_laboratorio':
+        # En estudios.py, dentro de estudios_home, para vista == 'solicitudes_laboratorio'
         pipeline = [
             {"$lookup": {"from": "atencion", "localField": "id_atencion", "foreignField": "id_atencion", "as": "atencion"}},
-            {"$unwind": "$atencion"},
+            {"$unwind": {"path": "$atencion", "preserveNullAndEmptyArrays": True}},   # ← left join
+
             {"$lookup": {"from": "pacientes", "localField": "atencion.Id_exp", "foreignField": "Id_exp", "as": "paciente"}},
-            {"$unwind": "$paciente"},
+            {"$unwind": {"path": "$paciente", "preserveNullAndEmptyArrays": True}},
+
             {"$lookup": {"from": "camas", "localField": "atencion.id_cama", "foreignField": "id_cama", "as": "cama"}},
             {"$unwind": {"path": "$cama", "preserveNullAndEmptyArrays": True}},
-            {"$lookup": {"from": "users", "localField": "id_medico", "foreignField": "_id", "as": "user"}},  # 👈 CORREGIDO
-            {"$unwind": "$user"},
+
+            {"$lookup": {"from": "users", "localField": "id_medico", "foreignField": "_id", "as": "user"}},
+            {"$unwind": {"path": "$user", "preserveNullAndEmptyArrays": True}},
+
             {"$lookup": {"from": "examenes_det", "localField": "id_examen", "foreignField": "id_examen", "as": "det"}},
-            {"$unwind": "$det"},
-            {"$match": {"det.id_catalogo": {"$in": lab_ids}, "det.estado": {"$regex": "^PENDIENTE$", "$options": "i"}}},
+            {"$unwind": {"path": "$det", "preserveNullAndEmptyArrays": False}},  # este debe coincidir con detalles pendientes
+
+            {"$match": {
+                "det.id_catalogo": {"$in": lab_ids},
+                "det.estado": {"$regex": "^PENDIENTE$", "$options": "i"}
+            }},
+
             {"$lookup": {"from": "catalogo_examenes", "localField": "det.id_catalogo", "foreignField": "id_catalogo", "as": "cat"}},
-            {"$unwind": "$cat"},
+            {"$unwind": {"path": "$cat", "preserveNullAndEmptyArrays": True}},
+
             {"$group": {
                 "_id": "$id_examen",
                 "fecha": {"$first": "$fecha"},
-                "paciente": {"$first": {"$concat": ["$paciente.nom_pac", " ", "$paciente.papell", " ", "$paciente.sapell"]}},
-                "medico": {"$first": {"$concat": ["$user.nombre", " ", "$user.papell"]}},
+                "paciente": {
+                    "$first": {
+                        "$concat": [
+                            {"$ifNull": ["$paciente.nom_pac", ""]}, " ",
+                            {"$ifNull": ["$paciente.papell", ""]}, " ",
+                            {"$ifNull": ["$paciente.sapell", ""]}
+                        ]
+                    }
+                },
+                "medico": {
+                    "$first": {
+                        "$concat": [
+                            {"$ifNull": ["$user.nombre", ""]}, " ",
+                            {"$ifNull": ["$user.papell", ""]}
+                        ]
+                    }
+                },
                 "habitacion": {"$first": "$cama.numero"},
                 "estudios": {"$push": "$cat.nombre"}
             }},
+
             {"$project": {
                 "id_examen": "$_id",
                 "fecha": 1,
@@ -127,28 +153,45 @@ def estudios_home():
     elif vista == 'resultados_laboratorio':
         pipeline = [
             {"$lookup": {"from": "atencion", "localField": "id_atencion", "foreignField": "id_atencion", "as": "atencion"}},
-            {"$unwind": "$atencion"},
+            {"$unwind": {"path": "$atencion", "preserveNullAndEmptyArrays": True}},
+
             {"$lookup": {"from": "pacientes", "localField": "atencion.Id_exp", "foreignField": "Id_exp", "as": "paciente"}},
-            {"$unwind": "$paciente"},
+            {"$unwind": {"path": "$paciente", "preserveNullAndEmptyArrays": True}},
+
             {"$lookup": {"from": "camas", "localField": "atencion.id_cama", "foreignField": "id_cama", "as": "cama"}},
             {"$unwind": {"path": "$cama", "preserveNullAndEmptyArrays": True}},
+
             {"$lookup": {"from": "users", "localField": "id_medico", "foreignField": "_id", "as": "user"}},
-            {"$unwind": "$user"},
+            {"$unwind": {"path": "$user", "preserveNullAndEmptyArrays": True}},
+
             {"$lookup": {"from": "examenes_det", "localField": "id_examen", "foreignField": "id_examen", "as": "det"}},
-            {"$unwind": "$det"},
-            {"$match": {"det.id_catalogo": {"$in": lab_ids}, "det.estado": {"$regex": "^REALIZADO$", "$options": "i"}}},
+            {"$unwind": {"path": "$det", "preserveNullAndEmptyArrays": False}},  # debe existir para ser realizado
+
+            {"$match": {
+                "det.id_catalogo": {"$in": lab_ids},
+                "det.estado": {"$regex": "^REALIZADO$", "$options": "i"}
+            }},
+
             {"$lookup": {"from": "catalogo_examenes", "localField": "det.id_catalogo", "foreignField": "id_catalogo", "as": "cat"}},
-            {"$unwind": "$cat"},
+            {"$unwind": {"path": "$cat", "preserveNullAndEmptyArrays": True}},
+
             {"$group": {
                 "_id": "$id_examen",
                 "fecha": {"$first": "$fecha"},
                 "fecha_realizado": {"$first": "$det.fecha_realizado"},
-                "paciente": {"$first": {"$concat": ["$paciente.nom_pac", " ", "$paciente.papell", " ", "$paciente.sapell"]}},
-                "medico": {"$first": {"$concat": ["$user.nombre", " ", "$user.papell"]}},
+                "paciente": {
+                    "$first": {
+                        "$concat": [
+                            {"$ifNull": ["$paciente.nom_pac", ""]}, " ",
+                            {"$ifNull": ["$paciente.papell", ""]}, " ",
+                            {"$ifNull": ["$paciente.sapell", ""]}
+                        ]
+                    }
+                },
+                "medico": {"$first": "$user.username"},  # Usar username directamente
                 "habitacion": {"$first": "$cama.numero"},
                 "estudios": {"$push": "$cat.nombre"}
             }},
-            # 👇 IMPORTANTE: proyectar _id como id_examen y formatear estudios como string
             {"$project": {
                 "id_examen": "$_id",
                 "fecha": 1,
@@ -173,23 +216,41 @@ def estudios_home():
     elif vista == 'solicitudes_gabinete':
         pipeline = [
             {"$lookup": {"from": "atencion", "localField": "id_atencion", "foreignField": "id_atencion", "as": "atencion"}},
-            {"$unwind": "$atencion"},
+            {"$unwind": {"path": "$atencion", "preserveNullAndEmptyArrays": True}},
+
             {"$lookup": {"from": "pacientes", "localField": "atencion.Id_exp", "foreignField": "Id_exp", "as": "paciente"}},
-            {"$unwind": "$paciente"},
+            {"$unwind": {"path": "$paciente", "preserveNullAndEmptyArrays": True}},
+
             {"$lookup": {"from": "camas", "localField": "atencion.id_cama", "foreignField": "id_cama", "as": "cama"}},
             {"$unwind": {"path": "$cama", "preserveNullAndEmptyArrays": True}},
-            {"$lookup": {"from": "users", "localField": "id_medico", "foreignField": "_id", "as": "user"}},  # 👈 CORREGIDO
-            {"$unwind": "$user"},
+
+            {"$lookup": {"from": "users", "localField": "id_medico", "foreignField": "_id", "as": "user"}},
+            {"$unwind": {"path": "$user", "preserveNullAndEmptyArrays": True}},
+
             {"$lookup": {"from": "examenes_det", "localField": "id_examen", "foreignField": "id_examen", "as": "det"}},
-            {"$unwind": "$det"},
-            {"$match": {"det.id_catalogo": {"$in": gab_ids}, "det.estado": {"$regex": "^PENDIENTE$", "$options": "i"}}},
+            {"$unwind": {"path": "$det", "preserveNullAndEmptyArrays": False}},  # debe existir para ser pendiente
+
+            {"$match": {
+                "det.id_catalogo": {"$in": gab_ids},
+                "det.estado": {"$regex": "^PENDIENTE$", "$options": "i"}
+            }},
+
             {"$lookup": {"from": "catalogo_examenes", "localField": "det.id_catalogo", "foreignField": "id_catalogo", "as": "cat"}},
-            {"$unwind": "$cat"},
+            {"$unwind": {"path": "$cat", "preserveNullAndEmptyArrays": True}},
+
             {"$group": {
                 "_id": "$id_examen",
                 "fecha": {"$first": "$fecha"},
-                "paciente": {"$first": {"$concat": ["$paciente.nom_pac", " ", "$paciente.papell", " ", "$paciente.sapell"]}},
-                "medico": {"$first": {"$concat": ["$user.nombre", " ", "$user.papell"]}},
+                "paciente": {
+                    "$first": {
+                        "$concat": [
+                            {"$ifNull": ["$paciente.nom_pac", ""]}, " ",
+                            {"$ifNull": ["$paciente.papell", ""]}, " ",
+                            {"$ifNull": ["$paciente.sapell", ""]}
+                        ]
+                    }
+                },
+                "medico": {"$first": "$user.username"},  # Usar username directamente
                 "habitacion": {"$first": "$cama.numero"},
                 "estudios": {"$push": "$cat.nombre"}
             }},
@@ -210,29 +271,39 @@ def estudios_home():
             {"$sort": {"fecha": -1}}
         ]
         solicitudes = list(db['examenes'].aggregate(pipeline))
-
     # -------- GABINETE REALIZADOS --------
     elif vista == 'resultados_gabinete':
         pipeline = [
             {"$lookup": {"from": "atencion", "localField": "id_atencion", "foreignField": "id_atencion", "as": "atencion"}},
-            {"$unwind": "$atencion"},
+            {"$unwind": {"path": "$atencion", "preserveNullAndEmptyArrays": True}},
             {"$lookup": {"from": "pacientes", "localField": "atencion.Id_exp", "foreignField": "Id_exp", "as": "paciente"}},
-            {"$unwind": "$paciente"},
+            {"$unwind": {"path": "$paciente", "preserveNullAndEmptyArrays": True}},
             {"$lookup": {"from": "camas", "localField": "atencion.id_cama", "foreignField": "id_cama", "as": "cama"}},
             {"$unwind": {"path": "$cama", "preserveNullAndEmptyArrays": True}},
             {"$lookup": {"from": "users", "localField": "id_medico", "foreignField": "_id", "as": "user"}},
-            {"$unwind": "$user"},
+            {"$unwind": {"path": "$user", "preserveNullAndEmptyArrays": True}},
             {"$lookup": {"from": "examenes_det", "localField": "id_examen", "foreignField": "id_examen", "as": "det"}},
-            {"$unwind": "$det"},
-            {"$match": {"det.id_catalogo": {"$in": gab_ids}, "det.estado": {"$regex": "^REALIZADO$", "$options": "i"}}},
+            {"$unwind": {"path": "$det", "preserveNullAndEmptyArrays": False}},
+            {"$match": {
+                "det.id_catalogo": {"$in": gab_ids},
+                "det.estado": {"$regex": "^REALIZADO$", "$options": "i"}
+            }},
             {"$lookup": {"from": "catalogo_examenes", "localField": "det.id_catalogo", "foreignField": "id_catalogo", "as": "cat"}},
-            {"$unwind": "$cat"},
+            {"$unwind": {"path": "$cat", "preserveNullAndEmptyArrays": True}},
             {"$group": {
                 "_id": "$id_examen",
                 "fecha": {"$first": "$fecha"},
                 "fecha_realizado": {"$first": "$det.fecha_realizado"},
-                "paciente": {"$first": {"$concat": ["$paciente.nom_pac", " ", "$paciente.papell", " ", "$paciente.sapell"]}},
-                "medico": {"$first": {"$concat": ["$user.nombre", " ", "$user.papell"]}},
+                "paciente": {
+                    "$first": {
+                        "$concat": [
+                            {"$ifNull": ["$paciente.nom_pac", ""]}, " ",
+                            {"$ifNull": ["$paciente.papell", ""]}, " ",
+                            {"$ifNull": ["$paciente.sapell", ""]}
+                        ]
+                    }
+                },
+                "medico": {"$first": "$user.username"},
                 "habitacion": {"$first": "$cama.numero"},
                 "estudios": {"$push": "$cat.nombre"}
             }},
