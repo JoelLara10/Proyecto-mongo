@@ -10,7 +10,8 @@ import psutil
 import time
 from flask import (
     Flask, render_template, request, redirect,
-    url_for, session, flash, jsonify, current_app, send_from_directory
+    url_for, session, flash, jsonify, current_app,
+    send_from_directory, make_response
 )
 from apscheduler.schedulers.background import BackgroundScheduler
 import bcrypt
@@ -44,6 +45,36 @@ from estudios import contar_solicitudes_pendientes
 # Inicializar Flask
 # ===============================
 app = Flask(__name__)
+
+def inicializar_colecciones():
+    db = get_db_connection()
+
+    colecciones = [
+        "pacientes",
+        "atencion",
+        "atencion_medicos",
+        "familiares",
+        "camas",
+        "expedientes",
+        "cuenta_paciente",
+        "presupuesto",
+        "cat_servicios",
+        "item",
+        "depositos_pserv",
+        "counters"
+    ]
+
+    existentes = db.list_collection_names()
+
+    for col in colecciones:
+        if col not in existentes:
+            db.create_collection(col)
+
+    # índices importantes
+    db.pacientes.create_index("Id_exp", unique=True)
+    db.atencion.create_index("id_atencion", unique=True)
+    db.camas.create_index("id_cama", unique=True)
+app.secret_key = 'tu_clave_secreta_aqui' # ⚠️ usa una clave segura en producción
 app.secret_key = 'tu_clave_secreta_aqui'  # ⚠️ usa una clave segura en producción
 
 # ===============================
@@ -65,6 +96,8 @@ app.config['SCHEDULER'] = scheduler
 # Programar backup automático (solo una vez)
 # ===============================
 with app.app_context():
+    inicializar_colecciones()
+    from utils.backups import cargar_config_auto
     config = cargar_config_auto()
     if config.get('activo', False):
         scheduler.add_job(
