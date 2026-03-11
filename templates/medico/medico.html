@@ -4,167 +4,425 @@
     <meta charset="UTF-8">
     <title>Módulo Médico - INEO</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-    <script src="https://kit.fontawesome.com/e547be4475.js" crossorigin="anonymous"></script>
+
+    <!-- Bootstrap 5 -->
+    <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet">
+
+    <!-- Bootstrap Icons -->
+    <link href="{{ url_for('static', filename='css/bootstrap-icons.css') }}" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/all.min.css') }}">
+
+    <!-- Google Fonts - Inter -->
+    <link href="{{ url_for('static', filename='css/fonts.css') }}" rel="stylesheet">
 
     <style>
-        body { background-color: #f4f6f9; }
-        .navbar { background-color: #1e3c72; }
-        .navbar-brand, .navbar-text { color: #fff !important; }
-        .icon-circle { width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; }
-        .bed-card { border-radius: 12px; min-height: 130px; transition: all .3s; text-align: center; font-size: .95rem; }
-        .bed-card:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0,0,0,.15); }
-        .bed-free { background: #e9ecef; color: #495057; }
-        .bed-occupied { background: #bfdbfe; color: #1e40af; }
-        .section-title { color: #1e3c72; font-weight: 700; margin: 2rem 0 1rem; }
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        /* Navbar glassmorphism */
+        .navbar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+            padding: 0.8rem 0;
+        }
+
+        .navbar-brand {
+            color: #2d3748 !important;
+            font-weight: 700;
+            font-size: 1.5rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .navbar-text {
+            color: #4a5568 !important;
+            font-weight: 500;
+        }
+
+        .btn-outline-light {
+            border: 1px solid #e2e8f0;
+            color: #4a5568;
+            border-radius: 10px;
+            padding: 0.5rem 1.2rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-outline-light:hover {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: transparent;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Título de sección principal */
+        .main-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: white;
+            margin: 1.5rem 0 1rem;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+        }
+
+        .main-title i {
+            margin-right: 1rem;
+            font-size: 2.5rem;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 0.5rem;
+            border-radius: 15px;
+        }
+
+        /* Títulos de sección */
+        .section-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin: 2rem 0 1rem;
+            padding: 0.8rem 1.5rem;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .section-title i {
+            margin-right: 0.8rem;
+            font-size: 1.5rem;
+        }
+
+        .section-title .badge-count {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 0.3rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+
+        .title-consulta {
+            color: #4299e1;
+            border-left: 5px solid #4299e1;
+        }
+
+        .title-preparacion {
+            color: #f56565;
+            border-left: 5px solid #f56565;
+        }
+
+        .title-recuperacion {
+            color: #48bb78;
+            border-left: 5px solid #48bb78;
+        }
+
+        /* Tarjetas de pacientes */
+        .patient-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .bed-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: none;
+            border-radius: 15px;
+            padding: 1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .bed-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+        }
+
+        .bed-card.occupied::before {
+            background: linear-gradient(90deg, #f56565, #ed8936);
+        }
+
+        .bed-card.free::before {
+            background: linear-gradient(90deg, #a0aec0, #718096);
+        }
+
+        .bed-card:hover {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 15px 30px rgba(102, 126, 234, 0.2);
+        }
+
+        .bed-card.occupied:hover {
+            box-shadow: 0 15px 30px rgba(245, 101, 101, 0.2);
+        }
+
+        .bed-icon {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 0.8rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-size: 2rem;
+        }
+
+        .bed-card.occupied .bed-icon {
+            background: linear-gradient(135deg, #f56565 0%, #ed8936 100%);
+        }
+
+        .bed-card.free .bed-icon {
+            background: #e2e8f0;
+            color: #718096;
+        }
+
+        .bed-number {
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: #2d3748;
+            margin-bottom: 0.3rem;
+        }
+
+        .patient-name {
+            font-size: 0.9rem;
+            color: #718096;
+            margin-bottom: 0.5rem;
+        }
+
+        .status-badge {
+            font-size: 0.75rem;
+            padding: 0.2rem 0.8rem;
+            border-radius: 20px;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .status-badge.occupied {
+            background: #f56565;
+            color: white;
+        }
+
+        .status-badge.free {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+
+        /* Animaciones */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .patient-grid {
+            animation: fadeInUp 0.6s ease forwards;
+        }
+
+        /* Enlaces */
+        a {
+            text-decoration: none;
+        }
+
+        /* Contenedor principal */
+        .main-container {
+            padding: 1rem 1.5rem;
+        }
     </style>
 </head>
+
 <body>
 
-<!-- NAVBAR SUPERIOR -->
-<nav class="navbar navbar-expand-lg shadow">
-  <div class="container-fluid">
+<!-- NAVBAR MEJORADO -->
+<nav class="navbar navbar-expand-lg">
+    <div class="container-fluid px-4">
+        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-light me-3">
+            <i class="bi bi-arrow-left me-2"></i>Dashboard
+        </a>
 
-    <!-- BOTÓN REGRESAR -->
-    <a href="{{ url_for('dashboard') }}" class="btn btn-outline-light btn-sm me-3">
-      <i class="bi bi-arrow-left"></i> Regresar
-    </a>
+        <span class="navbar-brand fw-semibold fs-4">
+            <i class="fas fa-user-md me-2" style="color: #667eea;"></i>
+            Módulo Médico
+        </span>
 
-    <div class="ms-auto">
-      <span class="navbar-text me-3">
-        <i class="bi bi-person-circle"></i>
-        {{ session['username'] }}
-      </span>
+        <div class="ms-auto d-flex align-items-center">
+            <span class="navbar-text me-4">
+                <i class="bi bi-person-circle me-2" style="color: #667eea;"></i>
+                <span class="fw-medium">{{ session['username'] }}</span>
+                <span class="badge ms-2" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                    {{ session['role']|capitalize }}
+                </span>
+            </span>
 
-      <a href="{{ url_for('logout') }}" class="btn btn-outline-light btn-sm">
-        <i class="bi bi-box-arrow-right"></i> Cerrar sesión
-      </a>
+            <a href="{{ url_for('logout') }}" class="btn btn-outline-light">
+                <i class="bi bi-box-arrow-right me-2"></i>Salir
+            </a>
+        </div>
     </div>
-  </div>
 </nav>
 
-<div class="container-fluid mt-4">
-    <div class="row">
-        <!-- SIDEBAR (opcional, puedes mantener tu menú aquí) -->
-        <div class="col-md-3 collapse" id="sidebar">
-            <!-- Tu menú lateral aquí si lo deseas -->
-        </div>
+<!-- CONTENIDO PRINCIPAL -->
+<div class="main-container">
 
-        <!-- CONTENIDO -->
-        <div class="col-md-12">
-            <h4 class="section-title">MÉDICO</h4>
-
-            <!-- Botones rápidos (solo si tiene permiso) -->
-<!--            {% if session['role'] == 'admin' or True %}   &lt;!&ndash; ajusta si quieres filtro &ndash;&gt;-->
-<!--            <div class="row g-3 mb-4">-->
-<!--                <div class="col-md-4">-->
-<!--                    <a href="#" class="text-decoration-none">-->
-<!--                        <div class="card shadow-sm text-center p-4">-->
-<!--                            <div class="icon-circle" style="background: linear-gradient(45deg,#007bff,#00c4ff);">-->
-<!--                                <i class="bi bi-calendar-event fs-2 text-white"></i>-->
-<!--                            </div>-->
-<!--                            <h5>Agenda Quirúrgica</h5>-->
-<!--                        </div>-->
-<!--                    </a>-->
-<!--                </div>-->
-<!--                <div class="col-md-4">-->
-<!--                    <a href="#" class="text-decoration-none">-->
-<!--                        <div class="card shadow-sm text-center p-4">-->
-<!--                            <div class="icon-circle" style="background: linear-gradient(45deg,#28a745,#34c759);">-->
-<!--                                <i class="bi bi-calendar-event fs-2 text-white"></i>-->
-<!--                            </div>-->
-<!--                            <h5>Agenda Consulta Externa</h5>-->
-<!--                        </div>-->
-<!--                    </a>-->
-<!--                </div>-->
-<!--                <div class="col-md-4">-->
-<!--                    <a href="#" class="text-decoration-none">-->
-<!--                        <div class="card shadow-sm text-center p-4">-->
-<!--                            <div class="icon-circle" style="background: linear-gradient(45deg,#6c757d,#adb5bd);">-->
-<!--                                <i class="bi bi-people-fill fs-2 text-white"></i>-->
-<!--                            </div>-->
-<!--                            <h5>Pacientes Atendidos</h5>-->
-<!--                        </div>-->
-<!--                    </a>-->
-<!--                </div>-->
-<!--            </div>-->
-<!--            {% endif %}-->
-
-            <!-- CONSULTA EXTERNA -->
-            <h5 class="section-title">PACIENTES EN CONSULTA EXTERNA</h5>
-            <div class="row g-3">
-                {% for bed in beds_consulta %}
-                {% set link = '#' %}
-                {% if bed.id_atencion %}
-    {% set link = '/medico/paciente/' ~ bed.id_atencion ~ '/' ~ bed.Id_exp %}
-{% endif %}
-
-                <div class="col-6 col-sm-4 col-md-3 col-lg-2">
-                    <a href="{{ link }}" class="text-decoration-none">
-                        <div class="card bed-card shadow-sm bed-occupied">
-                            <strong>{{ bed.num_cama }}</strong><br>
-                            <small>{{ bed.papell }} {{ bed.nom_pac }}</small>
-                        </div>
-                    </a>
-                </div>
-                {% endfor %}
-            </div>
-
-            <!-- PREPARACIÓN (Urgencias) -->
-            <h5 class="section-title">PACIENTES EN PREPARACIÓN</h5>
-            <div class="row g-3">
-                {% for bed in beds_preparacion %}
-                {% set cls = 'bed-free' if bed.estatus == 'LIBRE' else 'bed-occupied' %}
-                {% set link = '#' %}
-                {% if bed.id_atencion %}
-    {% set link = '/medico/paciente/' ~ bed.id_atencion ~ '/' ~ bed.Id_exp %}
-{% endif %}
-
-                <div class="col-6 col-sm-4 col-md-3 col-lg-2">
-                    <a href="{{ link }}" class="text-decoration-none">
-                        <div class="card bed-card shadow-sm {{ cls }}">
-                            <strong>Cama {{ bed.num_cama }}</strong><br>
-                            {% if bed.estatus == 'OCUPADA' %}
-                                <small>{{ bed.papell }} {{ bed.nom_pac }}</small>
-                            {% else %}
-                                <small>LIBRE</small>
-                            {% endif %}
-                        </div>
-                    </a>
-                </div>
-                {% endfor %}
-            </div>
-
-            <!-- RECUPERACIÓN (Hospitalizado) -->
-            <h5 class="section-title">PACIENTES EN RECUPERACIÓN</h5>
-            <div class="row g-3">
-                {% for bed in beds_recuperacion %}
-                {% set cls = 'bed-free' if bed.estatus == 'LIBRE' else 'bed-occupied' %}
-                {% set link = '#' %}
-                {% if bed.id_atencion %}
-    {% set link = '/medico/paciente/' ~ bed.id_atencion ~ '/' ~ bed.Id_exp %}
-{% endif %}
-
-                <div class="col-6 col-sm-4 col-md-3 col-lg-2">
-                    <a href="{{ link }}" class="text-decoration-none">
-                        <div class="card bed-card shadow-sm {{ cls }}">
-                            <strong>Cama {{ bed.num_cama }}</strong><br>
-                            {% if bed.estatus == 'OCUPADA' %}
-                                <small>{{ bed.papell }} {{ bed.nom_pac }}</small>
-                            {% else %}
-                                <small>LIBRE</small>
-                            {% endif %}
-                        </div>
-                    </a>
-                </div>
-                {% endfor %}
-            </div>
-
-        </div>
+    <!-- Título principal -->
+    <div class="main-title">
+        <i class="fas fa-stethoscope"></i>
+        Panel del Médico
     </div>
+
+    <!-- CONSULTA EXTERNA -->
+<!--    <div class="section-title title-consulta">-->
+<!--        <div>-->
+<!--            <i class="fas fa-stethoscope"></i>-->
+<!--            PACIENTES EN CONSULTA EXTERNA-->
+<!--        </div>-->
+<!--        <span class="badge-count">{{ beds_consulta|length }}</span>-->
+<!--    </div>-->
+
+    <div class="patient-grid">
+        {% for bed in beds_consulta %}
+        <a href="{% if bed.id_atencion %}/medico/paciente/{{ bed.id_atencion }}/{{ bed.Id_exp }}{% else %}#{% endif %}">
+            <div class="bed-card occupied">
+                <div class="bed-icon">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="bed-number">{{ bed.num_cama }}</div>
+                <div class="patient-name">{{ bed.papell }} {{ bed.nom_pac }}</div>
+                <span class="status-badge occupied">ACTIVO</span>
+            </div>
+        </a>
+        {% else %}
+<!--        <div class="col-12 text-center " style="background: rgba(255,255,255,0.1); border-radius: 15px; color: white;">-->
+<!--            <i class="fas fa-user-slash" style="font-size: 3rem;"></i>-->
+<!--            <p class="mt-3">No hay pacientes en consulta externa</p>-->
+<!--        </div>-->
+        {% endfor %}
+    </div>
+
+    <!-- PREPARACIÓN (Urgencias) -->
+    <div class="section-title title-preparacion">
+        <div>
+            <i class="fas fa-ambulance"></i>
+            PACIENTES EN PREPARACIÓN (URGENCIAS)
+        </div>
+        <span class="badge-count">{{ beds_preparacion|length }}</span>
+    </div>
+
+    <div class="patient-grid">
+        {% for bed in beds_preparacion %}
+            {% if bed.estatus == 'OCUPADA' and bed.id_atencion %}
+            <a href="/medico/paciente/{{ bed.id_atencion }}/{{ bed.Id_exp }}">
+                <div class="bed-card occupied">
+                    <div class="bed-icon">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="bed-number">Cama {{ bed.num_cama }}</div>
+                    <div class="patient-name">{{ bed.papell }} {{ bed.nom_pac }}</div>
+                    <span class="status-badge occupied">OCUPADA</span>
+                </div>
+            </a>
+            {% else %}
+            <div class="bed-card free">
+                <div class="bed-icon">
+                    <i class="fas fa-bed"></i>
+                </div>
+                <div class="bed-number">Cama {{ bed.num_cama }}</div>
+                <div class="patient-name">—</div>
+                <span class="status-badge free">LIBRE</span>
+            </div>
+            {% endif %}
+        {% else %}
+        <div class="col-12 text-center py-5" style="background: rgba(255,255,255,0.1); border-radius: 15px; color: white;">
+            <i class="fas fa-bed" style="font-size: 3rem;"></i>
+            <p class="mt-3">No hay camas en preparación</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- RECUPERACIÓN (Hospitalizado) -->
+    <div class="section-title title-recuperacion">
+        <div>
+            <i class="fas fa-procedures"></i>
+            PACIENTES EN RECUPERACIÓN (HOSPITALIZADO)
+        </div>
+        <span class="badge-count">{{ beds_recuperacion|length }}</span>
+    </div>
+
+    <div class="patient-grid">
+        {% for bed in beds_recuperacion %}
+            {% if bed.estatus == 'OCUPADA' and bed.id_atencion %}
+            <a href="/medico/paciente/{{ bed.id_atencion }}/{{ bed.Id_exp }}">
+                <div class="bed-card occupied">
+                    <div class="bed-icon">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="bed-number">Cama {{ bed.num_cama }}</div>
+                    <div class="patient-name">{{ bed.papell }} {{ bed.nom_pac }}</div>
+                    <span class="status-badge occupied">OCUPADA</span>
+                </div>
+            </a>
+            {% else %}
+            <div class="bed-card free">
+                <div class="bed-icon">
+                    <i class="fas fa-bed"></i>
+                </div>
+                <div class="bed-number">Cama {{ bed.num_cama }}</div>
+                <div class="patient-name">—</div>
+                <span class="status-badge free">LIBRE</span>
+            </div>
+            {% endif %}
+        {% else %}
+        <div class="col-12 text-center py-5" style="background: rgba(255,255,255,0.1); border-radius: 15px; color: white;">
+            <i class="fas fa-bed" style="font-size: 3rem;"></i>
+            <p class="mt-3">No hay camas en recuperación</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Footer -->
+    <div class="text-center text-white-50 py-4">
+        <small>
+            <i class="fas fa-shield-alt me-2"></i>
+            INEO v2.0 - Sistema de Gestión Hospitalaria
+        </small>
+    </div>
+
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Scripts -->
+<script src="{{ url_for('static', filename='js/jquery-3.6.0.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+
 </body>
 </html>

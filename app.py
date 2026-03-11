@@ -1078,32 +1078,98 @@ def ver_expedientes():
         expedientes=expedientes
     )
 
+
 @app.route('/expediente/<int:id_atencion>/<int:id_exp>', methods=['GET', 'POST'])
 def expediente(id_atencion, id_exp):
+    # Verificar sesión
+    if 'user_id' not in session:
+        flash('Sesión no válida.', 'error')
+        return redirect(url_for('login'))
+
     db = get_db_connection()
     atencion_coll = db['atencion']
-    pac = atencion_coll.find_one({"id_atencion": id_atencion}, {
-        "Id_exp": 1, "papell": 1, "sapell": 1, "nom_pac": 1, "area": 1, "fecha_ing": 1, "status": 1
-    })
+    pacientes_coll = db['pacientes']
     cuenta_coll = db['cuenta_paciente']
-    cuenta = list(cuenta_coll.find({"id_atencion": id_atencion}, {"fecha": 1, "descripcion": 1, "cantidad": 1, "precio": 1, "subtotal": 1}))
+    expedientes_coll = db['expedientes']
+
+    # ===== OBTENER DATOS DE ATENCIÓN =====
+    atencion = atencion_coll.find_one({"id_atencion": id_atencion})
+
+    if not atencion:
+        flash('Atención no encontrada.', 'error')
+        return redirect(url_for('gestion_pacientes'))
+
+    # ===== OBTENER DATOS DEL PACIENTE =====
+    paciente = pacientes_coll.find_one({"Id_exp": id_exp})
+
+    if not paciente:
+        flash('Paciente no encontrado.', 'error')
+        return redirect(url_for('gestion_pacientes'))
+
+    # ===== COMBINAR DATOS PARA EL TEMPLATE =====
+    pac = {
+        "Id_exp": paciente.get("Id_exp"),
+        "papell": paciente.get("papell", ""),
+        "sapell": paciente.get("sapell", ""),
+        "nom_pac": paciente.get("nom_pac", ""),
+        "area": atencion.get("area", ""),
+        "fecha_ing": atencion.get("fecha_ing"),
+        "status": atencion.get("status", "ABIERTA"),
+        "id_atencion": atencion.get("id_atencion")
+    }
+
+    # ===== OBTENER CUENTA DEL PACIENTE =====
+    cuenta = list(cuenta_coll.find(
+        {"id_atencion": id_atencion},
+        {"fecha": 1, "descripcion": 1, "cantidad": 1, "precio": 1, "subtotal": 1}
+    ).sort("fecha", -1))  # Ordenar por fecha descendente
+
+    # ===== CALCULAR TOTAL =====
     total_pipeline = [
         {"$match": {"id_atencion": id_atencion}},
         {"$group": {"_id": None, "total": {"$sum": "$subtotal"}}}
     ]
     total_result = list(cuenta_coll.aggregate(total_pipeline))
-    total = total_result[0]['total'] if total_result else 0
-    # ===== CERRAR CUENTA =====
-    if request.method == 'POST' and pac['status'] == 'ABIERTA':
-        atencion_coll.update_one({"id_atencion": id_atencion}, {"$set": {"status": "CERRADA"}})
-        expedientes_coll = db['expedientes']
-        expedientes_coll.insert_one({
-            "id_exp": id_exp,
-            "id_atencion": id_atencion,
-            "fecha_alta": datetime.now(),
-            "usuario_alta": ObjectId(session['user_id'])
-        })
-        return redirect(url_for('expediente', id_atencion=id_atencion, id_exp=id_exp))
+    total = total_result[0]['total'] if total_result else 0.0
+
+    # ===== CERRAR CUENTA (POST) =====
+    if request.method == 'POST':
+        # Verificar que la cuenta esté abierta
+        if pac['status'] != 'ABIERTA':
+            flash('La cuenta ya está cerrada.', 'warning')
+            return redirect(url_for('expediente', id_atencion=id_atencion, id_exp=id_exp))
+
+        try:
+            # 1. Cerrar la atención
+            atencion_coll.update_one(
+                {"id_atencion": id_atencion},
+                {"$set": {"status": "CERRADA"}}
+            )
+
+            # 2. Crear registro en expedientes
+            expedientes_coll.insert_one({
+                "id_exp": id_exp,
+                "id_atencion": id_atencion,
+                "fecha_alta": datetime.now(),
+                "usuario_alta": session['user_id'],  # Ya es string, no necesita ObjectId
+                "total_cuenta": total
+            })
+
+            # 3. Liberar cama si estaba asignada
+            if atencion.get('id_cama'):
+                db['camas'].update_one(
+                    {"id_cama": atencion['id_cama']},
+                    {"$set": {"ocupada": 0}}
+                )
+
+            flash('Cuenta cerrada correctamente.', 'success')
+            return redirect(url_for('gestion_pacientes'))
+
+        except Exception as e:
+            flash(f'Error al cerrar la cuenta: {str(e)}', 'error')
+            return redirect(url_for('expediente', id_atencion=id_atencion, id_exp=id_exp))
+
+    # ===== RENDERIZAR TEMPLATE (GET) =====
     return render_template(
         'administrativo/pacientes/cuenta_pac/expediente.html',
         pac=pac,
@@ -1116,7 +1182,6 @@ def expediente(id_atencion, id_exp):
 # ====================================================================================
 @app.route('/medico/medico')
 def medico():
-
     if 'user_id' not in session or session.get('role') not in ('admin', 'medico'):
         flash('Acceso denegado.', 'error')
         return redirect(url_for('dashboard'))
@@ -1126,7 +1191,7 @@ def medico():
 
     user_id = session['user_id']
 
-    # 🔥 BUSCAR COMO ObjectId O COMO STRING
+    # Buscar usuario
     user_data = None
     try:
         user_data = users_coll.find_one({"_id": ObjectId(user_id)})
@@ -1146,8 +1211,6 @@ def medico():
         'img_perfil': user_data.get('img_perfil')
     }
 
-    logo = {'img_base': 'logo.jpg'}
-
     # =============================
     # CONSULTA EXTERNA
     # =============================
@@ -1163,11 +1226,13 @@ def medico():
         {"$project": {
             "id_atencion": 1,
             "num_cama": {"$concat": ["Consulta ", {"$toString": "$id_atencion"}]},
-            "estatus": "OCUPADA",
+            "estatus": {"$literal": "OCUPADA"},
             "nom_pac": "$paciente.nom_pac",
             "papell": "$paciente.papell",
             "sapell": "$paciente.sapell",
-            "Id_exp": "$paciente.Id_exp"
+            "Id_exp": "$paciente.Id_exp",
+            "tiene_atencion": {"$literal": True},
+            "id_atencion": {"$ifNull": ["$id_atencion", None]}
         }}
     ]))
 
@@ -1192,7 +1257,7 @@ def medico():
         {"$unwind": {"path": "$paciente", "preserveNullAndEmptyArrays": True}},
         {"$project": {
             "id_cama": 1,
-            "id_atencion": "$atencion.id_atencion",
+            "id_atencion": {"$ifNull": ["$atencion.id_atencion", None]},
             "num_cama": "$numero",
             "estatus": {
                 "$cond": [{"$ifNull": ["$atencion", False]}, "OCUPADA", "LIBRE"]
@@ -1200,7 +1265,10 @@ def medico():
             "nom_pac": "$paciente.nom_pac",
             "papell": "$paciente.papell",
             "sapell": "$paciente.sapell",
-            "Id_exp": "$paciente.Id_exp"
+            "Id_exp": "$paciente.Id_exp",
+            "tiene_atencion": {
+                "$cond": [{"$ifNull": ["$atencion.id_atencion", False]}, True, False]
+            }
         }}
     ]))
 
@@ -1225,7 +1293,7 @@ def medico():
         {"$unwind": {"path": "$paciente", "preserveNullAndEmptyArrays": True}},
         {"$project": {
             "id_cama": 1,
-            "id_atencion": "$atencion.id_atencion",
+            "id_atencion": {"$ifNull": ["$atencion.id_atencion", None]},
             "num_cama": "$numero",
             "estatus": {
                 "$cond": [{"$ifNull": ["$atencion", False]}, "OCUPADA", "LIBRE"]
@@ -1233,19 +1301,20 @@ def medico():
             "nom_pac": "$paciente.nom_pac",
             "papell": "$paciente.papell",
             "sapell": "$paciente.sapell",
-            "Id_exp": "$paciente.Id_exp"
+            "Id_exp": "$paciente.Id_exp",
+            "tiene_atencion": {
+                "$cond": [{"$ifNull": ["$atencion.id_atencion", False]}, True, False]
+            }
         }}
     ]))
 
     return render_template(
         'medico/medico.html',
         usuario=usuario,
-        logo=logo,
         beds_consulta=beds_consulta,
         beds_preparacion=beds_preparacion,
         beds_recuperacion=beds_recuperacion
     )
-
 # Ruta para vista de paciente seleccionado
 @app.route('/medico/paciente/<int:id_atencion>/<int:Id_exp>')
 def paciente(id_atencion, Id_exp):
@@ -3277,27 +3346,46 @@ def cuenta_pdf(id_atencion):
     response.headers['Content-Disposition'] = 'inline; filename=cuenta_paciente.pdf'
     return response
 
+
 # ==================== CENSO ====================
 @app.route('/admin/censo')
 def censo():
     if 'user_id' not in session:
         flash('Acceso denegado.', 'error')
         return redirect(url_for('dashboard'))
+
     db = get_db_connection()
+
     def obtener_camas_por_area(area_camas, area_atencion=None):
         """
         area_camas: valor en tabla camas.area (Urgencias/Hospitalizado)
         area_atencion: valor en tabla atencion.area (Ambulatorio/Urgencias/Hospitalizado)
         """
         filas = []
+
         # 1) Ambulatorio (sin cama física)
         if area_atencion == 'Ambulatorio':
             pipeline = [
                 {"$match": {"area": "Ambulatorio", "status": "ABIERTA"}},
-                {"$lookup": {"from": "pacientes", "localField": "Id_exp", "foreignField": "Id_exp", "as": "paciente"}},
+                {"$lookup": {
+                    "from": "pacientes",
+                    "localField": "Id_exp",
+                    "foreignField": "Id_exp",
+                    "as": "paciente"
+                }},
                 {"$unwind": "$paciente"},
-                {"$lookup": {"from": "atencion_medicos", "localField": "id_atencion", "foreignField": "id_atencion", "as": "medicos"}},
-                {"$lookup": {"from": "users", "localField": "medicos.id_medico", "foreignField": "id", "as": "users"}},
+                {"$lookup": {
+                    "from": "atencion_medicos",
+                    "localField": "id_atencion",
+                    "foreignField": "id_atencion",
+                    "as": "medicos"
+                }},
+                {"$lookup": {
+                    "from": "users",
+                    "localField": "medicos.id_medico",
+                    "foreignField": "id",
+                    "as": "users"
+                }},
                 {"$project": {
                     "id_atencion": 1,
                     "num_cama": {"$concat": ["Consulta ", {"$toString": "$id_atencion"}]},
@@ -3315,25 +3403,53 @@ def censo():
                 {"$sort": {"fecha_ing": -1}}
             ]
             filas = list(db['atencion'].aggregate(pipeline))
+
             for f in filas:
                 f['estatus'] = 'OCUPADA'
                 f['fecha'] = f.get('fecha_ing')
                 f['motivo_recepcion'] = f.get('motivo_ingreso', '') or ''
-                f['alta_med'] = 'NO' # no existe en tu BD
-                f['paciente_nombre'] = f"{f.get('papell','')} {f.get('sapell','')} {f.get('nom_pac','')}".strip()
+                f['alta_med'] = 'NO'
+                f['paciente_nombre'] = f"{f.get('papell', '')} {f.get('sapell', '')} {f.get('nom_pac', '')}".strip()
                 f['edad_txt'] = calcular_edad(f['fecnac']) if f.get('fecnac') else ''
                 f['medico_txt'] = f.get('medico_tratante') or ''
+                f['num_cama'] = f.get('num_cama', '')
             return filas
+
         # 2) Con cama física (Urgencias/Hospitalizado)
         pipeline = [
             {"$match": {"area": area_camas}},
-            {"$lookup": {"from": "atencion", "localField": "id_cama", "foreignField": "id_cama", "as": "atencion"}},
+            {"$lookup": {
+                "from": "atencion",
+                "localField": "id_cama",
+                "foreignField": "id_cama",
+                "as": "atencion"
+            }},
             {"$unwind": {"path": "$atencion", "preserveNullAndEmptyArrays": True}},
-            {"$match": {"$or": [{"atencion.status": "ABIERTA"}, {"atencion": {"$exists": False}}]}},
-            {"$lookup": {"from": "pacientes", "localField": "atencion.Id_exp", "foreignField": "Id_exp", "as": "paciente"}},
+            {"$match": {
+                "$or": [
+                    {"atencion.status": "ABIERTA"},
+                    {"atencion": {"$exists": False}}
+                ]
+            }},
+            {"$lookup": {
+                "from": "pacientes",
+                "localField": "atencion.Id_exp",
+                "foreignField": "Id_exp",
+                "as": "paciente"
+            }},
             {"$unwind": {"path": "$paciente", "preserveNullAndEmptyArrays": True}},
-            {"$lookup": {"from": "atencion_medicos", "localField": "atencion.id_atencion", "foreignField": "id_atencion", "as": "medicos"}},
-            {"$lookup": {"from": "users", "localField": "medicos.id_medico", "foreignField": "id", "as": "users"}},
+            {"$lookup": {
+                "from": "atencion_medicos",
+                "localField": "atencion.id_atencion",
+                "foreignField": "id_atencion",
+                "as": "medicos"
+            }},
+            {"$lookup": {
+                "from": "users",
+                "localField": "medicos.id_medico",
+                "foreignField": "id",
+                "as": "users"
+            }},
             {"$project": {
                 "id_cama": 1,
                 "numero": 1,
@@ -3352,7 +3468,9 @@ def censo():
             }},
             {"$sort": {"numero": 1}}
         ]
+
         filas = list(db['camas'].aggregate(pipeline))
+
         for f in filas:
             if not f.get('id_atencion'):
                 # Cama libre (o mantenimiento si ocupada=1 sin atención abierta)
@@ -3363,6 +3481,8 @@ def censo():
                 f['edad_txt'] = ''
                 f['medico_txt'] = ''
                 f['alta_med'] = ''
+                f['num_cama'] = f.get('numero', '')
+
                 if int(f.get('ocupada') or 0) == 1:
                     f['estatus'] = 'MANTENIMIENTO'
                 else:
@@ -3371,21 +3491,30 @@ def censo():
                 # Cama ocupada con atención abierta
                 f['fecha'] = f.get('fecha_ing')
                 f['motivo_recepcion'] = f.get('motivo_ing', '') or ''
-                f['paciente_nombre'] = f"{f.get('papell','')} {f.get('sapell','')} {f.get('nom_pac','')}".strip()
+                f['paciente_nombre'] = f"{f.get('papell', '')} {f.get('sapell', '')} {f.get('nom_pac', '')}".strip()
                 f['edad_txt'] = calcular_edad(f['fecnac']) if f.get('fecnac') else ''
                 f['medico_txt'] = f.get('medico_tratante') or ''
                 f['alta_med'] = 'NO'
                 f['estatus'] = 'OCUPADA'
+                f['num_cama'] = f.get('numero', '')
+
         return filas
+
     # Secciones
-    consulta = obtener_camas_por_area(area_camas='Urgencias', area_atencion='Ambulatorio') # CONSULTA
-    preparacion = obtener_camas_por_area(area_camas='Urgencias') # PREPARACIÓN
-    recuperacion = obtener_camas_por_area(area_camas='Hospitalizado') # RECUPERACIÓN
+    consulta = obtener_camas_por_area(area_camas='Urgencias', area_atencion='Ambulatorio')  # CONSULTA
+    preparacion = obtener_camas_por_area(area_camas='Urgencias')  # PREPARACIÓN
+    recuperacion = obtener_camas_por_area(area_camas='Hospitalizado')  # RECUPERACIÓN
+
+    # Obtener fecha actual para el template
+    from datetime import datetime
+    now = datetime.now()
+
     return render_template(
         'administrativo/censo/censo.html',
         consulta=consulta,
         preparacion=preparacion,
-        recuperacion=recuperacion
+        recuperacion=recuperacion,
+        now=now  # 👈 Agregar esto para la fecha
     )
 
 @app.route('/admin/censo/imprimir')
@@ -3598,7 +3727,17 @@ def imprimir_censo():
 @app.route('/api/logs_recientes')
 def logs_recientes():
     db = get_db_connection()
-    logs = list(db['users'].find({}, {"id": 1, "username": 1, "role": 1, "created_at": 1}).sort("id", -1))
+    logs = list(
+        db['logs']
+        .find({}, {"_id": 0, "usuario": 1, "accion": 1, "fecha": 1})
+        .sort("fecha", -1)
+        .limit(10)
+    )
+
+    for log in logs:
+        if isinstance(log["fecha"], datetime):
+            log["fecha"] = log["fecha"].strftime('%Y-%m-%d %H:%M:%S')
+
     return jsonify(logs)
 
 # ====================================================================================
@@ -3622,6 +3761,8 @@ def rendimiento():
         usuarios=usuarios,
         logs=logs
     )
+
+
 
 @app.route('/logout')
 def logout():

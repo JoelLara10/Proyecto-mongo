@@ -353,24 +353,24 @@
     </div>
     {% endif %}
 
-    <!-- CARD ADICIONAL: REPORTES (ejemplo) -->
-    {% if usuario.role == 'admin' %}
-    {% set ns.counter = ns.counter + 1 %}
-    <div class="col-md-4" style="--animation-order: {{ ns.counter }};">
-      <a href="#" class="text-decoration-none">
-        <div class="dashboard-card" style="opacity: 0.8;">
-          <span class="access-badge" style="background: linear-gradient(135deg, #4fd1c5 0%, #38b2ac 100%);">Próximamente</span>
-          <div class="card-body">
-            <div class="icon-circle" style="background: linear-gradient(135deg, #4fd1c5 0%, #38b2ac 100%);">
-              <i class="bi bi-graph-up"></i>
-            </div>
-            <h5 class="card-title">Reportes</h5>
-            <p class="card-description">Reportes y estadísticas del sistema</p>
-          </div>
+    <!-- CARD ADICIONAL: RENDIMIENTO DEL SISTEMA -->
+{% if usuario.role == 'admin' %}
+{% set ns.counter = ns.counter + 1 %}
+<div class="col-md-4" style="--animation-order: {{ ns.counter }};">
+  <a href="{{ url_for('rendimiento') }}" class="text-decoration-none">
+    <div class="dashboard-card">
+      <span class="access-badge" style="background: linear-gradient(135deg, #4fd1c5 0%, #38b2ac 100%);">Monitoreo</span>
+      <div class="card-body">
+        <div class="icon-circle" style="background: linear-gradient(135deg, #4fd1c5 0%, #38b2ac 100%);">
+          <i class="bi bi-graph-up"></i>
         </div>
-      </a>
+        <h5 class="card-title">Rendimiento</h5>
+        <p class="card-description">Monitoreo de CPU, RAM, disco y actividad del sistema</p>
+      </div>
     </div>
-    {% endif %}
+  </a>
+</div>
+{% endif %}
 
   </div>
 

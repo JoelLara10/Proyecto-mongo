@@ -1,150 +1,416 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Rendimiento del Sistema</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-</head>
+{% extends 'configuracion/header_configuracion.html' %}
 
-<body class="bg-light">
+{% block content %}
 
-<div class="container mt-4">
+<section class="content-header">
+  <div class="container-fluid">
+    <div class="row mb-3">
+      <div class="col-12">
+        <h1 class="text-primary">
+          <i class="fas fa-tachometer-alt me-2"></i>
+          Rendimiento del Sistema
+        </h1>
+        <p class="text-muted">Monitoreo en tiempo real de los recursos del sistema</p>
+      </div>
+    </div>
+  </div>
+</section>
 
-    <h3 class="text-center mb-4">
-        <i class="fas fa-tachometer-alt"></i> Rendimiento del Sistema
-    </h3>
+<section class="content">
+  <div class="container-fluid">
 
-    <!-- ====== SISTEMA ====== -->
-    <div class="row mb-4">
-        <div class="col-md-4">
-            <div class="card text-center">
-                <div class="card-body">
-                    <h5>CPU</h5>
-                    <h2>{{ cpu }}%</h2>
-                    <canvas id="cpuChart"></canvas>
-                </div>
-            </div>
+    <!-- Mensajes Flash -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm" role="alert">
+            <i class="fas fa-info-circle me-2"></i> {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <!-- ====== MÉTRICAS DEL SISTEMA ====== -->
+    <div class="row g-4 mb-5">
+      <div class="col-md-4">
+        <div class="metric-card">
+          <div class="metric-header">
+            <h5><i class="fas fa-microchip me-2"></i> CPU</h5>
+          </div>
+          <div class="metric-body">
+            <div class="metric-value">{{ cpu }}<small>%</small></div>
+            <canvas id="cpuChart" height="150"></canvas>
+          </div>
         </div>
+      </div>
 
-        <div class="col-md-4">
-            <div class="card text-center">
-                <div class="card-body">
-                    <h5>Memoria RAM</h5>
-                    <h2>{{ ram }}%</h2>
-                    <canvas id="ramChart"></canvas>
-                </div>
-            </div>
+      <div class="col-md-4">
+        <div class="metric-card">
+          <div class="metric-header">
+            <h5><i class="fas fa-memory me-2"></i> Memoria RAM</h5>
+          </div>
+          <div class="metric-body">
+            <div class="metric-value">{{ ram }}<small>%</small></div>
+            <canvas id="ramChart" height="150"></canvas>
+          </div>
         </div>
+      </div>
 
-        <div class="col-md-4">
-            <div class="card text-center">
-                <div class="card-body">
-                    <h5>Disco</h5>
-                    <h2>{{ disco }}%</h2>
-                    <canvas id="diskChart"></canvas>
-                </div>
-            </div>
+      <div class="col-md-4">
+        <div class="metric-card">
+          <div class="metric-header">
+            <h5><i class="fas fa-hdd me-2"></i> Disco</h5>
+          </div>
+          <div class="metric-body">
+            <div class="metric-value">{{ disco }}<small>%</small></div>
+            <canvas id="diskChart" height="150"></canvas>
+          </div>
         </div>
+      </div>
     </div>
 
     <!-- ====== USUARIOS REGISTRADOS ====== -->
-    <div class="row mb-4">
-        <div class="col-md-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5>Usuarios Registrados</h5>
-                </div>
-                <div class="card-body">
-                    <ul class="list-group">
-                        {% for user in usuarios %}
-                            <li class="list-group-item">
-                                {{ user.username }} - Rol: {{ user.role }} - Registrado: {{ user.created_at }}
-                            </li>
-                        {% endfor %}
-                    </ul>
-                </div>
+    <div class="info-card">
+      <div class="info-header">
+        <h5>
+          <i class="fas fa-users me-2"></i>
+          Usuarios Registrados
+          <span class="badge bg-white text-primary float-end">{{ usuarios|length }}</span>
+        </h5>
+      </div>
+      <div class="info-body">
+        <div class="list-group">
+          {% for user in usuarios %}
+          <div class="list-group-item d-flex align-items-center">
+            <div class="user-avatar">
+              <i class="fas fa-user"></i>
             </div>
+            <div class="flex-grow-1">
+              <strong>{{ user.username }}</strong>
+              <br>
+              <small class="text-muted">ID: {{ user.id }} • Registrado:
+                {% if user.created_at %}
+                  {% if user.created_at is string %}
+                    {{ user.created_at }}
+                  {% else %}
+                    {{ user.created_at.strftime('%d/%m/%Y %H:%M') }}
+                  {% endif %}
+                {% else %}
+                  No disponible
+                {% endif %}
+              </small>
+            </div>
+            <span class="badge-role
+              {% if user.role == 'admin' %}badge-admin
+              {% elif user.role == 'medico' %}badge-medico
+              {% elif user.role == 'enfermero' %}badge-enfermero
+              {% else %}badge-otro{% endif %}">
+              {{ user.role|capitalize }}
+            </span>
+          </div>
+          {% else %}
+          <div class="text-center py-4">
+            <i class="fas fa-users-slash text-muted" style="font-size: 3rem;"></i>
+            <p class="text-muted mt-3">No hay usuarios registrados</p>
+          </div>
+          {% endfor %}
         </div>
+      </div>
     </div>
 
     <!-- ====== ACCIONES RECIENTES ====== -->
-    <div class="row mb-4">
-        <div class="col-md-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5>Acciones Recientes</h5>
-                </div>
-                <div class="card-body">
-                    <ul class="list-group" id="lista-logs">
-                        {% for log in logs %}
-                            <li class="list-group-item">{{ log.fecha }} - {{ log.usuario }}: {{ log.accion }}</li>
-                        {% endfor %}
-                    </ul>
-                </div>
+    <div class="info-card">
+      <div class="info-header">
+        <h5>
+          <i class="fas fa-history me-2"></i>
+          Acciones Recientes
+        </h5>
+      </div>
+      <div class="info-body">
+        <div class="list-group" id="lista-logs">
+          {% for log in logs %}
+          <div class="list-group-item d-flex align-items-center">
+            <div class="log-time">
+              <i class="far fa-clock me-1"></i>
+              {% if log.fecha %}
+                {% if log.fecha is string %}
+                  {{ log.fecha }}
+                {% else %}
+                  {{ log.fecha.strftime('%d/%m/%Y %H:%M') }}
+                {% endif %}
+              {% else %}
+                Fecha no disponible
+              {% endif %}
             </div>
+            <div class="flex-grow-1">
+              <strong>{{ log.usuario }}</strong>
+              <span class="text-muted mx-2">-</span>
+              <span>{{ log.accion }}</span>
+            </div>
+            <i class="fas fa-check-circle text-success"></i>
+          </div>
+          {% else %}
+          <div class="text-center py-4">
+            <i class="fas fa-history text-muted" style="font-size: 3rem;"></i>
+            <p class="text-muted mt-3">No hay acciones recientes</p>
+          </div>
+          {% endfor %}
         </div>
+      </div>
     </div>
 
-</div>
+  </div>
+</section>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+  /* Tarjetas de métricas */
+  .metric-card {
+    background: white;
+    border: none;
+    border-radius: 20px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    height: 100%;
+  }
+
+  .metric-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 60px rgba(102, 126, 234, 0.25);
+  }
+
+  .metric-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 1rem;
+    color: white;
+    text-align: center;
+  }
+
+  .metric-header h5 {
+    margin: 0;
+    font-weight: 600;
+    font-size: 1.1rem;
+  }
+
+  .metric-body {
+    padding: 1.5rem;
+    text-align: center;
+  }
+
+  .metric-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #2d3748;
+    margin-bottom: 1rem;
+  }
+
+  .metric-value small {
+    font-size: 1rem;
+    color: #718096;
+  }
+
+  /* Tarjetas de información */
+  .info-card {
+    background: white;
+    border: none;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    margin-bottom: 2rem;
+  }
+
+  .info-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 1rem 1.5rem;
+    color: white;
+  }
+
+  .info-header h5 {
+    margin: 0;
+    font-weight: 600;
+    font-size: 1.1rem;
+  }
+
+  .info-body {
+    padding: 1.5rem;
+  }
+
+  /* Listas */
+  .list-group-item {
+    border: none;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 0.8rem 1rem;
+    background: transparent;
+    color: #2d3748;
+    transition: all 0.2s ease;
+  }
+
+  .list-group-item:hover {
+    background: rgba(102, 126, 234, 0.1);
+    transform: translateX(5px);
+  }
+
+  .list-group-item:last-child {
+    border-bottom: none;
+  }
+
+  .user-avatar {
+    width: 35px;
+    height: 35px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    margin-right: 1rem;
+  }
+
+  .log-time {
+    color: #718096;
+    font-size: 0.85rem;
+    margin-right: 1rem;
+  }
+
+  /* Badges */
+  .badge-role {
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .badge-admin {
+    background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+    color: white;
+  }
+
+  .badge-medico {
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+    color: white;
+  }
+
+  .badge-enfermero {
+    background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+    color: white;
+  }
+
+  .badge-otro {
+    background: linear-gradient(135deg, #a0aec0 0%, #718096 100%);
+    color: white;
+  }
+</style>
 
 <script>
-    // ====== GRÁFICAS ======
-    const cpuCtx = document.getElementById('cpuChart').getContext('2d');
-    new Chart(cpuCtx, {
-        type: 'doughnut',
-        data: {
-            labels: ['Usado', 'Libre'],
-            datasets: [{
-                data: [{{ cpu }}, 100-{{ cpu }}],
-                backgroundColor: ['#FF6384', '#36A2EB']
-            }]
-        }
-    });
-
-    const ramCtx = document.getElementById('ramChart').getContext('2d');
-    new Chart(ramCtx, {
-        type: 'doughnut',
-        data: {
-            labels: ['Usada', 'Libre'],
-            datasets: [{
-                data: [{{ ram }}, 100-{{ ram }}],
-                backgroundColor: ['#FFCE56', '#4BC0C0']
-            }]
-        }
-    });
-
-    const diskCtx = document.getElementById('diskChart').getContext('2d');
-    new Chart(diskCtx, {
-        type: 'doughnut',
-        data: {
-            labels: ['Usado', 'Libre'],
-            datasets: [{
-                data: [{{ disco }}, 100-{{ disco }}],
-                backgroundColor: ['#9966FF', '#FF9F40']
-            }]
-        }
-    });
-
-    // ====== ACTUALIZAR ACCIONES RECIENTES EN TIEMPO REAL ======
-    function actualizarLogs() {
-        fetch('/api/logs_recientes')
-            .then(response => response.json())
-            .then(data => {
-                const lista = document.getElementById('lista-logs');
-                lista.innerHTML = '';
-                data.forEach(log => {
-                    const li = document.createElement('li');
-                    li.className = 'list-group-item';
-                    li.textContent = `${log.fecha} - ${log.usuario}: ${log.accion}`;
-                    lista.appendChild(li);
-                });
-            });
+  // ====== GRÁFICAS ======
+  const cpuCtx = document.getElementById('cpuChart').getContext('2d');
+  new Chart(cpuCtx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Usado', 'Libre'],
+      datasets: [{
+        data: [{{ cpu }}, 100-{{ cpu }}],
+        backgroundColor: ['#FF6384', '#36A2EB'],
+        borderWidth: 0
+      }]
+    },
+    options: {
+      cutout: '70%',
+      plugins: {
+        legend: { display: false },
+        tooltip: { enabled: false }
+      }
     }
+  });
 
-    // Actualizar cada 5 segundos
-    setInterval(actualizarLogs, 50000);
+  const ramCtx = document.getElementById('ramChart').getContext('2d');
+  new Chart(ramCtx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Usada', 'Libre'],
+      datasets: [{
+        data: [{{ ram }}, 100-{{ ram }}],
+        backgroundColor: ['#FFCE56', '#4BC0C0'],
+        borderWidth: 0
+      }]
+    },
+    options: {
+      cutout: '70%',
+      plugins: {
+        legend: { display: false },
+        tooltip: { enabled: false }
+      }
+    }
+  });
+
+  const diskCtx = document.getElementById('diskChart').getContext('2d');
+  new Chart(diskCtx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Usado', 'Libre'],
+      datasets: [{
+        data: [{{ disco }}, 100-{{ disco }}],
+        backgroundColor: ['#9966FF', '#FF9F40'],
+        borderWidth: 0
+      }]
+    },
+    options: {
+      cutout: '70%',
+      plugins: {
+        legend: { display: false },
+        tooltip: { enabled: false }
+      }
+    }
+  });
+
+  // ====== ACTUALIZAR ACCIONES RECIENTES EN TIEMPO REAL ======
+  function actualizarLogs() {
+    fetch('/api/logs_recientes')
+      .then(response => response.json())
+      .then(data => {
+        const lista = document.getElementById('lista-logs');
+        if (!lista) return;
+
+        lista.innerHTML = '';
+        data.forEach(log => {
+          const div = document.createElement('div');
+          div.className = 'list-group-item d-flex align-items-center';
+
+          let fechaStr = log.fecha;
+          if (log.fecha && typeof log.fecha === 'string') {
+            try {
+              const fecha = new Date(log.fecha);
+              fechaStr = fecha.toLocaleDateString('es-ES') + ' ' +
+                        fecha.toLocaleTimeString('es-ES', {hour: '2-digit', minute:'2-digit'});
+            } catch (e) {
+              fechaStr = log.fecha;
+            }
+          }
+
+          div.innerHTML = `
+            <div class="log-time">
+              <i class="far fa-clock me-1"></i>
+              ${fechaStr}
+            </div>
+            <div class="flex-grow-1">
+              <strong>${log.usuario || 'Sistema'}</strong>
+              <span class="text-muted mx-2">-</span>
+              <span>${log.accion || 'Acción sin descripción'}</span>
+            </div>
+            <i class="fas fa-check-circle text-success"></i>
+          `;
+          lista.appendChild(div);
+        });
+      })
+      .catch(error => console.error('Error:', error));
+  }
+
+  // Actualizar cada 30 segundos
+  setInterval(actualizarLogs, 30000);
 </script>
 
-</body>
-</html>
+{% endblock %}

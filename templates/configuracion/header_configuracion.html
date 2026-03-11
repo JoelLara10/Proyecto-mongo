@@ -161,6 +161,14 @@
             </a>
           </li>
 
+            <!-- En tu archivo de sidebar (configuracion_base.html) -->
+<li class="nav-item">
+  <a href="{{ url_for('rendimiento') }}" class="nav-link">
+    <i class="nav-icon fas fa-tachometer-alt"></i>
+    <p>Rendimiento del Sistema</p>
+  </a>
+</li>
+
           <li class="nav-item">
             <a href="{{ url_for('logout') }}" class="nav-link text-danger">
               <i class="nav-icon fas fa-sign-out-alt"></i>

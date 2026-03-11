@@ -2,221 +2,484 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Cuenta de Pacientes Activos</title>
+  <title>Cuenta de Pacientes Activos - INEO</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://use.fontawesome.com/releases/v5.7.0/css/all.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <!-- Bootstrap 5 -->
+  <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet">
 
+  <!-- Bootstrap Icons -->
+  <link href="{{ url_for('static', filename='css/bootstrap-icons.css') }}" rel="stylesheet">
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/all.min.css') }}">
+
+  <!-- Google Fonts - Inter -->
+  <link href="{{ url_for('static', filename='css/fonts.css') }}" rel="stylesheet">
 
   <style>
-    body { background:#f4f6f9; }
-    .page-header{
-      background: linear-gradient(135deg, #2b2d7f 0%, #667eea 100%);
-      color:#fff; padding:18px; border-radius:14px;
-      box-shadow:0 10px 25px rgba(43,45,127,.25);
-      margin-bottom:18px;
+    * {
+      font-family: 'Inter', sans-serif;
     }
+
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+
+    }
+
+    /* Navbar glassmorphism */
     .navbar {
-    background-color: #1e3c72;
-}
-    .content-card{
-      background:#fff; border-radius:14px; padding:18px;
-      box-shadow:0 10px 25px rgba(0,0,0,.08);
-      margin-bottom:18px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+      padding: 0.8rem 0;
+
     }
-    #search{
+
+    .navbar-brand {
+      color: #2d3748 !important;
+      font-weight: 700;
+      font-size: 1.5rem;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .navbar-text {
+      color: #4a5568 !important;
+      font-weight: 500;
+    }
+
+    .btn-outline-light {
+      border: 1px solid #e2e8f0;
+      color: #4a5568;
+      border-radius: 10px;
+      padding: 0.5rem 1.2rem;
+      font-weight: 500;
+      transition: all 0.3s ease;
+    }
+
+    .btn-outline-light:hover {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-color: transparent;
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    /* Título de sección */
+    .section-title {
+      font-size: 2rem;
+      font-weight: 700;
+      color: white;
+      margin-bottom: 1.5rem;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+      display: flex;
+      align-items: center;
+    }
+
+    .section-title i {
+      margin-right: 1rem;
+      font-size: 2.5rem;
+      background: rgba(255, 255, 255, 0.2);
+      padding: 0.5rem;
+      border-radius: 15px;
+    }
+
+    /* Tarjetas */
+    .main-card {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border: none;
       border-radius: 25px;
-      border: 2px solid #e9ecef;
-      padding: 10px 16px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+      animation: fadeInUp 0.6s ease forwards;
+      margin-bottom: 2rem;
     }
-    #search:focus{
-      border-color:#2b2d7f;
-      box-shadow:0 0 0 .2rem rgba(43,45,127,.20);
-      outline:none;
+
+    .card-header-custom {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 1.2rem 1.5rem;
+      color: white;
     }
-    .table-responsive{
-      border-radius:14px; overflow:hidden;
-      box-shadow:0 10px 25px rgba(0,0,0,.08);
-      background:#fff;
+
+    .card-header-custom h4 {
+      margin: 0;
+      font-weight: 600;
+      font-size: 1.3rem;
     }
-    thead th{
-      background: linear-gradient(135deg, #2b2d7f 0%, #3c3f8f 100%);
-      color:#fff; border:none; text-align:center; vertical-align:middle;
-      padding:14px 10px; font-size:13px;
+
+    .card-header-custom i {
+      margin-right: 0.8rem;
     }
-    tbody td{ vertical-align:middle; font-size:13px; }
-    tbody tr:hover{ background:#f8f9fa; }
-    .pill{
-      background: linear-gradient(135deg, #27ae60, #2ecc71);
-      color:#fff; border-radius:8px; padding:6px 10px; font-weight:700;
-      display:inline-block; min-width:64px; text-align:center;
+
+    .card-body-custom {
+      padding: 1.5rem;
     }
-    .pill-gray{
-      background: linear-gradient(135deg, #6c757d, #95a5a6);
-      color:#fff; border-radius:8px; padding:6px 10px; font-weight:700;
-      display:inline-block; min-width:64px; text-align:center;
+
+    /* Buscador */
+    .search-container {
+      background: white;
+      border-radius: 15px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     }
-    .money-total{
-      font-weight:800; color:#e74c3c; font-size:15px;
+
+    .search-input {
+      border: 2px solid #e2e8f0;
+      border-radius: 15px;
+      padding: 0.8rem 1.5rem;
+      transition: all 0.3s ease;
     }
-    .btn{
-      border-radius:10px;
-      box-shadow:0 2px 10px rgba(0,0,0,.08);
-      border:none;
+
+    .search-input:focus {
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+      outline: none;
+    }
+
+    /* Tabla */
+    .table-responsive {
+      border-radius: 15px;
+      overflow: hidden;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .table {
+      margin-bottom: 0;
+    }
+
+    .table thead th {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      font-weight: 600;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 1rem;
+      border: none;
+      white-space: nowrap;
+    }
+
+    .table tbody tr {
+      transition: all 0.3s ease;
+      background: white;
+    }
+
+    .table tbody tr:hover {
+      background: rgba(102, 126, 234, 0.1);
+    }
+
+    .table td {
+      padding: 1rem;
+      vertical-align: middle;
+      color: #2d3748;
+      font-size: 0.9rem;
+    }
+
+    /* Badges */
+    .badge-cama {
+      background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+      color: white;
+      padding: 0.4rem 0.8rem;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 0.85rem;
+    }
+
+    .badge-atencion {
+      background: linear-gradient(135deg, #a0aec0 0%, #718096 100%);
+      color: white;
+      padding: 0.4rem 0.8rem;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 0.85rem;
+    }
+
+    .badge-total {
+      background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+      color: white;
+      padding: 0.4rem 0.8rem;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 1rem;
+    }
+
+    /* Botones de acción */
+    .btn-group-action {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+    }
+
+    .btn-action {
+      width: 35px;
+      height: 35px;
+      border-radius: 10px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      transition: all 0.3s ease;
+      border: none;
+    }
+
+    .btn-action:hover {
+      transform: translateY(-2px);
+    }
+
+    .btn-view {
+      background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);
+      box-shadow: 0 4px 10px rgba(237, 137, 54, 0.3);
+    }
+
+    .btn-pdf {
+      background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+      box-shadow: 0 4px 10px rgba(229, 62, 62, 0.3);
+    }
+
+    /* Totales */
+    .money-subtotal {
+      font-weight: 600;
+      color: #2d3748;
+    }
+
+    .money-total {
+      font-weight: 700;
+      color: #e53e3e;
+      font-size: 1rem;
+    }
+
+    /* Animaciones */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Contador */
+    .records-count {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      padding: 0.5rem 1rem;
+      border-radius: 10px;
+      color: white;
+      font-size: 0.9rem;
+      display: inline-block;
+      margin-top: 1rem;
     }
   </style>
 </head>
 
 <body>
 
-  <!-- NAVBAR -->
-<nav class="navbar navbar-expand-lg shadow">
-    <div class="container-fluid">
-        <a href="{{ url_for('administrativo') }}" class="btn btn-outline-light btn-sm me-3">
-            <i class="bi bi-arrow-left"></i> Regresar
+<!-- NAVBAR -->
+<nav class="navbar navbar-expand-lg">
+    <div class="container-fluid px-4">
+        <a href="{{ url_for('administrativo') }}" class="btn btn-outline-light me-3">
+            <i class="bi bi-arrow-left me-2"></i>Panel Admin
         </a>
 
-        <div class="ms-auto">
-            <span class="navbar-text text-white me-3">
-                <i class="bi bi-person-circle"></i> {{ session['username'] }}
+        <span class="navbar-brand fw-semibold fs-4">
+            <i class="fas fa-file-invoice-dollar me-2" style="color: #667eea;"></i>
+            Cuenta de Pacientes
+        </span>
+
+        <div class="ms-auto d-flex align-items-center">
+            <span class="navbar-text me-4">
+                <i class="bi bi-person-circle me-2" style="color: #667eea;"></i>
+                <span class="fw-medium">{{ session['username'] }}</span>
+                <span class="badge bg-primary ms-2" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;">
+                    {{ session['role']|capitalize }}
+                </span>
             </span>
-            <a href="{{ url_for('logout') }}" class="btn btn-outline-light btn-sm">
-                <i class="bi bi-box-arrow-right"></i> Cerrar sesión
+
+            <a href="{{ url_for('logout') }}" class="btn btn-outline-light">
+                <i class="bi bi-box-arrow-right me-2"></i>Salir
             </a>
         </div>
     </div>
 </nav>
 
-  <div class="container mt-4">
+<!-- CONTENIDO PRINCIPAL -->
+<div class="container">
 
-    <div class="page-header text-center">
-      <h4 class="m-0"><i class="fas fa-file-invoice-dollar"></i> CUENTA DE PACIENTES ACTIVOS</h4>
+    <!-- Título -->
+    <div class="section-title">
+        <i class="fas fa-wallet"></i>
+        Cuentas Activas
     </div>
 
-    <div class="content-card">
-      <div class="row g-2 align-items-center">
-
-        <div class="col-12 col-md-6 text-md-center">
-          <!-- Si luego haces "pagadas", aquí pones el botón -->
-          <!-- <a href="#" class="btn btn-primary">Cuentas Pagadas</a> -->
+    <!-- CARD PRINCIPAL -->
+    <div class="main-card">
+        <div class="card-header-custom">
+            <h4>
+                <i class="fas fa-list"></i>
+                Pacientes con Cuenta Activa
+            </h4>
         </div>
 
-        <div class="col-12 col-md-3 text-md-end">
-          <!-- Si luego haces export excel, aquí pones el botón -->
-          <!-- <a href="#" class="btn btn-success w-100"><i class="fas fa-file-excel"></i> Exportar Excel</a> -->
+        <div class="card-body-custom">
+
+            <!-- BUSCADOR -->
+            <div class="search-container">
+                <div class="row align-items-center">
+                    <div class="col-md-5">
+                        <h6 class="mb-1 fw-bold">
+                            <i class="fas fa-search me-2 text-primary"></i>
+                            Buscar en la tabla
+                        </h6>
+                        <small class="text-muted">Filtra por paciente, expediente, cama, médico, etc.</small>
+                    </div>
+                    <div class="col-md-7">
+                        <input id="search" type="text" class="form-control search-input"
+                               placeholder="🔍 Buscar por nombre, expediente, cama, atención...">
+                    </div>
+                </div>
+            </div>
+
+            <!-- TABLA -->
+            <div class="table-responsive">
+                <table class="table table-hover" id="mytable">
+                    <thead>
+                        <tr>
+                            <th class="text-center">Acciones</th>
+                            <th class="text-center">Exp</th>
+                            <th class="text-center">Atención</th>
+                            <th class="text-center">Cama</th>
+                            <th>Paciente</th>
+                            <th>Médico</th>
+                            <th>Especialidad</th>
+                            <th>Área</th>
+                            <th class="text-end">Subtotal</th>
+                            <th class="text-end">IVA</th>
+                            <th class="text-center">Total</th>
+                            <th class="text-end">Anticipos</th>
+                            <th class="text-center">Ingreso</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for c in cuentas %}
+                        <tr>
+                            <td class="text-center">
+                                <div class="btn-group-action">
+                                    <a class="btn-action btn-view"
+                                       title="Ver Detalle"
+                                       href="{{ url_for('expediente', id_atencion=c.id_atencion, id_exp=c.Id_exp) }}">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+
+                                    <a class="btn-action btn-pdf"
+                                       title="Generar PDF"
+                                       target="_blank"
+                                       href="{{ url_for('cuenta_pdf', id_atencion=c.id_atencion) }}">
+                                        <i class="fas fa-file-pdf"></i>
+                                    </a>
+                                </div>
+                            </td>
+
+                            <td class="text-center fw-bold">{{ c.Id_exp }}</td>
+
+                            <td class="text-center">
+                                <span class="badge-atencion">#{{ c.id_atencion }}</span>
+                            </td>
+
+                            <td class="text-center">
+                                <span class="badge-cama">
+                                    <i class="fas fa-bed me-1"></i>{{ c.num_cama }}
+                                </span>
+                            </td>
+
+                            <td>
+                                <i class="fas fa-user-circle text-primary me-2"></i>
+                                {{ c.paciente }}
+                            </td>
+                            <td>{{ c.medico }}</td>
+                            <td>{{ c.especialidad }}</td>
+                            <td>{{ c.area }}</td>
+
+                            <td class="text-end money-subtotal">${{ '%.2f'|format(c.subtotal) }}</td>
+                            <td class="text-end money-subtotal">${{ '%.2f'|format(c.iva) }}</td>
+
+                            <td class="text-center">
+                                <span class="badge-total">${{ '%.2f'|format(c.total) }}</span>
+                            </td>
+
+                            <td class="text-end money-subtotal">${{ '%.2f'|format(c.anticipos) }}</td>
+
+                            <td class="text-center">
+                                <span class="fecha-badge">
+                                    <i class="far fa-calendar-alt me-1"></i>
+                                    {{ c.fecha_ing|strftime('%d/%m/%Y %H:%M') }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="13" class="text-center py-5">
+                                <i class="fas fa-receipt text-muted" style="font-size: 3rem;"></i>
+                                <p class="text-muted mt-3">No hay cuentas activas (atenciones ABIERTAS).</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Contador -->
+            <div class="records-count">
+                <i class="fas fa-database me-2"></i>
+                Total: {{ cuentas|length }} cuenta(s) activa(s)
+            </div>
+
         </div>
-      </div>
     </div>
 
-    <div class="content-card">
-      <div class="row g-2 align-items-center">
-        <div class="col-12 col-md-5">
-          <h6 class="m-0"><i class="fas fa-search"></i> Buscar en la tabla</h6>
-          <small class="text-muted">Filtra por paciente, expediente, cama, médico, etc.</small>
-        </div>
-        <div class="col-12 col-md-7">
-          <input id="search" type="text" class="form-control"
-                 placeholder="🔍 Buscar por nombre, expediente, cama, atención...">
-        </div>
-      </div>
+    <!-- Footer -->
+    <div class="text-center text-white-50 py-4">
+        <small>
+            <i class="fas fa-shield-alt me-2"></i>
+            INEO v2.0 - Gestión de Cuentas
+        </small>
     </div>
+</div>
 
-    <div class="table-responsive">
-      <table class="table table-striped table-hover mb-0" id="mytable">
-        <thead>
-          <tr>
-            <th><i class="fas fa-cogs"></i> Acciones</th>
-            <th><i class="fas fa-file-medical"></i> Exp</th>
-            <th><i class="fas fa-hashtag"></i> ID Atención</th>
-            <th><i class="fas fa-bed"></i> Cama</th>
-            <th><i class="fas fa-user"></i> Paciente</th>
-            <th><i class="fas fa-user-md"></i> Médico</th>
-            <th><i class="fas fa-stethoscope"></i> Especialidad</th>
-            <th><i class="fas fa-building"></i> Área</th>
-            <th><i class="fas fa-calculator"></i> Subtotal</th>
-            <th><i class="fas fa-percent"></i> IVA</th>
-            <th style="background:linear-gradient(135deg,#27ae60,#2ecc71);color:#fff;">
-              <i class="fas fa-dollar-sign"></i> Total
-            </th>
-            <th><i class="fas fa-money-bill"></i> Anticipos</th>
-            <th><i class="fas fa-calendar"></i> Fecha Ingreso</th>
-          </tr>
-        </thead>
+<!-- Scripts -->
+<script src="{{ url_for('static', filename='js/jquery-3.6.0.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
 
-        <tbody>
-          {% for c in cuentas %}
-          <tr>
-            <td class="text-center">
-              <div class="btn-group">
-                <a class="btn btn-warning btn-sm"
-                   title="Ver Detalle"
-                   href="{{ url_for('expediente', id_atencion=c.id_atencion, id_exp=c.Id_exp) }}">
-                  <i class="fas fa-eye"></i>
-                </a>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const input = document.getElementById("search");
+    const rows = document.querySelectorAll("#mytable tbody tr");
 
-                <a class="btn btn-danger btn-sm"
-                   title="Generar PDF"
-                   target="_blank"
-                   href="{{ url_for('cuenta_pdf', id_atencion=c.id_atencion) }}">
-                  <i class="fas fa-file-pdf"></i>
-                </a>
-              </div>
-            </td>
+    input.addEventListener("keyup", function() {
+        const q = input.value.toLowerCase().trim();
+        let visibleCount = 0;
 
-            <td><strong>{{ c.Id_exp }}</strong></td>
+        rows.forEach(row => {
+            // Ocultar fila de "No hay cuentas"
+            if (row.querySelector('td[colspan]')) return;
 
-            <td class="text-center">
-              <span class="pill-gray">{{ c.id_atencion }}</span>
-            </td>
-
-            <td class="text-center">
-              <span class="pill">{{ c.num_cama }}</span>
-            </td>
-
-            <td><strong>{{ c.paciente }}</strong></td>
-            <td><strong>{{ c.medico }}</strong></td>
-            <td><strong>{{ c.especialidad }}</strong></td>
-            <td><strong>{{ c.area }}</strong></td>
-
-            <td class="text-end"><strong>${{ '%.2f'|format(c.subtotal) }}</strong></td>
-            <td class="text-end"><strong>${{ '%.2f'|format(c.iva) }}</strong></td>
-
-            <td class="text-center">
-              <span class="money-total">${{ '%.2f'|format(c.total) }}</span>
-            </td>
-
-            <td class="text-end"><strong>${{ '%.2f'|format(c.anticipos) }}</strong></td>
-
-            <td><strong>{{ c.fecha_ing|strftime('%d/%m/%Y %H:%M') }}</strong></td>
-          </tr>
-          {% else %}
-          <tr>
-            <td colspan="13" class="text-center text-muted p-4">
-              No hay cuentas activas (atenciones ABIERTAS).
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-
-      </table>
-    </div>
-  </div>
-
-  <script>
-    // filtro tipo tu PHP
-    document.addEventListener("DOMContentLoaded", function() {
-      const input = document.getElementById("search");
-      const rows = document.querySelectorAll("#mytable tbody tr");
-
-      input.addEventListener("keyup", function() {
-        const q = input.value.toLowerCase();
-        rows.forEach(tr => {
-          tr.style.display = tr.innerText.toLowerCase().includes(q) ? "" : "none";
+            const text = row.innerText.toLowerCase();
+            const isVisible = text.includes(q);
+            row.style.display = isVisible ? "" : "none";
+            if (isVisible) visibleCount++;
         });
-      });
+
+        console.log(`Registros visibles: ${visibleCount}`);
     });
-  </script>
+});
+</script>
 
 </body>
 </html>

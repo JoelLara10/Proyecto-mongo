@@ -3,35 +3,119 @@
 {% block content %}
 
 <section class="content-header">
-  <h1 class="text-primary">
-    <i class="fas fa-user-injured"></i> Detalle del Paciente
-  </h1>
+  <div class="container-fluid">
+    <div class="row mb-3">
+      <div class="col-12">
+        <div class="page-header" style="background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border-radius: 15px; padding: 1.5rem;">
+          <h1 class="text-white">
+            <i class="fas fa-user-injured me-3"></i>
+            Detalle del Paciente
+          </h1>
+        </div>
+      </div>
+    </div>
+  </div>
 </section>
 
 <section class="content">
+  <div class="container-fluid">
 
-  <div class="card card-primary card-outline">
-    <div class="card-body">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card" style="background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border-radius: 20px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+          <div class="card-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 20px 20px 0 0; border: none; padding: 1rem 1.5rem;">
+            <h5 class="mb-0 text-white">
+              <i class="fas fa-id-card me-2"></i>
+              Información del Paciente
+            </h5>
+          </div>
 
-      <div class="row">
-        <div class="col-md-6">
-          <p><strong>Expediente:</strong> {{ paciente.Id_exp }}</p>
-          <p><strong>Nombre:</strong>
-            {{ paciente.papell }} {{ paciente.sapell }} {{ paciente.nom_pac }}
-          </p>
-          <p><strong>Diagnóstico:</strong> {{ diagnostico }}</p>
-        </div>
+          <div class="card-body p-4">
+            <div class="row">
+              <!-- Columna izquierda -->
+              <div class="col-md-6">
+                <div class="d-flex align-items-center mb-4">
+                  <div style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; margin-right: 20px;">
+                    <i class="fas fa-user text-white" style="font-size: 2.5rem;"></i>
+                  </div>
+                  <div>
+                    <h4 class="fw-bold" style="color: #2d3748;">{{ paciente.papell }} {{ paciente.sapell }} {{ paciente.nom_pac }}</h4>
+                    <span class="badge" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 0.5rem 1rem;">Expediente: {{ paciente.Id_exp }}</span>
+                  </div>
+                </div>
 
-        <div class="col-md-6">
-          <p><strong>Edad:</strong> {{ paciente.edad }} años</p>
-          <p><strong>Fecha ingreso:</strong> {{ paciente.fecha }}</p>
-          <p><strong>Cama:</strong> {{ cama.num_cama }} {{ cama.tipo }}</p>
+                <div class="info-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
+                  <div class="info-item p-3 rounded" style="background: #f7fafc;">
+                    <small class="text-muted d-block">Edad</small>
+                    <strong class="fs-5">{{ paciente.edad }} años</strong>
+                  </div>
+                  <div class="info-item p-3 rounded" style="background: #f7fafc;">
+                    <small class="text-muted d-block">Fecha ingreso</small>
+                    <strong class="fs-5">{{ paciente.fecha }}</strong>
+                  </div>
+                  <div class="info-item p-3 rounded" style="background: #f7fafc;">
+                    <small class="text-muted d-block">Cama</small>
+                    <strong class="fs-5">{{ cama.num_cama }} - {{ cama.tipo }}</strong>
+                  </div>
+                  <div class="info-item p-3 rounded" style="background: #f7fafc;">
+                    <small class="text-muted d-block">Diagnóstico</small>
+                    <strong class="fs-5">{{ diagnostico or 'Pendiente' }}</strong>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Columna derecha - Acciones rápidas -->
+              <div class="col-md-6">
+                <div class="card" style="border: 1px solid #e2e8f0; border-radius: 15px;">
+                  <div class="card-header" style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                    <h6 class="mb-0 fw-bold">
+                      <i class="fas fa-bolt me-2 text-primary"></i>
+                      Acciones rápidas
+                    </h6>
+                  </div>
+                  <div class="card-body">
+                    <div class="row g-2">
+                      <div class="col-6">
+                        <a href="{{ url_for('signos_vitales', id_atencion=id_atencion) }}" class="btn btn-outline-primary w-100">
+                          <i class="fas fa-heartbeat me-2"></i>Signos
+                        </a>
+                      </div>
+                      <div class="col-6">
+                        <a href="{{ url_for('nota_medica', id_atencion=id_atencion) }}" class="btn btn-outline-success w-100">
+                          <i class="fas fa-notes-medical me-2"></i>Nota
+                        </a>
+                      </div>
+                      <div class="col-6">
+                        <a href="{{ url_for('diagnostico', id_atencion=id_atencion) }}" class="btn btn-outline-warning w-100">
+                          <i class="fas fa-clipboard-list me-2"></i>Diagnóstico
+                        </a>
+                      </div>
+                      <div class="col-6">
+                        <a href="{{ url_for('receta_medica', id_atencion=id_atencion) }}" class="btn btn-outline-info w-100">
+                          <i class="fas fa-prescription-bottle-alt me-2"></i>Receta
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-
     </div>
-  </div>
 
+  </div>
 </section>
+
+<style>
+  .info-item {
+    transition: all 0.3s ease;
+  }
+  .info-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  }
+</style>
 
 {% endblock %}

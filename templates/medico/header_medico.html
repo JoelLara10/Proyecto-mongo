@@ -5,37 +5,147 @@
   <title>INEO | Módulo Médico</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <!-- Bootstrap 4 -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+  <!-- Bootstrap 5 -->
+  <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet">
 
-  <!-- AdminLTE -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
+  <!-- Bootstrap Icons -->
+  <link href="{{ url_for('static', filename='css/bootstrap-icons.css') }}" rel="stylesheet">
 
   <!-- Font Awesome -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/all.min.css') }}">
+
+  <!-- Google Fonts - Inter -->
+  <link href="{{ url_for('static', filename='css/fonts.css') }}" rel="stylesheet">
+
+  <!-- AdminLTE (opcional, lo dejamos por si lo necesitas) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
 
   <style>
+    * {
+      font-family: 'Inter', sans-serif;
+    }
+
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+    }
+
+    /* Sidebar mejorado */
     .main-sidebar {
-      background-color: #1e3c72;
+      background: rgba(30, 60, 114, 0.95);
+      backdrop-filter: blur(10px);
+      border-right: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 4px 0 30px rgba(0, 0, 0, 0.2);
     }
-    .nav-sidebar .nav-link,
+
+    .brand-link {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 1rem !important;
+    }
+
     .brand-text {
-      color: #fff !important;
+      color: white !important;
+      font-weight: 700;
+      font-size: 1.5rem;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
     }
+
+    .nav-sidebar .nav-link {
+      color: rgba(255, 255, 255, 0.8) !important;
+      padding: 0.8rem 1rem;
+      margin: 0.2rem 0.5rem;
+      border-radius: 12px;
+      transition: all 0.3s ease;
+    }
+
+    .nav-sidebar .nav-link:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: white !important;
+      transform: translateX(5px);
+    }
+
     .nav-sidebar .nav-link.active {
-      background-color: #16325c;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white !important;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
     }
+
+    .nav-sidebar .nav-link i {
+      margin-right: 0.8rem;
+      font-size: 1.1rem;
+    }
+
+    .nav-treeview {
+      padding-left: 1rem;
+    }
+
+    .nav-treeview .nav-link {
+      padding-left: 2rem;
+      font-size: 0.9rem;
+    }
+
+    /* Navbar superior */
     .navbar {
-      background-color: #1e3c72;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+      padding: 0.8rem 1rem;
+    }
+
+    .navbar-nav .nav-link {
+      color: #2d3748 !important;
+      font-weight: 500;
+    }
+
+    .navbar-nav .nav-link:hover {
+      color: #667eea !important;
+    }
+
+    .dropdown-menu {
+      border: none;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+    }
+
+    .dropdown-item {
+      border-radius: 8px;
+      padding: 0.5rem 1rem;
+      transition: all 0.3s ease;
+    }
+
+    .dropdown-item:hover {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white !important;
+    }
+
+    /* Content wrapper */
+    .content-wrapper {
+      background: transparent;
+      min-height: calc(100vh - 57px);
+      padding: 20px;
+    }
+
+    /* Animaciones */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .content-wrapper {
+      animation: fadeIn 0.5s ease forwards;
     }
   </style>
 </head>
 
-<body class="hold-transition sidebar-mini">
+<body class="hold-transition sidebar-mini layout-fixed">
 <div class="wrapper">
 
-  <!-- NAVBAR -->
-  <nav class="main-header navbar navbar-expand navbar-dark">
+  <!-- NAVBAR SUPERIOR -->
+  <nav class="main-header navbar navbar-expand">
     <ul class="navbar-nav">
       <li class="nav-item">
         <a class="nav-link" data-widget="pushmenu" href="#">
@@ -47,139 +157,146 @@
     <ul class="navbar-nav ml-auto">
       <li class="nav-item dropdown">
         <a class="nav-link" data-toggle="dropdown" href="#">
-          <i class="fas fa-user-md"></i> MÉDICO
+          <i class="fas fa-user-circle me-1" style="color: #667eea;"></i>
+          <span class="fw-medium">{{ session['username'] }}</span>
+          <span class="badge ms-2" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+            MÉDICO
+          </span>
         </a>
         <div class="dropdown-menu dropdown-menu-right">
           <a href="{{ url_for('logout') }}" class="dropdown-item text-danger">
-            <i class="fas fa-sign-out-alt"></i> Cerrar sesión
+            <i class="fas fa-sign-out-alt me-2"></i> Cerrar sesión
           </a>
         </div>
       </li>
     </ul>
   </nav>
 
-  <!-- SIDEBAR -->
-  <aside class="main-sidebar sidebar-dark-primary elevation-4">
+  <!-- SIDEBAR MEJORADO -->
+  <aside class="main-sidebar sidebar-dark-primary elevation-4 main-sidebar">
 
-    <a href="{{ url_for('dashboard') }}" class="brand-link text-center">
+    <a href="{{ url_for('dashboard') }}" class="brand-link">
       <span class="brand-text font-weight-bold">INEO</span>
+      <span class="brand-text font-weight-light float-right">v2.0</span>
     </a>
 
     <div class="sidebar">
-      <nav class="mt-3">
-        <ul class="nav nav-pills nav-sidebar flex-column"
-    data-widget="treeview"
-    role="menu"
-    data-accordion="false">
+      <div class="user-panel mt-3 pb-3 mb-3 d-flex">
+        <div class="info">
+          <a href="#" class="d-block text-white">
+            <i class="fas fa-user-md me-2"></i>
+            Dr. {{ session['username'] }}
+          </a>
+        </div>
+      </div>
 
+      <nav class="mt-2">
+        <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu">
 
+          <!-- Panel Principal -->
           <li class="nav-item">
-            <a href="{{ url_for('dashboard') }}" class="nav-link">
+            <a href="{{ url_for('dashboard') }}" class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}">
               <i class="nav-icon fas fa-tachometer-alt"></i>
               <p>Panel Médico</p>
             </a>
           </li>
 
+          <!-- Historia Clínica (solo si hay paciente seleccionado) -->
+          {% if id_atencion is defined and paciente is defined %}
+          <li class="nav-item">
+            <a href="{{ url_for('historia_clinica', id_atencion=id_atencion, id_exp=paciente.Id_exp) }}"
+               class="nav-link {% if request.endpoint == 'historia_clinica' %}active{% endif %}">
+              <i class="nav-icon fas fa-notes-medical"></i>
+              <p>Historia Clínica</p>
+            </a>
+          </li>
+          {% endif %}
+
+          <!-- Imprimir Documentos -->
           {% if id_atencion is defined %}
-<li class="nav-item">
-  <a href="{{ url_for(
-        'historia_clinica',
-        id_atencion=id_atencion,
-        id_exp=paciente.Id_exp
-      ) }}"
-     class="nav-link {% if request.endpoint == 'historia_clinica' %}active{% endif %}">
-    <i class="nav-icon fas fa-notes-medical"></i>
-    <p>Historia Clínica</p>
-  </a>
-</li>
           <li class="nav-item">
-  <a href="{{ url_for('imprimir_documentos', id_atencion=id_atencion) }}"
-     class="nav-link {% if request.endpoint == 'imprimir_documentos' %}active{% endif %}">
-    <i class="nav-icon fas fa-print"></i>
-    <p>Imprimir documentos</p>
-  </a>
-</li>
+            <a href="{{ url_for('imprimir_documentos', id_atencion=id_atencion) }}"
+               class="nav-link {% if request.endpoint == 'imprimir_documentos' %}active{% endif %}">
+              <i class="nav-icon fas fa-print"></i>
+              <p>Imprimir documentos</p>
+            </a>
+          </li>
+          {% endif %}
 
-
-
-{% endif %}
-
-
-
-
+          <!-- Notas Médicas (Dropdown) -->
           <li class="nav-item has-treeview {% if request.endpoint in ['signos_vitales', 'nota_medica', 'diagnostico', 'receta_medica', 'examenes_laboratorio', 'examenes_gabinete'] %}menu-open{% endif %}">
-  <a href="#" class="nav-link {% if request.endpoint in ['signos_vitales', 'nota_medica', 'diagnostico', 'receta_medica', 'examenes_laboratorio', 'examenes_gabinete'] %}active{% endif %}">
-    <i class="nav-icon fas fa-file-medical"></i>
-    <p>
-      Notas Médicas
-      <i class="right fas fa-angle-left"></i>
-    </p>
-  </a>
+            <a href="#" class="nav-link {% if request.endpoint in ['signos_vitales', 'nota_medica', 'diagnostico', 'receta_medica', 'examenes_laboratorio', 'examenes_gabinete'] %}active{% endif %}">
+              <i class="nav-icon fas fa-file-medical"></i>
+              <p>
+                Notas Médicas
+                <i class="right fas fa-angle-left"></i>
+              </p>
+            </a>
 
-  <ul class="nav nav-treeview">
+            <ul class="nav nav-treeview">
+              <li class="nav-item">
+                <a href="{{ url_for('signos_vitales', id_atencion=id_atencion) }}"
+                   class="nav-link {% if request.endpoint == 'signos_vitales' %}active{% endif %}">
+                  <i class="nav-icon fas fa-heartbeat"></i>
+                  <p>Signos vitales</p>
+                </a>
+              </li>
 
-    <li class="nav-item">
-      <a href="{{ url_for('signos_vitales', id_atencion=id_atencion) }}"
-         class="nav-link {% if request.endpoint == 'signos_vitales' %}active{% endif %}">
-        <i class="nav-icon fas fa-heartbeat"></i>
-        <p>Signos vitales</p>
-      </a>
-    </li>
+              <li class="nav-item">
+                <a href="{{ url_for('nota_medica', id_atencion=id_atencion) }}"
+                   class="nav-link {% if request.endpoint == 'nota_medica' %}active{% endif %}">
+                  <i class="nav-icon fas fa-notes-medical"></i>
+                  <p>Nota médica (SOAP)</p>
+                </a>
+              </li>
 
-    <li class="nav-item">
-      <a href="{{ url_for('nota_medica', id_atencion=id_atencion) }}"
-         class="nav-link {% if request.endpoint == 'nota_medica' %}active{% endif %}">
-        <i class="nav-icon fas fa-notes-medical"></i>
-        <p>Nota médica (SOAP)</p>
-      </a>
-    </li>
+              <li class="nav-item">
+                <a href="{{ url_for('diagnostico', id_atencion=id_atencion) }}"
+                   class="nav-link {% if request.endpoint == 'diagnostico' %}active{% endif %}">
+                  <i class="nav-icon fas fa-clipboard-list"></i>
+                  <p>Diagnóstico</p>
+                </a>
+              </li>
 
-    <li class="nav-item">
-      <a href="{{ url_for('diagnostico', id_atencion=id_atencion) }}"
-         class="nav-link {% if request.endpoint == 'diagnostico' %}active{% endif %}">
-        <i class="nav-icon fas fa-clipboard-list text-warning"></i>
-        <p>Diagnóstico</p>
-      </a>
-    </li>
+              <li class="nav-item">
+                <a href="{{ url_for('receta_medica', id_atencion=id_atencion) }}"
+                   class="nav-link {% if request.endpoint == 'receta_medica' %}active{% endif %}">
+                  <i class="nav-icon fas fa-prescription-bottle-alt"></i>
+                  <p>Receta</p>
+                </a>
+              </li>
 
-    <li class="nav-item">
-      <a href="{{ url_for('receta_medica', id_atencion=id_atencion) }}"
-         class="nav-link {% if request.endpoint == 'receta_medica' %}active{% endif %}">
-        <i class="nav-icon fas fa-prescription-bottle-alt"></i>
-        <p>Receta</p>
-      </a>
-    </li>
+              <li class="nav-item">
+                <a href="{{ url_for('examenes_laboratorio', id_atencion=id_atencion) }}"
+                   class="nav-link {% if request.endpoint == 'examenes_laboratorio' %}active{% endif %}">
+                  <i class="nav-icon fas fa-vials"></i>
+                  <p>Exámenes de Laboratorio</p>
+                </a>
+              </li>
 
-    <li class="nav-item">
-      <a href="{{ url_for('examenes_laboratorio', id_atencion=id_atencion) }}"
-         class="nav-link {% if request.endpoint == 'examenes_laboratorio' %}active{% endif %}">
-        <i class="nav-icon fas fa-vials"></i>
-        <p>Exámenes de Laboratorio</p>
-      </a>
-    </li>
+              <li class="nav-item">
+                <a href="{{ url_for('examenes_gabinete', id_atencion=id_atencion) }}"
+                   class="nav-link {% if request.endpoint == 'examenes_gabinete' %}active{% endif %}">
+                  <i class="nav-icon fas fa-x-ray"></i>
+                  <p>Exámenes de Gabinete</p>
+                </a>
+              </li>
+            </ul>
+          </li>
 
-    <li class="nav-item">
-      <a href="{{ url_for('examenes_gabinete', id_atencion=id_atencion) }}"
-         class="nav-link {% if request.endpoint == 'examenes_gabinete' %}active{% endif %}">
-        <i class="nav-icon fas fa-x-ray"></i>
-        <p>Exámenes de Gabinete</p>
-      </a>
-    </li>
-
-  </ul>
-</li>
-
-
-<li class="nav-item">
-  <a href="{{ url_for('resultados_estudios', id_atencion=id_atencion) }}"
-     class="nav-link {% if request.endpoint == 'resultados_estudios' %}active{% endif %}">
-    <i class="nav-icon fas fa-file-medical-alt text-info"></i>
-    <p>Resultados de Estudios</p>
-  </a>
-</li>
-
-
+          <!-- Resultados de Estudios -->
+          {% if id_atencion is defined %}
           <li class="nav-item">
+            <a href="{{ url_for('resultados_estudios', id_atencion=id_atencion) }}"
+               class="nav-link {% if request.endpoint == 'resultados_estudios' %}active{% endif %}">
+              <i class="nav-icon fas fa-file-medical-alt"></i>
+              <p>Resultados de Estudios</p>
+            </a>
+          </li>
+          {% endif %}
+
+          <!-- Cerrar sesión -->
+          <li class="nav-item mt-4">
             <a href="{{ url_for('logout') }}" class="nav-link text-danger">
               <i class="nav-icon fas fa-sign-out-alt"></i>
               <p>Cerrar sesión</p>
@@ -193,16 +310,14 @@
 
   <!-- CONTENT WRAPPER -->
   <div class="content-wrapper">
-
     {% block content %}{% endblock %}
-
   </div>
 
 </div>
 
-<!-- JS -->
-<script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Scripts -->
+<script src="{{ url_for('static', filename='js/jquery-3.6.0.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
 <script src="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/js/adminlte.min.js"></script>
 
 </body>

@@ -5,19 +5,16 @@
     <title>Dashboard - INEO</title>
 
     <!-- Bootstrap 5 -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet">
 
     <!-- Bootstrap Icons -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/bootstrap-icons.css') }}" rel="stylesheet">
 
-    <!-- Font Awesome (para más variedad de iconos) -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/all.min.css') }}">
 
-    <!-- Toastr -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet">
-
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- Google Fonts - Inter -->
+    <link href="{{ url_for('static', filename='css/fonts.css') }}" rel="stylesheet">
 
     <style>
         * {
@@ -101,6 +98,204 @@
             font-size: 0.85rem;
             font-weight: 500;
         }
+
+        /* =========================
+   TOASTR – DISEÑO COMPACTO Y ÉPICO
+   ========================= */
+
+#toast-container {
+    position: fixed !important;
+    top: 1rem !important;
+    right: 1rem !important;
+    z-index: 99999 !important;
+}
+
+/* Toast base compacto */
+#toast-container > .toast {
+    border-radius: 12px !important;
+    padding: 12px 14px 12px 42px !important;
+    box-shadow:
+        0 10px 25px -8px rgba(0, 0, 0, 0.3),
+        0 0 0 1px rgba(255, 255, 255, 0.1) inset !important;
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+    font-size: 0.85rem;
+    line-height: 1.3;
+    background: rgba(30, 30, 40, 0.95) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    color: #fff !important;
+    opacity: 1 !important;
+    min-width: 280px;
+    max-width: 320px;
+    animation: toastSlideIn 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.2) forwards !important;
+    position: relative;
+    overflow: hidden;
+    letter-spacing: 0.2px;
+}
+
+/* Animación de entrada rápida */
+@keyframes toastSlideIn {
+    0% {
+        opacity: 0;
+        transform: translateX(30px) scale(0.9);
+    }
+    100% {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+}
+
+/* Título compacto */
+#toast-container .toast-title {
+    font-weight: 700;
+    font-size: 0.9rem;
+    margin-bottom: 3px;
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Mensaje compacto */
+#toast-container .toast-message {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 400;
+    line-height: 1.3;
+}
+
+#toast-container .toast-message b {
+    font-size: 1rem;
+    color: #fff;
+    font-weight: 700;
+    background: rgba(255,255,255,0.15);
+    padding: 1px 5px;
+    border-radius: 6px;
+    margin: 0 2px;
+}
+
+/* Botón cerrar compacto */
+#toast-container .toast-close-button {
+    color: rgba(255,255,255,0.6);
+    font-size: 1.1rem;
+    right: 8px;
+    top: 6px;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.7;
+    transition: all 0.2s ease;
+    text-shadow: none;
+    font-weight: 300;
+    line-height: 1;
+}
+
+#toast-container .toast-close-button:hover {
+    opacity: 1;
+    color: #fff;
+    transform: scale(1.1);
+}
+
+/* Barra de progreso delgada */
+.toast-progress {
+    height: 2px;
+    border-radius: 0 0 12px 12px;
+    opacity: 0.8;
+    background: linear-gradient(90deg, #667eea, #764ba2) !important;
+}
+
+/* =========================
+   TIPOS DE TOAST – VERSIÓN COMPACTA
+   ========================= */
+
+/* Iconos pequeños */
+#toast-container > .toast::before {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1.2rem;
+    filter: drop-shadow(0 2px 3px rgba(0,0,0,0.3));
+}
+
+/* INFO */
+.toast-info {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+    border-left: none !important;
+}
+
+/* WARNING (pendientes) */
+.toast-warning {
+    background: linear-gradient(135deg, #ea580c, #c2410c) !important;
+    border-left: none !important;
+}
+.toast-warning::before {
+    content: "⚠️";
+}
+
+/* SUCCESS */
+.toast-success {
+    background: linear-gradient(135deg, #16a34a, #15803d) !important;
+    border-left: none !important;
+}
+
+/* ERROR */
+.toast-error {
+    background: linear-gradient(135deg, #dc2626, #b91c1c) !important;
+    border-left: none !important;
+}
+
+/* Mini estadísticas integradas */
+.toast-stats-mini {
+    display: flex;
+    gap: 8px;
+    margin-top: 6px;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 4px 8px;
+    border-radius: 20px;
+    font-size: 0.7rem;
+}
+
+.toast-stat-mini {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    color: rgba(255,255,255,0.9);
+}
+
+.toast-stat-mini i {
+    font-size: 0.7rem;
+}
+
+.toast-stat-mini span {
+    font-weight: 600;
+}
+
+/* Efecto hover sutil */
+#toast-container > .toast:hover {
+    transform: translateY(-2px) scale(1.02) !important;
+    filter: brightness(1.1);
+    transition: all 0.2s ease;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    #toast-container {
+        top: 0.5rem !important;
+        right: 0.5rem !important;
+        left: 0.5rem !important;
+    }
+
+    #toast-container > .toast {
+        min-width: auto;
+        width: 100%;
+        padding: 10px 12px 10px 38px !important;
+    }
+}
 
         .menu-card {
             background: rgba(255, 255, 255, 0.95);
@@ -194,6 +389,173 @@
             50% { transform: scale(1.05); }
             100% { transform: scale(1); }
         }
+
+        /* Tarjetas de información */
+        .info-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: none;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            margin-top: 2rem;
+            height: 100%;
+        }
+
+        .info-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 1rem 1.5rem;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .info-header h5 {
+            margin: 0;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .info-header i {
+            margin-right: 0.5rem;
+        }
+
+        .info-body {
+            padding: 1.2rem;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .log-item {
+            display: flex;
+            align-items: center;
+            padding: 0.8rem;
+            border-bottom: 1px solid #e2e8f0;
+            transition: all 0.2s ease;
+        }
+
+        .log-item:last-child {
+            border-bottom: none;
+        }
+
+        .log-item:hover {
+            background: rgba(102, 126, 234, 0.1);
+            transform: translateX(5px);
+            border-radius: 10px;
+        }
+
+        .log-avatar {
+            width: 35px;
+            height: 35px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            margin-right: 1rem;
+        }
+
+        .log-content {
+            flex: 1;
+        }
+
+        .log-user {
+            font-weight: 600;
+            color: #2d3748;
+            font-size: 0.85rem;
+        }
+
+        .log-action {
+            color: #718096;
+            font-size: 0.75rem;
+            margin-top: 0.2rem;
+        }
+
+        .log-time {
+            color: #a0aec0;
+            font-size: 0.7rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .log-time i {
+            margin-right: 0.3rem;
+            font-size: 0.7rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .stat-box {
+            background: #f7fafc;
+            border-radius: 12px;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .stat-label {
+            color: #718096;
+            font-size: 0.8rem;
+            margin-top: 0.3rem;
+        }
+
+        .alert-pendiente {
+            background: #fff3cd;
+            border: 1px solid #ffeeba;
+            border-radius: 12px;
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .alert-pendiente i {
+            font-size: 1.5rem;
+            color: #e53e3e;
+        }
+
+        .btn-view {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+        .btn-view:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+
+        .section-divider {
+            margin: 2rem 0 1rem;
+            color: white;
+            font-weight: 600;
+            font-size: 1.1rem;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .section-divider i {
+            margin-right: 0.5rem;
+        }
     </style>
 </head>
 <body>
@@ -206,13 +568,13 @@
         </span>
 
         <div class="ms-auto d-flex align-items-center">
-            <div class="me-3 text-end">
-                <span class="navbar-text d-block fw-semibold">
-                    <i class="fas fa-user-circle me-1" style="color: #667eea;"></i>
-                    {{ session['username'] }}
+            <span class="navbar-text me-4">
+                <i class="bi bi-person-circle me-2" style="color: #667eea;"></i>
+                <span class="fw-medium">{{ session['username'] }}</span>
+                <span class="badge bg-primary ms-2" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;">
+                    {{ session['role']|capitalize }}
                 </span>
-                <small class="text-muted" style="font-size: 0.7rem;">{{ role|capitalize }}</small>
-            </div>
+            </span>
             <a href="{{ url_for('logout') }}" class="btn btn-outline-light">
                 <i class="fas fa-sign-out-alt me-1"></i>Salir
             </a>
@@ -245,14 +607,14 @@
             </div>
         </div>
 
-        <!-- TARJETAS DEL MENÚ CON ICONOS ÚNICOS -->
+        <!-- TARJETAS DEL MENÚ PRINCIPAL -->
         <div class="row g-3">
             {% for option in menu_options %}
             <div class="col-xl-4 col-md-6">
                 <div class="menu-card">
                     <div class="card-body">
 
-                        <!-- Badge de notificaciones -->
+                        <!-- Badge de notificaciones para Estudios -->
                         {% if option.name == 'Estudios' %}
                         <span id="pendientes-badge"
                               class="badge-notification"
@@ -261,95 +623,41 @@
                         </span>
                         {% endif %}
 
-                        <!-- Iconos únicos para cada módulo -->
+                        <!-- Iconos -->
                         <div class="icon-wrapper">
                             {% if option.name == 'Estudios' %}
-                                <i class="fas fa-microscope"></i> <!-- Microscopio para estudios -->
+                                <i class="fas fa-microscope"></i>
                             {% elif option.name == 'Pacientes' %}
-                                <i class="fas fa-wheelchair"></i> <!-- Silla de ruedas para pacientes -->
+                                <i class="fas fa-wheelchair"></i>
                             {% elif option.name == 'Citas' %}
-                                <i class="far fa-calendar-check"></i> <!-- Calendario con check -->
+                                <i class="far fa-calendar-check"></i>
                             {% elif option.name == 'Facturación' %}
-                                <i class="fas fa-file-invoice-dollar"></i> <!-- Factura con dólar -->
+                                <i class="fas fa-file-invoice-dollar"></i>
                             {% elif option.name == 'Inventario' %}
-                                <i class="fas fa-pills"></i> <!-- Pastillas/medicamentos -->
+                                <i class="fas fa-pills"></i>
                             {% elif option.name == 'Reportes' %}
-                                <i class="fas fa-chart-line"></i> <!-- Gráfico lineal -->
-                            {% elif option.name == 'Usuarios' or option.name == 'Personal' %}
-                                <i class="fas fa-user-md"></i> <!-- Médico -->
+                                <i class="fas fa-chart-line"></i>
+                            {% elif option.name == 'Personal' or option.name == 'Usuarios' %}
+                                <i class="fas fa-user-md"></i>
                             {% elif option.name == 'Camas' %}
-                                <i class="fas fa-bed"></i> <!-- Cama -->
+                                <i class="fas fa-bed"></i>
                             {% elif option.name == 'Diagnósticos' %}
-                                <i class="fas fa-stethoscope"></i> <!-- Estetoscopio -->
+                                <i class="fas fa-stethoscope"></i>
                             {% elif option.name == 'Servicios' %}
-                                <i class="fas fa-concierge-bell"></i> <!-- Campana de servicio -->
+                                <i class="fas fa-concierge-bell"></i>
                             {% elif option.name == 'Copias de Seguridad' %}
-                                <i class="fas fa-database"></i> <!-- Base de datos -->
+                                <i class="fas fa-database"></i>
                             {% elif option.name == 'Configuración' %}
-                                <i class="fas fa-cogs"></i> <!-- Engranes -->
-                            {% elif option.name == 'Laboratorio' %}
-                                <i class="fas fa-flask"></i> <!-- Matraz -->
-                            {% elif option.name == 'Gabinete' %}
-                                <i class="fas fa-x-ray"></i> <!-- Rayos X -->
-                            {% elif option.name == 'Medicamentos' %}
-                                <i class="fas fa-capsules"></i> <!-- Cápsulas -->
-                            {% elif option.name == 'Quirófano' %}
-                                <i class="fas fa-procedures"></i> <!-- Procedimiento -->
-                            {% elif option.name == 'Emergencias' %}
-                                <i class="fas fa-ambulance"></i> <!-- Ambulancia -->
-                            {% elif option.name == 'Enfermería' %}
-                                <i class="fas fa-hand-holding-heart"></i> <!-- Mano con corazón -->
-                            {% elif option.name == 'Administración' %}
-                                <i class="fas fa-chart-pie"></i> <!-- Gráfico circular -->
+                                <i class="fas fa-cogs"></i>
+                            {% elif option.name == 'Rendimiento' %}
+                                <i class="fas fa-chart-line"></i>
                             {% else %}
-                                <i class="fas fa-cube"></i> <!-- Cubo genérico -->
+                                <i class="fas fa-cube"></i>
                             {% endif %}
                         </div>
 
                         <h5 class="card-title">{{ option.name }}</h5>
-                        <p class="card-description">
-                            {% if option.name == 'Estudios' %}
-                                Laboratorio y gabinete
-                            {% elif option.name == 'Pacientes' %}
-                                Registro y expedientes
-                            {% elif option.name == 'Citas' %}
-                                Programación médica
-                            {% elif option.name == 'Facturación' %}
-                                Pagos y facturas
-                            {% elif option.name == 'Inventario' %}
-                                Insumos y medicamentos
-                            {% elif option.name == 'Reportes' %}
-                                Estadísticas y gráficos
-                            {% elif option.name == 'Usuarios' or option.name == 'Personal' %}
-                                Gestión de personal
-                            {% elif option.name == 'Camas' %}
-                                Disponibilidad hospitalaria
-                            {% elif option.name == 'Diagnósticos' %}
-                                Catálogo CIE-10
-                            {% elif option.name == 'Servicios' %}
-                                Procedimientos médicos
-                            {% elif option.name == 'Copias de Seguridad' %}
-                                Respaldo de datos
-                            {% elif option.name == 'Configuración' %}
-                                Ajustes del sistema
-                            {% elif option.name == 'Laboratorio' %}
-                                Análisis clínicos
-                            {% elif option.name == 'Gabinete' %}
-                                Imagenología
-                            {% elif option.name == 'Medicamentos' %}
-                                Farmacia
-                            {% elif option.name == 'Quirófano' %}
-                                Cirugías
-                            {% elif option.name == 'Emergencias' %}
-                                Urgencias
-                            {% elif option.name == 'Enfermería' %}
-                                Cuidados
-                            {% elif option.name == 'Administración' %}
-                                Gestión
-                            {% else %}
-                                Módulo {{ option.name }}
-                            {% endif %}
-                        </p>
+                        <p class="card-description">{{ option.description }}</p>
 
                         <a href="{{ option.url }}" class="btn-access text-decoration-none">
                             <i class="fas fa-arrow-right me-1"></i>
@@ -365,9 +673,9 @@
 </div>
 
 <!-- SCRIPTS -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+<script src="{{ url_for('static', filename='js/jquery-3.6.0.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/toastr.min.js') }}"></script>
 
 <script>
     // Fecha en español
@@ -378,14 +686,21 @@
             fecha.toLocaleDateString('es-ES', opciones);
     });
 
-    // Configuración de Toastr
+    // Configuración de Toastr para que aparezca en la esquina superior derecha
     toastr.options = {
-        closeButton: true,
-        progressBar: true,
-        positionClass: "toast-top-right",
-        timeOut: 5000,
-        showMethod: 'slideDown',
-        hideMethod: 'slideUp'
+        closeButton: true,           // Mostrar botón de cerrar
+        progressBar: true,           // Barra de progreso
+        positionClass: "toast-top-right", // Posición: superior derecha
+        timeOut: 5000,                // Duración: 5 segundos
+        extendedTimeOut: 1000,        // Tiempo extendido al pasar el mouse
+        showMethod: 'fadeIn',         // Animación de entrada
+        hideMethod: 'fadeOut',        // Animación de salida
+        preventDuplicates: true,      // Evitar duplicados
+        newestOnTop: true,            // Más nuevos arriba
+        showEasing: 'swing',
+        hideEasing: 'linear',
+        showDuration: 300,
+        hideDuration: 300
     };
 
     $(document).ready(function() {
@@ -395,49 +710,175 @@
             total: {{ total_pendientes }}
         };
         let ultimaNotificacionPendientes = Date.now();
-        const INTERVALO_PENDIENTES = 30000;
-        const COOLDOWN_NOTIFICACION = 300000;
+        const INTERVALO_PENDIENTES = 3000; // 30 segundos
+        const COOLDOWN_NOTIFICACION = 60000; // 1 minuto (para no spamear)
+
+        // Mostrar notificación inicial si hay pendientes
+        if (ultimosPendientes.total > 0) {
+            setTimeout(() => {
+                mostrarNotificacion(ultimosPendientes.lab, ultimosPendientes.gab, ultimosPendientes.total);
+            }, 2000); // Mostrar después de 2 segundos
+        }
 
         function mostrarNotificacion(lab, gab, total) {
-            let message = `${total} solicitud(es) pendiente(s)`;
-            if (lab > 0 && gab > 0) {
-                message = `${lab} Lab · ${gab} Gab pendientes`;
-            } else if (lab > 0) {
-                message = `${lab} de Laboratorio pendientes`;
-            } else if (gab > 0) {
-                message = `${gab} de Gabinete pendientes`;
-            }
-            toastr.warning(message, "📋 Pendientes");
-        }
+    let titulo = "";
+    let icono = "";
+
+    if (lab > 0 && gab > 0) {
+        titulo = `🔬📊 ${total} estudios pendientes`;
+        icono = "⚡";
+    } else if (lab > 0) {
+        titulo = `🔬 ${lab} ${lab === 1 ? 'estudio' : 'estudios'} de laboratorio`;
+        icono = lab > 3 ? "🔥" : "📋";
+    } else if (gab > 0) {
+        titulo = `📊 ${gab} ${gab === 1 ? 'estudio' : 'estudios'} de gabinete`;
+        icono = gab > 3 ? "⚡" : "📋";
+    }
+
+    // Crear mini estadísticas
+    let statsHtml = `
+        <div class="toast-stats-mini">
+            <div class="toast-stat-mini">
+                <i class="fas fa-flask"></i>
+                <span>${lab}</span>
+            </div>
+            <div class="toast-stat-mini">
+                <i class="fas fa-x-ray"></i>
+                <span>${gab}</span>
+            </div>
+            <div class="toast-stat-mini">
+                <i class="fas fa-clipboard-list"></i>
+                <span>${total}</span>
+            </div>
+        </div>
+    `;
+
+    // Mostrar toast
+    toastr.warning(statsHtml, titulo);
+}
 
         function actualizarBadge(total) {
             const badge = document.getElementById('pendientes-badge');
             if (badge) {
-                badge.style.display = total > 0 ? 'block' : 'none';
-                if (total > 0) badge.textContent = total;
+                if (total > 0) {
+                    badge.style.display = 'block';
+                    badge.textContent = total;
+
+                    // También actualizar el contador en la tarjeta de estudios pendientes si existe
+                    const totalSpan = document.querySelector('.info-header .badge');
+                    if (totalSpan) {
+                        totalSpan.textContent = total + ' total';
+                    }
+                } else {
+                    badge.style.display = 'none';
+                }
             }
         }
 
-        function verificarPendientes() {
-            fetch("{{ url_for('estudios.api_pendientes') }}")
+       function verificarPendientes() {
+    fetch("{{ url_for('estudios.api_pendientes') }}")
+        .then(r => r.json())
+        .then(data => {
+            actualizarBadge(data.total_pendientes);
+
+            if (data.total_pendientes > 0) {
+                // Verificar si aumentó para no spamear
+                if (data.total_pendientes > ultimosPendientes.total) {
+                    mostrarNotificacion(
+                        data.lab_pendientes,
+                        data.gab_pendientes,
+                        data.total_pendientes
+                    );
+                    ultimaNotificacionPendientes = Date.now();
+                }
+            }
+            ultimosPendientes = data;
+        })
+        .catch(err => console.error(err));
+}
+
+
+        // Función para actualizar logs en tiempo real
+        function actualizarLogs() {
+            fetch('/api/logs_recientes')
                 .then(response => response.json())
                 .then(data => {
-                    actualizarBadge(data.total_pendientes);
+                    const container = document.getElementById('logs-container');
+                    if (!container) return;
 
-                    if (data.total_pendientes > 0) {
-                        if (data.total_pendientes > ultimosPendientes.total) {
-                            mostrarNotificacion(data.lab_pendientes, data.gab_pendientes, data.total_pendientes);
-                            ultimaNotificacionPendientes = Date.now();
-                        }
+                    container.innerHTML = '';
+                    if (data.length === 0) {
+                        container.innerHTML = '<div class="text-center py-4"><i class="fas fa-archive text-muted" style="font-size: 2rem;"></i><p class="text-muted mt-2">No hay actividad reciente</p></div>';
+                        return;
                     }
-                    ultimosPendientes = data;
+
+                    data.slice(0, 10).forEach(log => {
+                        const div = document.createElement('div');
+                        div.className = 'log-item';
+
+                        let fechaStr = '';
+                        if (log.created_at) {
+                            try {
+                                const fecha = new Date(log.created_at);
+                                fechaStr = fecha.toLocaleDateString('es-ES') + ' ' +
+                                          fecha.toLocaleTimeString('es-ES', {hour: '2-digit', minute:'2-digit'});
+                            } catch (e) {
+                                fechaStr = log.created_at || '';
+                            }
+                        }
+
+                        div.innerHTML = `
+                            <div class="log-avatar">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <div class="log-content">
+                                <div class="log-user">${log.username || 'Sistema'}</div>
+                                <div class="log-action">Usuario registrado - Rol: ${log.role || 'N/A'}</div>
+                            </div>
+                            <div class="log-time">
+                                <i class="far fa-clock"></i>
+                                ${fechaStr}
+                            </div>
+                        `;
+                        container.appendChild(div);
+                    });
                 })
-                .catch(console.error);
+                .catch(error => console.error('Error al actualizar logs:', error));
         }
 
+        // Iniciar intervalos
         setInterval(verificarPendientes, INTERVALO_PENDIENTES);
+        setInterval(actualizarLogs, 10000); // Actualizar logs cada 10 segundos
+
+        // Ejecutar una vez al inicio
         verificarPendientes();
+        actualizarLogs();
     });
+</script>
+
+<script>
+let ultimoLogTimestamp = null;
+
+function verificarNuevoLog() {
+    fetch("/logs/ultimo")
+        .then(r => r.json())
+        .then(data => {
+            if (!data.nuevo && !data.fecha) return;
+
+            if (!ultimoLogTimestamp || data.fecha > ultimoLogTimestamp) {
+                ultimoLogTimestamp = data.fecha;
+
+                toastr.info(
+                    `<strong>${data.usuario}</strong><br>${data.accion}`,
+                    "🕒 Nueva actividad"
+                );
+            }
+        })
+        .catch(err => console.error("Error log:", err));
+}
+
+// Revisar cada 8 segundos
+setInterval(verificarNuevoLog, 8000);
 </script>
 
 </body>

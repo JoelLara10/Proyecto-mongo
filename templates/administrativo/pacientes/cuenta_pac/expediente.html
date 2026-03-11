@@ -2,115 +2,432 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Expediente del Paciente</title>
+    <title>Expediente del Paciente - INEO</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://use.fontawesome.com/releases/v5.7.0/css/all.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Bootstrap 5 -->
+    <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet">
 
+    <!-- Bootstrap Icons -->
+    <link href="{{ url_for('static', filename='css/bootstrap-icons.css') }}" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/all.min.css') }}">
+
+    <!-- Google Fonts - Inter -->
+    <link href="{{ url_for('static', filename='css/fonts.css') }}" rel="stylesheet">
 
     <style>
-        .bg-ineo {
-            background-color: #2b2d7f !important;
+        * {
+            font-family: 'Inter', sans-serif;
         }
-        .text-ineo {
-            color: #2b2d7f !important;
-        }
+
         body {
-    background-color: #f4f6f9;
-}
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
 
-.navbar {
-    background-color: #1e3c72;
-}
+        }
 
-.section-title {
-    font-size: 22px;
-    font-weight: 600;
-    color: #1e3c72;
-}
+        /* Navbar glassmorphism */
+        .navbar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+            padding: 0.8rem 0;
 
-table th {
-    background-color: #1e3c72;
-    color: white;
-    text-align: center;
-}
+        }
 
+        .navbar-brand {
+            color: #2d3748 !important;
+            font-weight: 700;
+            font-size: 1.5rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .navbar-text {
+            color: #4a5568 !important;
+            font-weight: 500;
+        }
+
+        .btn-outline-light {
+            border: 1px solid #e2e8f0;
+            color: #4a5568;
+            border-radius: 10px;
+            padding: 0.5rem 1.2rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-outline-light:hover {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: transparent;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Título de sección */
+        .section-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 1.5rem;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+        }
+
+        .section-title i {
+            margin-right: 1rem;
+            font-size: 2.5rem;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 0.5rem;
+            border-radius: 15px;
+        }
+
+        /* Tarjeta principal */
+        .main-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: none;
+            border-radius: 25px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+            animation: fadeInUp 0.6s ease forwards;
+            margin-bottom: 2rem;
+        }
+
+        .card-header-custom {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 1.2rem 1.5rem;
+            color: white;
+        }
+
+        .card-header-custom h5 {
+            margin: 0;
+            font-weight: 600;
+            font-size: 1.2rem;
+        }
+
+        .card-header-custom i {
+            margin-right: 0.8rem;
+        }
+
+        .card-body-custom {
+            padding: 2rem;
+        }
+
+        /* Info paciente */
+        .paciente-info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            background: #f7fafc;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border-left: 4px solid #667eea;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .info-item i {
+            width: 35px;
+            height: 35px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+        }
+
+        .info-item .label {
+            font-size: 0.8rem;
+            color: #718096;
+            margin-bottom: 0.2rem;
+        }
+
+        .info-item .value {
+            font-weight: 600;
+            color: #2d3748;
+            font-size: 1rem;
+        }
+
+        /* Badges */
+        .badge-status {
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .badge-status.abierta {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            color: white;
+        }
+
+        .badge-status.cerrada {
+            background: linear-gradient(135deg, #a0aec0 0%, #718096 100%);
+            color: white;
+        }
+
+        /* Tabla */
+        .table-responsive {
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .table {
+            margin-bottom: 0;
+        }
+
+        .table thead th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 1rem;
+            border: none;
+        }
+
+        .table tbody tr {
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .table tbody tr:hover {
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .table td {
+            padding: 1rem;
+            vertical-align: middle;
+            color: #2d3748;
+            font-size: 0.95rem;
+        }
+
+        .table tfoot tr {
+            background: #f7fafc;
+            font-weight: 600;
+        }
+
+        .table tfoot td {
+            padding: 1rem;
+            color: #2d3748;
+        }
+
+        .total-amount {
+            font-size: 1.2rem;
+            color: #e53e3e;
+            font-weight: 700;
+        }
+
+        /* Botones */
+        .btn-custom {
+            padding: 0.8rem 2rem;
+            border-radius: 12px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: none;
+        }
+
+        .btn-custom i {
+            margin-right: 0.5rem;
+        }
+
+        .btn-close-account {
+            background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(229, 62, 62, 0.3);
+            width: 100%;
+            padding: 1rem;
+            font-size: 1.1rem;
+        }
+
+        .btn-close-account:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(229, 62, 62, 0.4);
+            color: white;
+        }
+
+        /* Animaciones */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Alerta */
+        .alert-custom {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            color: white;
+            border: none;
+            border-radius: 15px;
+            padding: 1rem;
+            text-align: center;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(72, 187, 120, 0.3);
+        }
+
+        .alert-custom i {
+            margin-right: 0.5rem;
+        }
+
+        /* Separador */
+        .divider {
+            height: 2px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            margin: 2rem 0;
+            border-radius: 2px;
+        }
     </style>
 </head>
 
-<body class="bg-light">
+<body>
 
-<!-- 🔹 NAVBAR / HEADER (igual que el resto del sistema) -->
-<!-- ================= NAVBAR ================= -->
-<nav class="navbar navbar-expand-lg shadow">
-    <div class="container-fluid">
-
-        <a href="javascript:history.back()"
-           class="btn btn-outline-light btn-sm me-3">
-            <i class="bi bi-arrow-left"></i> Regresar
+<!-- NAVBAR MEJORADO -->
+<nav class="navbar navbar-expand-lg">
+    <div class="container-fluid px-4">
+        <a href="javascript:history.back()" class="btn btn-outline-light me-3">
+            <i class="bi bi-arrow-left me-2"></i>Regresar
         </a>
 
-        <div class="ms-auto">
-            <span class="navbar-text text-white me-3">
-                <i class="bi bi-person-circle"></i> {{ session['username'] }}
+        <span class="navbar-brand fw-semibold fs-4">
+            <i class="fas fa-folder-open me-2" style="color: #667eea;"></i>
+            Expediente del Paciente
+        </span>
+
+        <div class="ms-auto d-flex align-items-center">
+            <span class="navbar-text me-4">
+                <i class="bi bi-person-circle me-2" style="color: #667eea;"></i>
+                <span class="fw-medium">{{ session['username'] }}</span>
+                <span class="badge bg-primary ms-2" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;">
+                    {{ session['role']|capitalize }}
+                </span>
             </span>
-            <a href="{{ url_for('logout') }}"
-               class="btn btn-outline-light btn-sm">
-                <i class="bi bi-box-arrow-right"></i> Cerrar sesión
+
+            <a href="{{ url_for('logout') }}" class="btn btn-outline-light">
+                <i class="bi bi-box-arrow-right me-2"></i>Salir
             </a>
         </div>
-
     </div>
 </nav>
 
+<!-- CONTENIDO PRINCIPAL -->
+<div class="container">
 
-<div class="container mt-4">
-    <div class="card shadow-sm border-0">
+    <!-- Título de sección -->
+    <div class="section-title">
+        <i class="fas fa-file-invoice"></i>
+        Cuenta del Paciente
+    </div>
 
-        <!-- HEADER -->
-        <div class="card-header bg-ineo text-white fw-bold">
-            EXPEDIENTE / CUENTA DEL PACIENTE
+    <!-- CARD PRINCIPAL -->
+    <div class="main-card">
+        <div class="card-header-custom">
+            <h5>
+                <i class="fas fa-user-circle"></i>
+                Información del Paciente
+            </h5>
         </div>
 
-        <div class="card-body">
+        <div class="card-body-custom">
 
-            <p><strong>Expediente:</strong> {{ pac['Id_exp'] }}</p>
+            <!-- Grid de información del paciente -->
+<div class="paciente-info-grid">
+    <div class="info-item">
+        <i class="fas fa-id-card"></i>
+        <div class="content">
+            <div class="label">Expediente</div>
+            <div class="value">{{ pac.Id_exp }}</div>
+        </div>
+    </div>
 
-            <p><strong>Paciente:</strong>
-                {{ pac['papell'] }} {{ pac['sapell'] }} {{ pac['nom_pac'] }}
-            </p>
+    <div class="info-item">
+        <i class="fas fa-user"></i>
+        <div class="content">
+            <div class="label">Paciente</div>
+            <div class="value">{{ pac.papell }} {{ pac.sapell }} {{ pac.nom_pac }}</div>
+        </div>
+    </div>
 
-            <p><strong>Área:</strong> {{ pac['area'] }}</p>
+    <div class="info-item">
+        <i class="fas fa-hospital"></i>
+        <div class="content">
+            <div class="label">Área</div>
+            <div class="value">{{ pac.area }}</div>
+        </div>
+    </div>
 
-            <p><strong>Fecha de ingreso:</strong>
-                {{ pac['fecha_ing'].strftime('%d/%m/%Y %H:%M') }}
-            </p>
-
-            <p><strong>Status:</strong>
-                {% if pac['status'] == 'ABIERTA' %}
-                    <span class="badge bg-success">ABIERTA</span>
+    <div class="info-item">
+        <i class="fas fa-calendar-alt"></i>
+        <div class="content">
+            <div class="label">Fecha de ingreso</div>
+            <div class="value">
+                {% if pac.fecha_ing %}
+                    {{ pac.fecha_ing.strftime('%d/%m/%Y %H:%M') }}
                 {% else %}
-                    <span class="badge bg-secondary">CERRADA</span>
+                    No disponible
                 {% endif %}
-            </p>
+            </div>
+        </div>
+    </div>
 
-            <hr>
+    <div >
 
-            <!-- CUENTA -->
-            <h6 class="text-ineo mb-2">
-                <i class="fas fa-file-invoice-dollar"></i> Cuenta del paciente
-            </h6>
+        <div class="content">
+            <div class="label">Estado</div>
+            <div>
+                {% if pac.status == 'ABIERTA' %}
+                    <span class="badge-status abierta">
+                        <i class="fas fa-lock-open me-1"></i>ABIERTA
+                    </span>
+                {% else %}
+                    <span class="badge-status cerrada">
+                        <i class="fas fa-lock me-1"></i>CERRADA
+                    </span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
 
-            <div class="table-responsive">
-                <table class="table table-bordered table-striped">
-                    <thead class="bg-ineo text-white">
+            <!-- Separador decorativo -->
+            <div class="divider"></div>
+
+            <!-- Título de cuenta -->
+            <h5 class="text-primary fw-bold mb-3" style="color: #667eea !important;">
+                <i class="fas fa-file-invoice-dollar me-2"></i>
+                Detalle de Cuenta
+            </h5>
+
+            <!-- Tabla de cargos -->
+            <div class="table-responsive mb-4">
+                <table class="table table-hover">
+                    <thead>
                         <tr>
                             <th>Fecha</th>
                             <th>Descripción</th>
-                            <th>Cantidad</th>
-                            <th>Precio</th>
-                            <th>Subtotal</th>
+                            <th class="text-center">Cantidad</th>
+                            <th class="text-end">Precio</th>
+                            <th class="text-end">Subtotal</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -119,21 +436,22 @@ table th {
                             <td>{{ c['fecha'].strftime('%d/%m/%Y') }}</td>
                             <td>{{ c['descripcion'] }}</td>
                             <td class="text-center">{{ c['cantidad'] }}</td>
-                            <td>${{ '%.2f'|format(c['precio']) }}</td>
-                            <td>${{ '%.2f'|format(c['subtotal']) }}</td>
+                            <td class="text-end">${{ '%.2f'|format(c['precio']) }}</td>
+                            <td class="text-end fw-bold">${{ '%.2f'|format(c['subtotal']) }}</td>
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="5" class="text-center text-muted">
-                                No hay cargos registrados
+                            <td colspan="5" class="text-center py-4">
+                                <i class="fas fa-receipt text-muted" style="font-size: 2rem;"></i>
+                                <p class="text-muted mt-2">No hay cargos registrados</p>
                             </td>
                         </tr>
                         {% endfor %}
                     </tbody>
                     <tfoot>
-                        <tr class="fw-bold">
-                            <td colspan="4" class="text-end">TOTAL</td>
-                            <td class="text-danger">
+                        <tr>
+                            <td colspan="4" class="text-end fw-bold">TOTAL</td>
+                            <td class="text-end total-amount">
                                 ${{ '%.2f'|format(total) }}
                             </td>
                         </tr>
@@ -141,27 +459,68 @@ table th {
                 </table>
             </div>
 
-            <hr>
+            <!-- Separador -->
+            <div class="divider"></div>
 
-            <!-- CERRAR CUENTA -->
-            {% if pac['status'] == 'ABIERTA' %}
-            <form method="post">
-                <button type="submit"
-                        class="btn btn-danger w-100"
-                        onclick="return confirm('¿Cerrar la cuenta del paciente?')">
-                    <i class="fas fa-lock"></i> Cerrar Cuenta
-                </button>
-            </form>
-            {% else %}
-            <div class="alert alert-info text-center">
-                La cuenta ya está cerrada
+            <!-- Acción de cierre de cuenta -->
+            <div class="mt-4">
+                {% if pac['status'] == 'ABIERTA' %}
+                <form method="post">
+                    <button type="submit"
+                            class="btn btn-custom btn-close-account"
+                            onclick="return confirm('¿Está seguro de cerrar la cuenta del paciente? Esta acción no se puede deshacer.');">
+                        <i class="fas fa-lock"></i>
+                        Cerrar Cuenta y Finalizar Atención
+                    </button>
+                </form>
+                {% else %}
+                <div class="alert-custom">
+                    <i class="fas fa-check-circle"></i>
+                    La cuenta ya está cerrada
+                </div>
+                {% endif %}
             </div>
-            {% endif %}
+
+            <!-- Nota informativa -->
+            <div class="text-muted small mt-3 text-center">
+                <i class="fas fa-info-circle me-1"></i>
+                Los cargos mostrados corresponden a servicios, estudios y procedimientos realizados durante la estancia del paciente.
+            </div>
 
         </div>
     </div>
 
+    <!-- Footer -->
+    <div class="text-center text-white-50 py-4">
+        <small>
+            <i class="fas fa-shield-alt me-2"></i>
+            INEO v2.0 - Sistema de Gestión Hospitalaria
+        </small>
+    </div>
 </div>
+
+<!-- Scripts locales -->
+<script src="{{ url_for('static', filename='js/jquery-3.6.0.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+
+<!-- Script adicional para efectos -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Animación de entrada para las filas de la tabla
+    const rows = document.querySelectorAll('tbody tr');
+    rows.forEach((row, index) => {
+        if (!row.querySelector('td[colspan]')) {
+            row.style.animation = `fadeInUp 0.3s ease forwards ${index * 0.05}s`;
+        }
+    });
+
+    // Tooltips (si los necesitas)
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    });
+});
+</script>
 
 </body>
 </html>
