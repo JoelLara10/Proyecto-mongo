@@ -1,134 +1,439 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Alta de Usuario</title>
+{% extends "configuracion/header_configuracion.html" %}
 
-    <!-- Bootstrap -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://use.fontawesome.com/releases/v5.15.4/css/all.css" rel="stylesheet">
-</head>
+{% block content %}
 
-<body>
+<style>
+  * {
+    font-family: 'Inter', sans-serif;
+  }
 
-<div class="container mt-4">
+  /* Título principal */
+  .page-title {
+    color: white;
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+  }
 
-    <h4 class="mb-4 text-center">ALTA DE USUARIO</h4>
+  .page-title i {
+    margin-right: 1rem;
+    font-size: 2.5rem;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 0.5rem;
+    border-radius: 15px;
+  }
 
-    <form action="{{ url_for('insertar_usuario') }}" method="POST" enctype="multipart/form-data">
+  /* Tarjeta del formulario */
+  .main-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: none;
+    border-radius: 25px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    margin-bottom: 2rem;
+  }
 
-        <div class="row">
+  .card-header-custom {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 1.5rem 2rem;
+    color: white;
+  }
 
-            <!-- DATOS PERSONALES -->
-            <div class="col-md-6">
+  .card-header-custom h3 {
+    margin: 0;
+    font-weight: 600;
+    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
 
-                <div class="mb-3">
-                    <label class="form-label">CURP</label>
-                    <input type="text" name="curp_u" class="form-control" required>
-                </div>
+  .card-body-custom {
+    padding: 2rem;
+  }
 
-                <div class="mb-3">
-                    <label class="form-label">Nombre(s)</label>
-                    <input type="text" name="nombre" class="form-control" required>
-                </div>
+  /* Secciones del formulario */
+  .form-section {
+    background: #f7fafc;
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    border-left: 4px solid #667eea;
+    transition: all 0.3s ease;
+  }
 
-                <div class="mb-3">
-                    <label class="form-label">Primer Apellido</label>
-                    <input type="text" name="papell" class="form-control" required>
-                </div>
+  .form-section:hover {
+    background: #ffffff;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+  }
 
-                <div class="mb-3">
-                    <label class="form-label">Segundo Apellido</label>
-                    <input type="text" name="sapell" class="form-control" required>
-                </div>
+  .section-title {
+    color: #667eea;
+    font-weight: 700;
+    margin-bottom: 1.2rem;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+  }
 
-                <div class="mb-3">
-                    <label class="form-label">Fecha de nacimiento</label>
-                    <input type="date" name="fecnac" class="form-control" required>
-                </div>
+  .section-title i {
+    margin-right: 0.8rem;
+    font-size: 1.3rem;
+    background: rgba(102, 126, 234, 0.1);
+    padding: 0.5rem;
+    border-radius: 10px;
+    color: #667eea;
+  }
 
-                <div class="mb-3">
-                    <label class="form-label">Matrícula</label>
-                    <input type="text" name="mat" class="form-control">
-                </div>
+  /* Etiquetas */
+  .form-label-custom {
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
 
-                <div class="mb-3">
-                    <label class="form-label">Cédula Profesional</label>
-                    <input type="text" name="cedp" class="form-control">
-                </div>
+  .form-label-custom i {
+    color: #667eea;
+    font-size: 0.9rem;
+    width: 20px;
+  }
 
+  /* Campos de formulario */
+  .form-control-custom, .form-select-custom {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    background: white;
+    font-size: 0.95rem;
+  }
+
+  .form-control-custom:focus, .form-select-custom:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+    outline: none;
+  }
+
+  .form-control-custom::placeholder {
+    color: #a0aec0;
+  }
+
+  /* Botones de acción */
+  .btn-actions {
+    text-align: center;
+    background: #f7fafc;
+    padding: 1.5rem;
+    border-radius: 16px;
+    margin-top: 1.5rem;
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+  }
+
+  .btn-save {
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 0.8rem 2rem;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(72, 187, 120, 0.3);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    text-decoration: none;
+  }
+
+  .btn-cancel {
+    background: white;
+    color: #718096;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 0.8rem 2rem;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    text-decoration: none;
+  }
+
+  .btn-cancel:hover {
+    background: #f7fafc;
+    color: #4a5568;
+    transform: translateY(-2px);
+  }
+
+  .btn-save:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(72, 187, 120, 0.4);
+    color: white;
+  }
+
+  /* Mensajes flash */
+  .flash-messages {
+    margin-bottom: 1.5rem;
+  }
+
+  .alert {
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .alert-success {
+    background: #d1fae5;
+    color: #065f46;
+    border-left: 4px solid #38a169;
+  }
+
+  .alert-danger {
+    background: #fed7d7;
+    color: #991b1b;
+    border-left: 4px solid #e53e3e;
+  }
+
+  .alert i {
+    font-size: 1.2rem;
+  }
+
+  /* Espaciado entre campos */
+  .mt-3 {
+    margin-top: 1.2rem;
+  }
+
+  /* Animaciones */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .main-card {
+    animation: fadeIn 0.5s ease;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .card-body-custom {
+      padding: 1rem;
+    }
+    
+    .btn-actions {
+      flex-direction: column;
+    }
+    
+    .btn-save, .btn-cancel {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+</style>
+
+<div class="container-fluid mt-4">
+
+  <!-- TÍTULO DE LA PÁGINA -->
+  <div class="page-title">
+    <i class="fas fa-user-plus"></i>
+    NUEVO USUARIO
+  </div>
+
+  <!-- TARJETA DEL FORMULARIO -->
+  <div class="main-card">
+    <div class="card-header-custom">
+      <h3>
+        <i class="fas fa-user-plus"></i>
+        Registrar Nuevo Usuario
+      </h3>
+    </div>
+
+    <div class="card-body-custom">
+
+      <!-- Mensajes flash -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-messages">
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }}">
+                <i class="fas {% if category == 'success' %}fa-check-circle{% else %}fa-exclamation-circle{% endif %}"></i>
+                {{ message }}
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <form action="{{ url_for('insertar_usuario') }}" method="POST">
+
+        <!-- DATOS PERSONALES -->
+        <div class="form-section">
+          <div class="section-title">
+            <i class="fas fa-id-card"></i>
+            Datos Personales
+          </div>
+
+          <div class="row">
+            <div class="col-md-12 mb-3">
+              <label class="form-label-custom">
+                <i class="fas fa-id-card"></i> CURP
+              </label>
+              <input type="text" name="curp_u" class="form-control-custom" placeholder="Ingrese CURP" required>
             </div>
+          </div>
 
-            <!-- DATOS DEL SISTEMA -->
-            <div class="col-md-6">
-
-                <div class="mb-3">
-                    <label class="form-label">Cargo</label>
-                    <input type="text" name="cargp" class="form-control" required>
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label">Teléfono</label>
-                    <input type="text" name="tel" class="form-control" required>
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label">Correo</label>
-                    <input type="email" name="email" class="form-control" required>
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label">Pregunta de seguridad</label>
-                    <input type="text" name="pre" class="form-control" required>
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label">Usuario</label>
-                    <input type="text" name="usuario" class="form-control" required>
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label">Contraseña</label>
-                    <input type="password" name="pass" class="form-control" required>
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label">Rol</label>
-                    <select name="id_rol" class="form-select" required>
-                        <option value="">Seleccionar</option>
-                        {% for rol in roles %}
-                            <option value="{{ rol.id_rol }}">{{ rol.rol }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label">Imagen de perfil</label>
-                    <input type="file" name="img_perfil" class="form-control" accept="image/*">
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label">Firma</label>
-                    <input type="file" name="firma" class="form-control" accept="image/*">
-                </div>
-
+          <div class="row">
+            <div class="col-md-12 mb-3">
+              <label class="form-label-custom">
+                <i class="fas fa-user"></i> Nombre(s)
+              </label>
+              <input type="text" name="nombre" class="form-control-custom" placeholder="Ingrese nombre(s)" required>
             </div>
+          </div>
 
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label-custom">
+                <i class="fas fa-user-tag"></i> Primer Apellido
+              </label>
+              <input type="text" name="papell" class="form-control-custom" placeholder="Ingrese primer apellido" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label-custom">
+                <i class="fas fa-user-tag"></i> Segundo Apellido
+              </label>
+              <input type="text" name="sapell" class="form-control-custom" placeholder="Ingrese segundo apellido" required>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label-custom">
+                <i class="fas fa-calendar-alt"></i> Fecha de nacimiento
+              </label>
+              <input type="date" name="fecnac" class="form-control-custom" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label-custom">
+                <i class="fas fa-phone"></i> Teléfono
+              </label>
+              <input type="text" name="telefono" class="form-control-custom" placeholder="Ingrese teléfono" required>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label-custom">
+                <i class="fas fa-graduation-cap"></i> Matrícula
+              </label>
+              <input type="text" name="matricula" class="form-control-custom" placeholder="Matrícula (opcional)">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label-custom">
+                <i class="fas fa-certificate"></i> Cédula Profesional
+              </label>
+              <input type="text" name="cedula" class="form-control-custom" placeholder="Cédula (opcional)">
+            </div>
+          </div>
         </div>
 
-        <div class="text-end mt-4">
-            <button type="submit" class="btn btn-primary">
-                <i class="fas fa-save"></i> Guardar
-            </button>
-            <a href="{{ url_for('alta_usuario') }}" class="btn btn-secondary">
-                Cancelar
-            </a>
+        <!-- DATOS DEL SISTEMA -->
+        <div class="form-section">
+          <div class="section-title">
+            <i class="fas fa-cogs"></i>
+            Datos del Sistema
+          </div>
+
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label-custom">
+                <i class="fas fa-briefcase"></i> Cargo
+              </label>
+              <input type="text" name="cargo" class="form-control-custom" placeholder="Ej. Médico General" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label-custom">
+                <i class="fas fa-envelope"></i> Correo
+              </label>
+              <input type="email" name="email" class="form-control-custom" placeholder="correo@ejemplo.com" required>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-12 mb-3">
+              <label class="form-label-custom">
+                <i class="fas fa-question-circle"></i> Pregunta de seguridad
+              </label>
+              <input type="text" name="pregunta_seguridad" class="form-control-custom" placeholder="Ej. ¿Nombre de tu primera mascota?" required>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-4 mb-3">
+              <label class="form-label-custom">
+                <i class="fas fa-user-circle"></i> Usuario
+              </label>
+              <input type="text" name="username" class="form-control-custom" placeholder="Nombre de usuario" required>
+            </div>
+            <div class="col-md-4 mb-3">
+              <label class="form-label-custom">
+                <i class="fas fa-lock"></i> Contraseña
+              </label>
+              <input type="password" name="password" class="form-control-custom" placeholder="Contraseña" required>
+            </div>
+            <div class="col-md-4 mb-3">
+              <label class="form-label-custom">
+                <i class="fas fa-user-tag"></i> Rol
+              </label>
+              <select name="role" class="form-select-custom" required>
+                <option value="">Seleccionar rol</option>
+                {% for rol in roles %}
+                  <option value="{{ rol }}">{{ rol|capitalize }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
         </div>
 
-    </form>
+        <!-- BOTONES DE ACCIÓN -->
+        <div class="btn-actions">
+          <a href="{{ url_for('alta_usuarios') }}" class="btn-cancel">
+            <i class="fas fa-times"></i>
+            Cancelar
+          </a>
+          <button type="submit" class="btn-save">
+            <i class="fas fa-save"></i>
+            Guardar Usuario
+          </button>
+        </div>
+
+      </form>
+
+    </div>
+  </div>
 
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+{% endblock %}

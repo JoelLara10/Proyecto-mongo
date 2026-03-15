@@ -1,155 +1,601 @@
 {% extends 'medico/header_medico.html' %}
 
 {% block content %}
+
+<!-- Mensajes Flash con diseño mejorado -->
 {% with messages = get_flashed_messages(with_categories=true) %}
   {% if messages %}
-    {% for category, message in messages %}
-      <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show" role="alert">
-        <i class="fas fa-check-circle"></i>
-        {{ message }}
-        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
-    {% endfor %}
+    <div class="flash-messages">
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm" role="alert">
+          <div class="d-flex align-items-center">
+            <i class="fas {% if category == 'success' %}fa-check-circle text-success{% else %}fa-exclamation-circle text-danger{% endif %} me-3 fa-2x"></i>
+            <div class="flex-grow-1">
+              <strong class="d-block">{% if category == 'success' %}Éxito{% else %}Error{% endif %}</strong>
+              <span>{{ message }}</span>
+            </div>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      {% endfor %}
+    </div>
   {% endif %}
 {% endwith %}
 
-
+<!-- Encabezado de la sección -->
 <section class="content-header">
-  <h1 class="text-dark">
-    <i class="fas fa-notes-medical"></i> Historia Clínica
-  </h1>
+  <div class="container-fluid">
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="page-header" style="background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border-radius: 15px; padding: 1.2rem;">
+          <h1 class="text-white mb-0">
+            <i class="fas fa-notes-medical me-3"></i>
+            Historia Clínica
+          </h1>
+        </div>
+      </div>
+    </div>
+  </div>
 </section>
 
 <section class="content">
+  <div class="container-fluid">
 
-  <div class="card card-primary">
-    <div class="card-header">
-      <h3 class="card-title">
-        Paciente: {{ paciente.papell }} {{ paciente.sapell }} {{ paciente.nom_pac }}
-      </h3>
+    <!-- Tarjeta principal -->
+    <div class="main-card">
+      <div class="card-header-custom">
+        <div class="d-flex align-items-center justify-content-between">
+          <h5 class="mb-0">
+            <i class="fas fa-user-circle me-2"></i>
+            Paciente: {{ paciente.papell }} {{ paciente.sapell }} {{ paciente.nom_pac }}
+          </h5>
+          <span class="badge bg-white text-primary">
+            <i class="fas fa-id-card me-1"></i> Exp: {{ paciente.Id_exp }}
+          </span>
+        </div>
+      </div>
+
+      <form method="POST">
+        <div class="card-body-custom">
+
+          <!-- INFORMACIÓN GENERAL -->
+          <div class="section-title">
+            <i class="fas fa-info-circle"></i>
+            Información General
+          </div>
+
+          <div class="row g-4 mb-4">
+            <div class="col-md-12">
+              <div class="form-group-custom">
+                <label class="form-label-custom">
+                  <i class="fas fa-question-circle me-2"></i>
+                  Motivo de consulta
+                </label>
+                <textarea class="form-control-custom"
+                          name="motivo_consulta"
+                          rows="3"
+                          placeholder="Describa el motivo de la consulta..."
+                          required></textarea>
+              </div>
+            </div>
+          </div>
+
+          <!-- SINTOMATOLOGÍA OCULAR -->
+          <div class="section-title">
+            <i class="fas fa-eye"></i>
+            Sintomatología Ocular
+          </div>
+
+          <div class="row g-4 mb-4">
+            <div class="col-md-12">
+              <div class="checkbox-group">
+                {% for s in ['Dolor', 'Ojo rojo', 'Lagrimeo', 'Visión borrosa', 'Fotofobia', 'Prurito', 'Cuerpo extraño'] %}
+                <div class="checkbox-item">
+                  <input class="form-check-input-custom"
+                         type="checkbox"
+                         name="sintomatologia[]"
+                         value="{{ s }}"
+                         id="sint_{{ loop.index }}">
+                  <label class="form-check-label-custom" for="sint_{{ loop.index }}">
+                    <i class="fas fa-check-circle check-icon"></i>
+                    {{ s }}
+                  </label>
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+
+            <div class="col-md-12">
+              <div class="form-group-custom">
+                <label class="form-label-custom">
+                  <i class="fas fa-plus-circle me-2"></i>
+                  Otros síntomas
+                </label>
+                <textarea class="form-control-custom"
+                          name="sintomatologia_otros"
+                          rows="2"
+                          placeholder="Describa otros síntomas no listados..."></textarea>
+              </div>
+            </div>
+          </div>
+
+          <!-- ANTECEDENTES HEREDOFAMILIARES -->
+          <div class="section-title">
+            <i class="fas fa-family"></i>
+            Antecedentes Heredofamiliares
+          </div>
+
+          <div class="row g-4 mb-4">
+            <div class="col-md-12">
+              <div class="checkbox-group">
+                {% for h in ['Diabetes', 'Hipertensión', 'Cáncer', 'Glaucoma', 'Catarata'] %}
+                <div class="checkbox-item">
+                  <input class="form-check-input-custom"
+                         type="checkbox"
+                         name="heredo[]"
+                         value="{{ h }}"
+                         id="hered_{{ loop.index }}">
+                  <label class="form-check-label-custom" for="hered_{{ loop.index }}">
+                    <i class="fas fa-check-circle check-icon"></i>
+                    {{ h }}
+                  </label>
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+
+            <div class="col-md-12">
+              <div class="form-group-custom">
+                <label class="form-label-custom">
+                  <i class="fas fa-plus-circle me-2"></i>
+                  Otros heredofamiliares
+                </label>
+                <textarea class="form-control-custom"
+                          name="heredo_otros"
+                          rows="2"
+                          placeholder="Describa otros antecedentes..."></textarea>
+              </div>
+            </div>
+          </div>
+
+          <!-- ANTECEDENTES PERSONALES NO PATOLÓGICOS -->
+          <div class="section-title">
+            <i class="fas fa-user-check"></i>
+            Antecedentes Personales No Patológicos
+          </div>
+
+          <div class="row g-4 mb-4">
+            <div class="col-md-12">
+              <div class="checkbox-group">
+                {% for n in ['Tabaquismo', 'Alcohol', 'Sedentarismo', 'Vacunación COVID'] %}
+                <div class="checkbox-item">
+                  <input class="form-check-input-custom"
+                         type="checkbox"
+                         name="nopat[]"
+                         value="{{ n }}"
+                         id="nopat_{{ loop.index }}">
+                  <label class="form-check-label-custom" for="nopat_{{ loop.index }}">
+                    <i class="fas fa-check-circle check-icon"></i>
+                    {{ n }}
+                  </label>
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+
+            <div class="col-md-12">
+              <div class="form-group-custom">
+                <label class="form-label-custom">
+                  <i class="fas fa-plus-circle me-2"></i>
+                  Otros no patológicos
+                </label>
+                <textarea class="form-control-custom"
+                          name="nopat_otros"
+                          rows="2"
+                          placeholder="Describa otros antecedentes..."></textarea>
+              </div>
+            </div>
+          </div>
+
+          <!-- ANTECEDENTES PATOLÓGICOS -->
+          <div class="section-title">
+            <i class="fas fa-briefcase-medical"></i>
+            Antecedentes Patológicos
+          </div>
+
+          <div class="row g-4 mb-4">
+            <div class="col-md-6">
+              <div class="form-group-custom">
+                <label class="form-label-custom">
+                  <i class="fas fa-disease me-2"></i>
+                  Enfermedades
+                </label>
+                <input class="form-control-custom"
+                       name="pat_enfermedades"
+                       placeholder="Ej: Hipertensión, Diabetes, etc.">
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <div class="form-group-custom">
+                <label class="form-label-custom">
+                  <i class="fas fa-pills me-2"></i>
+                  Medicamentos
+                </label>
+                <input class="form-control-custom"
+                       name="pat_medicamentos"
+                       placeholder="Medicamentos que toma actualmente">
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <div class="form-group-custom">
+                <label class="form-label-custom">
+                  <i class="fas fa-allergies me-2"></i>
+                  Alergias
+                </label>
+                <input class="form-control-custom"
+                       name="pat_alergias"
+                       placeholder="Ej: Penicilina, Polen, etc.">
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <div class="form-group-custom">
+                <label class="form-label-custom">
+                  <i class="fas fa-eye me-2"></i>
+                  Antecedentes oculares
+                </label>
+                <input class="form-control-custom"
+                       name="pat_oculares"
+                       placeholder="Antecedentes oftalmológicos">
+              </div>
+            </div>
+
+            <div class="col-md-12">
+              <div class="form-group-custom">
+                <label class="form-label-custom">
+                  <i class="fas fa-scalpel me-2"></i>
+                  Cirugías previas
+                </label>
+                <input class="form-control-custom"
+                       name="pat_cirugias"
+                       placeholder="Describa cirugías anteriores...">
+              </div>
+            </div>
+          </div>
+
+          <!-- BOTONES DE ACCIÓN -->
+          <div class="d-flex justify-content-center gap-3 mt-5">
+            <a href="{{ url_for('paciente', id_atencion=id_atencion, Id_exp=paciente.Id_exp) }}"
+               class="btn-custom btn-cancel">
+              <i class="fas fa-times me-2"></i>
+              Cancelar
+            </a>
+            <button type="submit" class="btn-custom btn-save">
+              <i class="fas fa-save me-2"></i>
+              Guardar Historia Clínica
+            </button>
+          </div>
+
+        </div>
+      </form>
     </div>
 
-    <form method="POST">
-
-      <div class="card-body">
-
-        <!-- MOTIVO -->
-        <div class="form-group">
-          <label>Motivo de consulta</label>
-          <textarea class="form-control"
-                    name="motivo_consulta"
-                    rows="3"
-                    required></textarea>
-        </div>
-
-        <!-- SINTOMATOLOGÍA -->
-        <div class="form-group">
-          <label>Sintomatología ocular</label><br>
-          {% for s in [
-            'Dolor','Ojo rojo','Lagrimeo','Visión borrosa',
-            'Fotofobia','Prurito','Cuerpo extraño'
-          ] %}
-            <div class="form-check form-check-inline">
-              <input class="form-check-input"
-                     type="checkbox"
-                     name="sintomatologia[]"
-                     value="{{ s }}">
-              <label class="form-check-label">{{ s }}</label>
-            </div>
-          {% endfor %}
-        </div>
-
-        <div class="form-group">
-          <label>Otros síntomas</label>
-          <textarea class="form-control"
-                    name="sintomatologia_otros"
-                    rows="2"></textarea>
-        </div>
-
-        <!-- HEREDO -->
-        <div class="form-group">
-          <label>Antecedentes heredofamiliares</label><br>
-          {% for h in ['Diabetes','Hipertensión','Cáncer','Glaucoma','Catarata'] %}
-            <div class="form-check form-check-inline">
-              <input class="form-check-input"
-                     type="checkbox"
-                     name="heredo[]"
-                     value="{{ h }}">
-              <label class="form-check-label">{{ h }}</label>
-            </div>
-          {% endfor %}
-        </div>
-
-        <div class="form-group">
-          <label>Otros heredofamiliares</label>
-          <textarea class="form-control" name="heredo_otros"></textarea>
-        </div>
-
-        <!-- NO PAT -->
-        <div class="form-group">
-          <label>Antecedentes personales no patológicos</label><br>
-          {% for n in ['Tabaquismo','Alcohol','Sedentarismo','Vacunación COVID'] %}
-            <div class="form-check form-check-inline">
-              <input class="form-check-input"
-                     type="checkbox"
-                     name="nopat[]"
-                     value="{{ n }}">
-              <label class="form-check-label">{{ n }}</label>
-            </div>
-          {% endfor %}
-        </div>
-
-        <div class="form-group">
-          <label>Otros no patológicos</label>
-          <textarea class="form-control" name="nopat_otros"></textarea>
-        </div>
-
-        <!-- PATOLÓGICOS -->
-        <div class="form-group">
-          <label>Enfermedades</label>
-          <input class="form-control" name="pat_enfermedades">
-        </div>
-
-        <div class="form-group">
-          <label>Medicamentos</label>
-          <input class="form-control" name="pat_medicamentos">
-        </div>
-
-        <div class="form-group">
-          <label>Alergias</label>
-          <input class="form-control" name="pat_alergias">
-        </div>
-
-        <div class="form-group">
-          <label>Antecedentes oculares</label>
-          <input class="form-control" name="pat_oculares">
-        </div>
-
-        <div class="form-group">
-          <label>Cirugías previas</label>
-          <input class="form-control" name="pat_cirugias">
-        </div>
-
-      </div>
-
-      <div class="card-footer text-center">
-        <button type="submit" class="btn btn-primary">
-          <i class="fas fa-save"></i> Guardar Historia Clínica
-        </button>
-
-        <a href="{{ url_for('paciente',
-                            id_atencion=id_atencion,
-                            Id_exp=paciente.Id_exp) }}"
-           class="btn btn-secondary">
-          Cancelar
-        </a>
-      </div>
-
-    </form>
   </div>
-
 </section>
+
+<style>
+  /* Estilos para los elementos del formulario */
+  .main-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: none;
+    border-radius: 25px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    margin-bottom: 2rem;
+  }
+
+  .card-header-custom {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 1.2rem 1.5rem;
+    color: white;
+  }
+
+  .card-header-custom h5 {
+    margin: 0;
+    font-weight: 600;
+    font-size: 1.2rem;
+  }
+
+  .card-body-custom {
+    padding: 2rem;
+  }
+
+  .section-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #667eea;
+    margin: 1.5rem 0 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid;
+    border-image: linear-gradient(90deg, #667eea, #764ba2);
+    border-image-slice: 1;
+    display: flex;
+    align-items: center;
+  }
+
+  .section-title i {
+    margin-right: 0.8rem;
+    font-size: 1.4rem;
+  }
+
+  .form-group-custom {
+    margin-bottom: 1rem;
+  }
+
+  .form-label-custom {
+    display: flex;
+    align-items: center;
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+  }
+
+  .form-label-custom i {
+    color: #667eea;
+  }
+
+  .form-control-custom {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    background: white;
+    font-size: 0.95rem;
+  }
+
+  .form-control-custom:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+    outline: none;
+  }
+
+  .checkbox-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    background: #f7fafc;
+    border-radius: 15px;
+    padding: padding: 1.2rem;
+ 1.2rem;
+  }
+
+  .checkbox-item {
+     }
+
+  .checkbox-item {
+    position: relative;
+  }
+
+  . position: relative;
+  }
+
+  .form-check-input-cform-check-input-custom {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+ustom {
+    position    height: 0;
+    width: 0;
+  }
+
+  .form-check-label-custom {
+    display: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+  }
+
+  .form-check: flex;
+    align-items: center;
+    gap: 8px;
+    padding: -label-custom {
+    display: flex;
+    align-items: center;
+    gap: 80.5rem 1rem;
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius:px;
+    padding: 0.5rem 1rem;
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 25px;
+ 25px;
+    font-size: 0.9rem;
+    color: #4a    font-size: 0.9rem;
+    color: #4a5568;
+   5568;
+    cursor: pointer;
+    transition cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0: all 0.3s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  }
+
+  .form-check-label,0.05);
+  }
+
+  .form-check-label-custom .check-icon {
+    color: #a0aec0;
+-custom .check-icon {
+    color: #a0    transition: all 0.3s ease;
+  }
+
+  .form-check-input-customaec:checked + .form-check-label-custom {
+    background: linear-gradient(135deg, #0;
+    transition: all 0.3s ease;
+  }
+
+  .form-check-input-custom:checked + .form-check-label-custom {
+    background: linear667eea, #764ba2);
+    border-color: transparent;
+   -gradient(135deg, #667eea, #764ba2);
+    border-color: transparent color: white;
+    box-shadow: 0 5px 15px rgba(102, ;
+    color: white;
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 126, 234, 0.3);
+  }
+
+ 0.3);
+  }
+
+  .form-check-input-custom:checked + .form-check-label-c .form-check-input-custom:checked + .form-check-label-custom .check-icon {
+    color: white;
+  }
+
+  .form-check-input-custom:hover + .form-check-label-custom {
+    border-color: #667eeaustom .check-icon {
+    color: white;
+  }
+
+  .form-check-input-custom:hover + .form-check-label-custom {
+    border-color:;
+    transform: translateY(-2px);
+  }
+
+  .btn-custom {
+    padding:  #667eea;
+    transform: translateY(-2px);
+  }
+
+  .btn-custom {
+0.8rem 2rem;
+    border-radius:    padding: 0.8rem 2rem;
+    border-radius: 12px;
+    font-weight: 600;
+    transition: 12px;
+    font-weight: 600 all 0.3s ease;
+    border: none;
+    text-decoration: none;
+   ;
+    transition: all 0.3s ease;
+    border: none;
+    text-decoration display:: none;
+    inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .btn-save {
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+    color: display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .btn-save {
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100% white;
+    box-shadow: 0 4px 15px rgba(72, 187, 120,);
+    color: white;
+    box-shadow: 0 4px 15px rgba(72, 0.3);
+  }
+
+  187, 120, 0.3);
+  }
+
+  .btn-save:hover {
+    transform .btn-save:hover {
+    transform: translateY(-3px: translateY(-3px);
+    box-shadow: 0 );
+    box-shadow: 0 8px 25px rgba(72, 8px 25px rgba(72, 187, 120187, 120, 0.4);
+    color: white;
+ , 0.4);
+    color: white;
+  }
+
+  .btn-cancel {
+    background: }
+
+  .btn-cancel {
+    background: white;
+    color: #718096 white;
+    color: #718096;
+    border: 2px solid #e2e8f;
+    border: 2px solid0;
+  }
+
+  .btn-cancel:hover {
+    #e2e8f0;
+  }
+
+  . background: #f7fafcbtn-cancel:hover {
+    background: #f7fafc;
+    color: #4a5568;
+    transform;
+    color: #4a5568;
+    transform: translateY(-2px);
+  }
+
+ : translateY(-2px /* Mensajes flash */
+  .flash-messages {
+    margin-bottom: );
+  }
+
+  /* Mensajes flash */
+  .flash-messages {
+    margin-bottom: 1.1.5rem;
+  }
+
+  .alert5rem;
+  }
+
+  .alert {
+    border-radius:  {
+    border-radius: 15px;
+   15px;
+    border: none;
+    box-shadow: 0 5 border: none;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  }
+
+  /*px 15px rgba(0,0,0,0.1);
+  }
+
+  /* Responsive */
+  @media Responsive */
+  @media (max-width: 768px) {
+    .card (max-width: 768px) {
+    .card-body-custom {
+      padding-body-custom {
+      padding: 1rem;
+    }
+
+: 1rem;
+    }
+
+    .checkbox-group {
+      gap: 0.5rem;
+    }
+
+    .form-check-label-custom {
+      padding: 0.4rem 0.8rem;
+      font-size: 0.8rem;
+    }
+  }
+</    .checkbox-group {
+      gap: 0.5rem;
+    }
+
+    .form-check-label-custom {
+      padding: 0.4rem 0.8rem;
+      font-size: 0.8rem;
+    }
+  }
+</style>
 
 {% endblock %}

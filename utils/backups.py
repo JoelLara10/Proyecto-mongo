@@ -207,6 +207,7 @@ def realizar_backup(tipo, formato, colecciones_seleccionadas, es_auto=False):
             return None
 
         # ============= FORMATO JSON =============
+        # ============= FORMATO JSON =============
         if formato == 'json':
             respaldo = {}
             for coll in colecciones_seleccionadas:
@@ -535,27 +536,32 @@ def restaurar_backup(nombre_archivo):
                     for doc in docs:
                         # Intentar convertir campos que parecen fechas
                         for key, value in doc.items():
-                            # Buscar campos que podrían ser fechas (por nombre)
-                            if key in ['fecnac', 'fecha_ing', 'fecha', 'fecha_nac', 'fecha_registro',
-                                       'created_at', 'updated_at', 'fecha_alta', 'fecha_baja']:
-                                if value and isinstance(value, str):
-                                    try:
-                                        # Limpiar el string
-                                        fecha_str = value.strip()
+                            # Lista completa de campos de fecha
+                            campos_fecha = [
+                                'fecnac', 'fecha_ing', 'fecha', 'fecha_nac', 'fecha_registro',
+                                'fecha_realizado', 'fecha_ingreso', 'fecha_alta', 'fecha_baja',
+                                'created_at', 'updated_at', 'fecha_consulta', 'fecha_cita',
+                                'fecha_creacion', 'fecha_receta', 'fecha_actualizacion'
+                            ]
 
-                                        # Quitar hora si existe (formato ISO)
-                                        if 'T' in fecha_str:
-                                            fecha_str = fecha_str.split('T')[0]
-                                        if ' ' in fecha_str:
-                                            fecha_str = fecha_str.split(' ')[0]
+                            if key in campos_fecha and value and isinstance(value, str):
+                                try:
+                                    # Limpiar el string
+                                    fecha_str = value.strip()
 
-                                        # Convertir a datetime
-                                        from datetime import datetime
-                                        fecha_obj = datetime.strptime(fecha_str, '%Y-%m-%d')
-                                        doc[key] = fecha_obj
-                                        current_app.logger.info(f"  ✓ Fecha convertida: {key} = {fecha_obj}")
-                                    except Exception as e:
-                                        current_app.logger.warning(f"  ✗ No se pudo convertir {key}: {value} - {e}")
+                                    # Quitar hora si existe (formato ISO)
+                                    if 'T' in fecha_str:
+                                        fecha_str = fecha_str.split('T')[0]
+                                    if ' ' in fecha_str:
+                                        fecha_str = fecha_str.split(' ')[0]
+
+                                    # Convertir a datetime
+                                    from datetime import datetime
+                                    fecha_obj = datetime.strptime(fecha_str, '%Y-%m-%d')
+                                    doc[key] = fecha_obj
+                                    current_app.logger.info(f"  ✓ Fecha convertida: {key} = {fecha_obj}")
+                                except Exception as e:
+                                    current_app.logger.warning(f"  ✗ No se pudo convertir {key}: {value} - {e}")
 
                         # Restaurar ObjectId si existe
                         if '_id' in doc and isinstance(doc['_id'], str):
@@ -586,20 +592,27 @@ def restaurar_backup(nombre_archivo):
                                 # Procesar documentos
                                 for doc in docs:
                                     for key, value in doc.items():
-                                        # Convertir fechas
-                                        if key in ['fecnac', 'fecha_ing', 'fecha', 'fecha_nac', 'fecha_registro']:
-                                            if value and isinstance(value, str):
-                                                try:
-                                                    fecha_str = value.strip()
-                                                    if 'T' in fecha_str:
-                                                        fecha_str = fecha_str.split('T')[0]
-                                                    if ' ' in fecha_str:
-                                                        fecha_str = fecha_str.split(' ')[0]
+                                        # Lista completa de campos de fecha
+                                        campos_fecha = [
+                                            'fecnac', 'fecha_ing', 'fecha', 'fecha_nac', 'fecha_registro',
+                                            'fecha_realizado', 'fecha_ingreso', 'fecha_alta', 'fecha_baja',
+                                            'created_at', 'updated_at', 'fecha_consulta', 'fecha_cita',
+                                            'fecha_creacion', 'fecha_receta', 'fecha_actualizacion'
+                                        ]
 
-                                                    from datetime import datetime
-                                                    doc[key] = datetime.strptime(fecha_str, '%Y-%m-%d')
-                                                except:
-                                                    pass
+                                        # Convertir fechas
+                                        if key in campos_fecha and value and isinstance(value, str):
+                                            try:
+                                                fecha_str = value.strip()
+                                                if 'T' in fecha_str:
+                                                    fecha_str = fecha_str.split('T')[0]
+                                                if ' ' in fecha_str:
+                                                    fecha_str = fecha_str.split(' ')[0]
+
+                                                from datetime import datetime
+                                                doc[key] = datetime.strptime(fecha_str, '%Y-%m-%d')
+                                            except:
+                                                pass
 
                                         # Convertir números
                                         if value and isinstance(value, str):
@@ -714,13 +727,67 @@ def restaurar_backup(nombre_archivo):
         if result_ate.modified_count > 0:
             current_app.logger.info(f"  ✓ {result_ate.modified_count} fechas convertidas en atencion.fecha_ing")
 
+        # Convertir fecha_realizado en examenes_det
+        result_ex_det = db.examenes_det.update_many(
+            {"fecha_realizado": {"$type": "string"}},
+            [{
+                "$set": {
+                    "fecha_realizado": {
+                        "$dateFromString": {
+                            "dateString": {
+                                "$substr": ["$fecha_realizado", 0, 10]
+                            },
+                            "format": "%Y-%m-%d"
+                        }
+                    }
+                }
+            }]
+        )
+        if result_ex_det.modified_count > 0:
+            current_app.logger.info(
+                f"  ✓ {result_ex_det.modified_count} fechas convertidas en examenes_det.fecha_realizado")
+
+        # Convertir fecha en examenes
+        result_ex = db.examenes.update_many(
+            {"fecha": {"$type": "string"}},
+            [{
+                "$set": {
+                    "fecha": {
+                        "$dateFromString": {
+                            "dateString": {
+                                "$cond": [
+                                    {"$regexMatch": {"input": "$fecha", "regex": "T"}},
+                                    {"$substr": ["$fecha", 0, 19]},
+                                    "$fecha"
+                                ]
+                            },
+                            "format": {
+                                "$cond": [
+                                    {"$regexMatch": {"input": "$fecha", "regex": "T"}},
+                                    "%Y-%m-%dT%H:%M:%S",
+                                    "%Y-%m-%d %H:%M:%S"
+                                ]
+                            }
+                        }
+                    }
+                }
+            }]
+        )
+        if result_ex.modified_count > 0:
+            current_app.logger.info(f"  ✓ {result_ex.modified_count} fechas convertidas en examenes.fecha")
+
         # Convertir otras fechas comunes
         colecciones_fechas = {
             'users': ['fecha_registro', 'fecha_actualizacion'],
             'citas': ['fecha_cita', 'fecha_creacion'],
             'historial': ['fecha_consulta'],
-            'recetas': ['fecha_receta'],
-            'ingresos': ['fecha_ingreso', 'fecha_alta']
+            'recetas': ['fecha_receta', 'fecha_registro'],
+            'ingresos': ['fecha_ingreso', 'fecha_alta'],
+            'examenes_det': ['fecha_realizado'],
+            'examenes': ['fecha'],
+            'signos_vitales': ['fecha_registro'],
+            'notas_medicas': ['fecha_registro'],
+            'diagnosticos': ['fecha_registro']
         }
 
         for coll, campos in colecciones_fechas.items():

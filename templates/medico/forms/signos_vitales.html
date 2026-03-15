@@ -1,111 +1,399 @@
 {% extends 'medico/header_medico.html' %}
+
 {% block content %}
 
+<!-- Mensajes Flash con diseño mejorado -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="flash-messages">
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm" role="alert">
+          <div class="d-flex align-items-center">
+            <i class="fas {% if category == 'success' %}fa-check-circle text-success{% else %}fa-exclamation-circle text-danger{% endif %} me-3 fa-2x"></i>
+            <div class="flex-grow-1">
+              <strong class="d-block">{% if category == 'success' %}Éxito{% else %}Error{% endif %}</strong>
+              <span>{{ message }}</span>
+            </div>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
 <section class="content-header">
-  <h1 class="text-dark">
-    <i class="fas fa-heartbeat"></i> Signos Vitales
-    <small>Registro clínico</small>
-  </h1>
+  <div class="container-fluid">
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="page-header" style="background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border-radius: 15px; padding: 1.2rem;">
+          <h1 class="text-white mb-0">
+            <i class="fas fa-heartbeat me-3"></i>
+            Signos Vitales
+            <small class="text-white-50 ms-3">Registro clínico</small>
+          </h1>
+        </div>
+      </div>
+    </div>
+  </div>
 </section>
 
 <section class="content">
+  <div class="container-fluid">
 
-  <!-- ================= ALERTAS ================= -->
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-      {% for category, message in messages %}
-        <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show">
-          {{ message }}
-          <button type="button" class="close" data-dismiss="alert">&times;</button>
+    <!-- Tarjeta de información del paciente -->
+    <div class="patient-info-card mb-4">
+      <div class="patient-info-content">
+        <div class="patient-avatar">
+          <i class="fas fa-user-circle"></i>
         </div>
-      {% endfor %}
-    {% endif %}
-  {% endwith %}
-
-  <!-- ================= CARD ================= -->
-  <div class="card card-danger">
-
-    <!-- PACIENTE -->
-    <div class="card-header">
-      <h3 class="card-title">
-        <i class="fas fa-user"></i>
-        Paciente: {{ paciente.papell }} {{ paciente.sapell }} {{ paciente.nom_pac }}
-      </h3>
+        <div class="patient-details">
+          <h5 class="patient-name">{{ paciente.papell }} {{ paciente.sapell }} {{ paciente.nom_pac }}</h5>
+          <div class="patient-meta">
+            <span class="patient-meta-item">
+              <i class="fas fa-id-card"></i> Exp: {{ paciente.Id_exp }}
+            </span>
+            <span class="patient-meta-item">
+              <i class="fas fa-calendar-alt"></i> Edad: {{ paciente.edad }} años
+            </span>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <form method="POST">
-      <div class="card-body">
+    <!-- Tarjeta principal de registro -->
+    <div class="main-card">
+      <div class="card-header-custom">
+        <div class="d-flex align-items-center">
+          <i class="fas fa-heartbeat me-2"></i>
+          <h5 class="mb-0">Registro de Signos Vitales</h5>
+        </div>
+      </div>
 
-        <div class="row">
+      <form method="POST">
+        <div class="card-body-custom">
 
-          <div class="col-md-4">
-            <div class="form-group">
-              <label>Presión arterial (TA)</label>
-              <input name="ta" class="form-control" placeholder="120/80">
-            </div>
+          <div class="section-title">
+            <i class="fas fa-chart-line"></i>
+            Parámetros Clínicos
           </div>
 
-          <div class="col-md-4">
-            <div class="form-group">
-              <label>Frecuencia cardíaca (FC)</label>
-              <input name="fc" type="number" class="form-control" placeholder="lpm">
+          <div class="row">
+            <!-- Presión arterial (TA) -->
+            <div class="col-md-4">
+              <div class="form-group-custom">
+                <label class="form-label-custom">
+                  <i class="fas fa-heartbeat"></i>
+                  Presión arterial (TA)
+                </label>
+                <input name="ta" class="form-control-custom" placeholder="120/80">
+              </div>
             </div>
-          </div>
 
-          <div class="col-md-4">
-            <div class="form-group">
-              <label>Frecuencia respiratoria (FR)</label>
-              <input name="fr" type="number" class="form-control" placeholder="rpm">
+            <!-- Frecuencia cardíaca (FC) -->
+            <div class="col-md-4">
+              <div class="form-group-custom">
+                <label class="form-label-custom">
+                  <i class="fas fa-heart"></i>
+                  Frecuencia cardíaca (FC)
+                </label>
+                <input name="fc" type="number" class="form-control-custom" placeholder="lpm">
+              </div>
             </div>
-          </div>
 
-          <div class="col-md-4">
-            <div class="form-group">
-              <label>Temperatura (°C)</label>
-              <input name="temp" type="number" step="0.1" class="form-control" placeholder="36.5">
+            <!-- Frecuencia respiratoria (FR) -->
+            <div class="col-md-4">
+              <div class="form-group-custom">
+                <label class="form-label-custom">
+                  <i class="fas fa-lungs"></i>
+                  Frecuencia respiratoria (FR)
+                </label>
+                <input name="fr" type="number" class="form-control-custom" placeholder="rpm">
+              </div>
             </div>
-          </div>
 
-          <div class="col-md-4">
-            <div class="form-group">
-              <label>SpO₂ (%)</label>
-              <input name="spo2" type="number" class="form-control" placeholder="98">
+            <!-- Temperatura -->
+            <div class="col-md-4">
+              <div class="form-group-custom">
+                <label class="form-label-custom">
+                  <i class="fas fa-thermometer-half"></i>
+                  Temperatura (°C)
+                </label>
+                <input name="temp" type="number" step="0.1" class="form-control-custom" placeholder="36.5">
+              </div>
             </div>
-          </div>
 
-          <div class="col-md-4">
-            <div class="form-group">
-              <label>Peso (kg)</label>
-              <input name="peso" type="number" step="0.1" class="form-control" placeholder="70">
+            <!-- SpO₂ -->
+            <div class="col-md-4">
+              <div class="form-group-custom">
+                <label class="form-label-custom">
+                  <i class="fas fa-wind"></i>
+                  SpO₂ (%)
+                </label>
+                <input name="spo2" type="number" class="form-control-custom" placeholder="98">
+              </div>
             </div>
-          </div>
 
-          <div class="col-md-4">
-            <div class="form-group">
-              <label>Talla (m)</label>
-              <input name="talla" type="number" step="0.01" class="form-control" placeholder="1.70">
+            <!-- Peso -->
+            <div class="col-md-4">
+              <div class="form-group-custom">
+                <label class="form-label-custom">
+                  <i class="fas fa-weight-scale"></i>
+                  Peso (kg)
+                </label>
+                <input name="peso" type="number" step="0.1" class="form-control-custom" placeholder="70">
+              </div>
+            </div>
+
+            <!-- Talla -->
+            <div class="col-md-4">
+              <div class="form-group-custom">
+                <label class="form-label-custom">
+                  <i class="fas fa-ruler-vertical"></i>
+                  Talla (m)
+                </label>
+                <input name="talla" type="number" step="0.01" class="form-control-custom" placeholder="1.70">
+              </div>
             </div>
           </div>
 
         </div>
 
-      </div>
-
-      <div class="card-footer text-center">
-        <button class="btn btn-danger">
-          <i class="fas fa-save"></i> Guardar signos vitales
-        </button>
-
-        <a href="{{ url_for('resultados_estudios', id_atencion=id_atencion) }}"
-           class="btn btn-secondary ml-2">
-          <i class="fas fa-arrow-left"></i> Regresar
-        </a>
-      </div>
-
-    </form>
+        <div class="card-footer-custom">
+          <div class="d-flex justify-content-center gap-3">
+            <a href="{{ url_for('resultados_estudios', id_atencion=id_atencion) }}"
+               class="btn-custom btn-cancel">
+              <i class="fas fa-arrow-left me-2"></i>
+              Regresar
+            </a>
+            <button type="submit" class="btn-custom btn-save">
+              <i class="fas fa-save me-2"></i>
+              Guardar signos vitales
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
 
   </div>
-
 </section>
+
+<style>
+  /* Tarjeta de información del paciente */
+  .patient-info-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: none;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    border-left: 5px solid #f56565;
+  }
+
+  .patient-info-content {
+    display: flex;
+    align-items: center;
+    padding: 1.2rem 1.5rem;
+  }
+
+  .patient-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 15px;
+    background: linear-gradient(135deg, #f56565 0%, #ed8936 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1.2rem;
+  }
+
+  .patient-avatar i {
+    font-size: 2.5rem;
+    color: white;
+  }
+
+  .patient-name {
+    font-weight: 700;
+    color: #2d3748;
+    margin-bottom: 0.3rem;
+    font-size: 1.2rem;
+  }
+
+  .patient-meta {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  .patient-meta-item {
+    font-size: 0.85rem;
+    color: #718096;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  .patient-meta-item i {
+    color: #f56565;
+  }
+
+  /* Tarjeta principal */
+  .main-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: none;
+    border-radius: 25px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    margin-bottom: 2rem;
+  }
+
+  .card-header-custom {
+    background: linear-gradient(135deg, #f56565 0%, #ed8936 100%);
+    padding: 1.2rem 1.5rem;
+    color: white;
+  }
+
+  .card-header-custom h5 {
+    margin: 0;
+    font-weight: 600;
+    font-size: 1.2rem;
+  }
+
+  .card-body-custom {
+    padding: 2rem;
+  }
+
+  .card-footer-custom {
+    background: #f7fafc;
+    border-top: 2px solid #e2e8f0;
+    padding: 1.5rem;
+  }
+
+  /* Título de sección */
+  .section-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #f56565;
+    margin: 0 0 1.5rem 0;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid;
+    border-image: linear-gradient(90deg, #f56565, #ed8936);
+    border-image-slice: 1;
+    display: flex;
+    align-items: center;
+  }
+
+  .section-title i {
+    margin-right: 0.8rem;
+    font-size: 1.4rem;
+  }
+
+  /* Formulario */
+  .form-group-custom {
+    margin-bottom: 1.5rem;
+  }
+
+  .form-label-custom {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+  }
+
+  .form-label-custom i {
+    color: #f56565;
+    font-size: 1rem;
+  }
+
+  .form-control-custom {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    background: white;
+    font-size: 0.95rem;
+  }
+
+  .form-control-custom:focus {
+    border-color: #f56565;
+    box-shadow: 0 0 0 3px rgba(245, 101, 101, 0.2);
+    outline: none;
+  }
+
+  /* Botones */
+  .btn-custom {
+    padding: 0.8rem 2rem;
+    border-radius: 12px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    border: none;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .btn-save {
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(72, 187, 120, 0.3);
+  }
+
+  .btn-save:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(72, 187, 120, 0.4);
+    color: white;
+  }
+
+  .btn-cancel {
+    background: white;
+    color: #718096;
+    border: 2px solid #e2e8f0;
+  }
+
+  .btn-cancel:hover {
+    background: #f7fafc;
+    color: #4a5568;
+    transform: translateY(-2px);
+  }
+
+  /* Mensajes flash */
+  .flash-messages {
+    margin-bottom: 1.5rem;
+  }
+
+  .alert {
+    border-radius: 15px;
+    border: none;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .patient-info-content {
+      flex-direction: column;
+      text-align: center;
+    }
+
+    .patient-avatar {
+      margin-right: 0;
+      margin-bottom: 1rem;
+    }
+
+    .patient-meta {
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .card-body-custom {
+      padding: 1rem;
+    }
+  }
+</style>
 
 {% endblock %}

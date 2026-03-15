@@ -1,71 +1,118 @@
 {% extends 'medico/header_medico.html' %}
 
 {% block content %}
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+<!-- Mensajes Flash -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="flash-messages">
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm" role="alert">
+          <div class="d-flex align-items-center">
+            <i class="fas {% if category == 'success' %}fa-check-circle text-success{% else %}fa-exclamation-circle text-danger{% endif %} me-3 fa-2x"></i>
+            <div class="flex-grow-1">
+              <strong class="d-block">{% if category == 'success' %}Éxito{% else %}Error{% endif %}</strong>
+              <span>{{ message }}</span>
+            </div>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
 
 <div class="container-fluid mt-3">
-  <!-- ENCABEZADO CON BOTÓN DE REGRESO -->
-  <div class="d-flex align-items-center mb-3">
+
+  <!-- ENCABEZADO CON BOTÓN DE REGRESO MEJORADO -->
+  <div class="d-flex align-items-center mb-4">
     <a href="{{ url_for('resultados_estudios', id_atencion=id_atencion) }}"
-       class="btn btn-outline-primary btn-sm d-flex align-items-center back-btn">
-      <i class="bi bi-arrow-left me-1"></i>Regresar a Resultados
+       class="back-btn">
+      <i class="fas fa-arrow-left me-2"></i>
+      Regresar a Resultados
     </a>
   </div>
 
-  <!-- INFORMACIÓN DEL PACIENTE (CARD SUPERIOR) -->
-  <div class="row mb-3">
-    <div class="col-12">
-      <div class="card border-0 shadow-sm rounded-2 info-card">
-        <div class="card-body py-2">
-          <div class="d-flex align-items-center">
-            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2"
-                 style="width: 35px; height: 35px;">
-              <i class="bi bi-person"></i>
-            </div>
-            <div>
-              <h6 class="mb-0 fw-bold">{{ paciente.papell }} {{ paciente.sapell }} {{ paciente.nom_pac }}</h6>
-              <small class="text-muted">Expediente: {{ paciente.Id_exp }} • Solicitud: {{ encabezado.fecha.strftime('%d/%m/%Y %H:%M') if encabezado.fecha else 'N/A' }}</small>
-            </div>
-          </div>
+  <!-- TARJETA DE INFORMACIÓN DEL PACIENTE MEJORADA -->
+  <div class="patient-info-card mb-4">
+    <div class="patient-info-content">
+      <div class="patient-avatar">
+        <i class="fas fa-user-circle"></i>
+      </div>
+      <div class="patient-details">
+        <h5 class="patient-name">{{ paciente.papell }} {{ paciente.sapell }} {{ paciente.nom_pac }}</h5>
+        <div class="patient-meta">
+          <span class="patient-meta-item">
+            <i class="fas fa-id-card"></i> Exp: {{ paciente.Id_exp }}
+          </span>
+          <span class="patient-meta-item">
+            <i class="fas fa-calendar-alt"></i> Solicitud:
+            {% if encabezado.fecha %}
+              {{ encabezado.fecha.strftime('%d/%m/%Y %H:%M') }}
+            {% else %}
+              N/A
+            {% endif %}
+          </span>
         </div>
       </div>
     </div>
   </div>
 
-  <div class="row">
-    <!-- LISTA DE RESULTADOS -->
+  <div class="row g-4">
+    <!-- LISTA DE ESTUDIOS DE LABORATORIO -->
     <div class="col-md-5">
-      <div class="card border-0 shadow rounded-2 h-100">
-        <div class="card-header bg-primary text-white py-2 rounded-top">
-          <h6 class="mb-0">
-            <i class="bi bi-files me-1"></i>Estudios de Laboratorio
-          </h6>
+      <div class="main-card h-100">
+        <div class="card-header-custom" style="background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);">
+          <div class="d-flex align-items-center justify-content-between">
+            <h6 class="mb-0">
+              <i class="fas fa-flask me-2"></i>
+              Estudios de Laboratorio
+            </h6>
+            <span class="badge bg-white text-success">
+              {{ detalles|length }} estudio(s)
+            </span>
+          </div>
         </div>
-        <div class="card-body p-0">
-          <div class="list-group list-group-flush">
+
+        <div class="card-body-custom p-0">
+          <div class="estudios-list">
             {% for d in detalles %}
-              <a href="#"
-                 class="list-group-item list-group-item-action resultado-link py-2"
-                 data-resultado="{{ d.resultado }}"
-                 data-nombre="{{ d.nombre }}">
-                <div class="d-flex align-items-center justify-content-between">
-                  <div class="d-flex align-items-center">
-                    <i class="bi bi-flask me-2 text-primary"></i>
-                    <div>
-                      <span class="small fw-bold">{{ d.nombre }}</span>
-                      <br>
-                      <small class="text-muted">{{ d.fecha_realizado.strftime('%d/%m/%Y') if d.fecha_realizado else 'Sin fecha' }}</small>
-                    </div>
-                  </div>
-                  <span class="badge {% if d.estado == 'REALIZADO' %}bg-success{% else %}bg-warning{% endif %} text-white rounded-pill px-2 py-0 small">
-                    {{ d.estado }}
-                  </span>
+            <a href="#"
+               class="estudio-item-link resultado-link"
+               data-resultado="{{ d.resultado }}"
+               data-nombre="{{ d.nombre }}">
+              <div class="estudio-item-content">
+                <div class="estudio-icon">
+                  <i class="fas fa-flask"></i>
                 </div>
-              </a>
+                <div class="estudio-info">
+                  <div class="estudio-nombre">{{ d.nombre }}</div>
+                  <div class="estudio-fecha">
+                    <i class="far fa-calendar-alt me-1"></i>
+                    {% if d.fecha_realizado %}
+                      {{ d.fecha_realizado.strftime('%d/%m/%Y') }}
+                    {% else %}
+                      Sin fecha
+                    {% endif %}
+                  </div>
+                </div>
+                <div class="estudio-estado">
+                  {% if d.estado == 'REALIZADO' %}
+                    <span class="badge-realizado">
+                      <i class="fas fa-check-circle me-1"></i>REALIZADO
+                    </span>
+                  {% else %}
+                    <span class="badge-pendiente">
+                      <i class="fas fa-clock me-1"></i>PENDIENTE
+                    </span>
+                  {% endif %}
+                </div>
+              </div>
+            </a>
             {% else %}
-            <div class="text-center py-4">
-              <i class="bi bi-folder-x text-muted" style="font-size: 1.5rem;"></i>
-              <p class="text-muted small mt-2 mb-0">No hay estudios disponibles</p>
+            <div class="empty-state-list">
+              <i class="fas fa-flask"></i>
+              <p>No hay estudios disponibles</p>
             </div>
             {% endfor %}
           </div>
@@ -75,36 +122,32 @@
 
     <!-- VISTA DEL RESULTADO -->
     <div class="col-md-7">
-      <div class="card border-0 shadow rounded-2 h-100">
-        <div class="card-header bg-primary text-white py-2 rounded-top">
-          <h6 class="mb-0">
-            <i class="bi bi-eye me-1"></i>Resultado del Estudio
-          </h6>
+      <div class="main-card h-100">
+        <div class="card-header-custom" style="background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);">
+          <div class="d-flex align-items-center">
+            <i class="fas fa-eye me-2"></i>
+            <h6 class="mb-0">Resultado del Estudio</h6>
+          </div>
         </div>
-        <div class="card-body p-0">
-          <div id="preview-laboratorio"
-               class="border rounded m-3 p-4"
-               style="min-height: 450px; background:#f8f9fa;">
-            <div class="text-center">
-              <i class="bi bi-flask text-muted" style="font-size: 3rem;"></i>
-              <p class="text-muted mt-2">
-                Selecciona un estudio para ver su resultado
-              </p>
+
+        <div class="card-body-custom">
+          <div id="preview-laboratorio" class="preview-container">
+            <div class="preview-placeholder">
+              <i class="fas fa-flask"></i>
+              <p>Selecciona un estudio para ver su resultado</p>
             </div>
           </div>
+        </div>
 
-          <!-- Información adicional -->
-          <div class="d-flex justify-content-between align-items-center border-top p-3 bg-light">
-            <div class="small text-muted">
-              <i class="bi bi-info-circle me-1"></i>
-              {{ detalles|length }} estudio(s) disponible(s)
-            </div>
-            <div>
-              <small class="text-muted">
-                <i class="bi bi-calendar me-1"></i>
-                Médico: {{ encabezado.medico }}
-              </small>
-            </div>
+        <!-- Información adicional mejorada -->
+        <div class="preview-footer">
+          <div class="footer-info">
+            <i class="fas fa-info-circle me-1"></i>
+            {{ detalles|length }} estudio(s) disponible(s)
+          </div>
+          <div class="footer-medico">
+            <i class="fas fa-user-md me-1"></i>
+            Médico: {{ encabezado.medico }}
           </div>
         </div>
       </div>
@@ -113,92 +156,395 @@
 
   <!-- OBSERVACIONES GENERALES (si existen) -->
   {% if encabezado.observaciones %}
-  <div class="row mt-3">
+  <div class="row mt-4">
     <div class="col-12">
-      <div class="card border-0 shadow-sm rounded-2">
-        <div class="card-body py-2">
-          <small class="text-muted">
-            <i class="bi bi-chat-text me-1"></i>
-            <strong>Observaciones generales:</strong> {{ encabezado.observaciones }}
-          </small>
+      <div class="observaciones-card">
+        <div class="observaciones-header">
+          <i class="fas fa-comment me-2"></i>
+          Observaciones generales
+        </div>
+        <div class="observaciones-body">
+          {{ encabezado.observaciones }}
         </div>
       </div>
     </div>
   </div>
   {% endif %}
+
 </div>
 
 <style>
+  /* Mensajes flash */
+  .flash-messages {
+    margin-bottom: 1.5rem;
+  }
+
+  .alert {
+    border-radius: 15px;
+    border: none;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  }
+
+  /* Botón de regreso */
   .back-btn {
-    border: 1px solid #4dabf7;
-    color: #4dabf7;
-    font-weight: 500;
-    padding: 4px 12px;
-    border-radius: 6px;
-    font-size: 0.875rem;
-    transition: all 0.2s ease;
+    border: 2px solid #48bb78;
+    color: #48bb78;
+    font-weight: 600;
+    padding: 0.5rem 1.2rem;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
   }
 
   .back-btn:hover {
-    background-color: #4dabf7;
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
     color: white;
     transform: translateX(-3px);
+    box-shadow: 0 5px 15px rgba(72, 187, 120, 0.3);
   }
 
-  .info-card {
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  /* Tarjeta de información del paciente */
+  .patient-info-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: none;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    border-left: 5px solid #48bb78;
   }
 
-  .info-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08) !important;
+  .patient-info-content {
+    display: flex;
+    align-items: center;
+    padding: 1.2rem 1.5rem;
   }
 
-  .card-header {
-    border-radius: 8px 8px 0 0 !important;
-    font-size: 0.875rem;
+  .patient-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 15px;
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1.2rem;
   }
 
-  .list-group-item {
-    border-left: none;
-    border-right: none;
-    transition: all 0.2s ease;
+  .patient-avatar i {
+    font-size: 2.5rem;
+    color: white;
   }
 
-  .list-group-item:first-child {
-    border-top: none;
+  .patient-name {
+    font-weight: 700;
+    color: #2d3748;
+    margin-bottom: 0.3rem;
+    font-size: 1.2rem;
   }
 
-  .list-group-item:hover {
-    background-color: #e8f4fd;
+  .patient-meta {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
   }
 
-  .list-group-item.active {
-    background-color: #4dabf7 !important;
-    border-color: #4dabf7 !important;
-    color: white !important;
+  .patient-meta-item {
+    font-size: 0.85rem;
+    color: #718096;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
   }
 
-  .list-group-item.active i {
-    color: white !important;
+  .patient-meta-item i {
+    color: #48bb78;
   }
 
-  .badge {
-    font-size: 0.7rem;
-    padding: 3px 8px;
+  /* Tarjeta principal */
+  .main-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: none;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
   }
 
-  #preview-laboratorio {
-    transition: all 0.3s ease;
+  .card-header-custom {
+    padding: 1rem 1.5rem;
+    color: white;
+  }
+
+  .card-header-custom h6 {
+    margin: 0;
+    font-weight: 600;
+    font-size: 1rem;
+  }
+
+  .card-header-custom .badge {
+    font-size: 0.8rem;
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+  }
+
+  .card-body-custom {
+    flex: 1;
     overflow-y: auto;
+    max-height: 450px;
+  }
+
+  /* Lista de estudios */
+  .estudios-list {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .estudio-item-link {
+    text-decoration: none;
+    border-bottom: 1px solid #e2e8f0;
+    transition: all 0.3s ease;
+  }
+
+  .estudio-item-link:hover {
+    background: rgba(72, 187, 120, 0.1);
+  }
+
+  .estudio-item-link.active {
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+  }
+
+  .estudio-item-link.active .estudio-nombre,
+  .estudio-item-link.active .estudio-fecha,
+  .estudio-item-link.active .estudio-icon i,
+  .estudio-item-link.active .estudio-estado .badge-realizado,
+  .estudio-item-link.active .estudio-estado .badge-pendiente {
+    color: white !important;
+  }
+
+  .estudio-item-link.active .badge-realizado,
+  .estudio-item-link.active .badge-pendiente {
+    background: rgba(255, 255, 255, 0.2) !important;
+    color: white !important;
+    border-color: white;
+  }
+
+  .estudio-item-content {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    gap: 1rem;
+  }
+
+  .estudio-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: #f7fafc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .estudio-icon i {
+    font-size: 1.3rem;
+    color: #48bb78;
+  }
+
+  .estudio-info {
+    flex: 1;
+  }
+
+  .estudio-nombre {
+    font-weight: 600;
+    color: #2d3748;
+    font-size: 0.95rem;
+    margin-bottom: 0.2rem;
+  }
+
+  .estudio-fecha {
+    font-size: 0.75rem;
+    color: #718096;
+  }
+
+  .estudio-estado {
+    min-width: 100px;
+    text-align: right;
+  }
+
+  .badge-realizado, .badge-pendiente {
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+  }
+
+  .badge-realizado {
+    background: #d1fae5;
+    color: #065f46;
+    border: 1px solid #a7f3d0;
+  }
+
+  .badge-pendiente {
+    background: #fed7d7;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+  }
+
+  /* Estado vacío de la lista */
+  .empty-state-list {
+    text-align: center;
+    padding: 3rem;
+  }
+
+  .empty-state-list i {
+    font-size: 3rem;
+    color: #cbd5e0;
+    margin-bottom: 1rem;
+  }
+
+  .empty-state-list p {
+    color: #718096;
+    margin: 0;
+  }
+
+  /* Contenedor de vista previa */
+  .preview-container {
+    min-height: 350px;
+    background: #f8fafc;
+    border-radius: 12px;
+    padding: 1.5rem;
+  }
+
+  .preview-placeholder {
+    height: 100%;
+    min-height: 300px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #a0aec0;
+  }
+
+  .preview-placeholder i {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+  }
+
+  .preview-placeholder p {
+    font-size: 0.95rem;
+  }
+
+  .resultado-content {
+    padding: 1rem;
+  }
+
+  .resultado-titulo {
+    color: #48bb78;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .resultado-titulo i {
+    font-size: 1.5rem;
   }
 
   .resultado-valor {
     font-size: 1.1rem;
-    padding: 1rem;
+    padding: 1.5rem;
     background: white;
-    border-radius: 8px;
-    border-left: 4px solid #4dabf7;
+    border-radius: 12px;
+    border-left: 4px solid #48bb78;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  }
+
+  /* Footer de vista previa */
+  .preview-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 2px solid #e2e8f0;
+    padding: 1rem 1.5rem;
+    background: #f8fafc;
+  }
+
+  .footer-info, .footer-medico {
+    font-size: 0.85rem;
+    color: #718096;
+    display: flex;
+    align-items: center;
+  }
+
+  .footer-info i, .footer-medico i {
+    color: #48bb78;
+  }
+
+  /* Tarjeta de observaciones */
+  .observaciones-card {
+    background: white;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+  }
+
+  .observaciones-header {
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+    padding: 0.8rem 1.2rem;
+    color: white;
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+
+  .observaciones-body {
+    padding: 1.2rem;
+    color: #2d3748;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    background: #fff;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .patient-info-content {
+      flex-direction: column;
+      text-align: center;
+    }
+
+    .patient-avatar {
+      margin-right: 0;
+      margin-bottom: 1rem;
+    }
+
+    .patient-meta {
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .estudio-item-content {
+      flex-direction: column;
+      text-align: center;
+    }
+
+    .estudio-estado {
+      text-align: center;
+    }
+
+    .preview-footer {
+      flex-direction: column;
+      gap: 0.5rem;
+    }
   }
 </style>
 
@@ -224,15 +570,16 @@
 
         // Mostrar el resultado
         previewArea.innerHTML = `
-          <div class="p-3">
-            <h6 class="text-primary fw-bold mb-3">
-              <i class="bi bi-flask me-2"></i>${nombreEstudio}
+          <div class="resultado-content">
+            <h6 class="resultado-titulo">
+              <i class="fas fa-flask"></i>
+              ${nombreEstudio}
             </h6>
             <div class="resultado-valor">
               ${resultado || '<span class="text-muted">Sin resultado disponible</span>'}
             </div>
             <small class="text-muted d-block mt-3">
-              <i class="bi bi-info-circle"></i>
+              <i class="fas fa-info-circle me-1"></i>
               Resultado de laboratorio
             </small>
           </div>

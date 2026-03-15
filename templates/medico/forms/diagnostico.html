@@ -3,104 +3,544 @@
 
 {% block content %}
 
+<!-- Mensajes Flash con diseño mejorado -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="flash-messages">
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm" role="alert">
+          <div class="d-flex align-items-center">
+            <i class="fas {% if category == 'success' %}fa-check-circle text-success{% else %}fa-exclamation-circle text-danger{% endif %} me-3 fa-2x"></i>
+            <div class="flex-grow-1">
+              <strong class="d-block">{% if category == 'success' %}Éxito{% else %}Error{% endif %}</strong>
+              <span>{{ message }}</span>
+            </div>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
 <section class="content-header">
-  <h1 class="text-dark">
-    <i class="fas fa-clipboard-list"></i> Diagnóstico Médico
-    <small>Registro clínico</small>
-  </h1>
+  <div class="container-fluid">
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="page-header" style="background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border-radius: 15px; padding: 1.2rem;">
+          <h1 class="text-white mb-0">
+            <i class="fas fa-clipboard-list me-3"></i>
+            Diagnóstico Médico
+            <small class="text-white-50 ms-3">Registro clínico</small>
+          </h1>
+        </div>
+      </div>
+    </div>
+  </div>
 </section>
 
 <section class="content">
+  <div class="container-fluid">
 
-{% with messages = get_flashed_messages(with_categories=true) %}
-  {% for category, message in messages %}
-    <div class="alert alert-{{ 'success' if category=='success' else 'danger' }} alert-dismissible fade show">
-      {{ message }}
-      <button type="button" class="close" data-dismiss="alert">&times;</button>
+    <!-- Tarjeta de información del paciente -->
+    <div class="patient-info-card mb-4">
+      <div class="patient-info-content">
+        <div class="patient-avatar">
+          <i class="fas fa-user-circle"></i>
+        </div>
+        <div class="patient-details">
+          <h5 class="patient-name">{{ paciente.papell }} {{ paciente.sapell }} {{ paciente.nom_pac }}</h5>
+          <div class="patient-meta">
+            <span class="patient-meta-item">
+              <i class="fas fa-id-card"></i> Exp: {{ paciente.Id_exp }}
+            </span>
+            <span class="patient-meta-item">
+              <i class="fas fa-calendar-alt"></i> Edad: {{ paciente.edad }} años
+            </span>
+            {% if bloqueado %}
+            <span class="patient-meta-item">
+              <i class="fas fa-lock"></i> Atención Cerrada
+            </span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
     </div>
-  {% endfor %}
-{% endwith %}
 
-<div class="card card-primary">
-  <div class="card-header">
-    <h3 class="card-title">
-      <i class="fas fa-user"></i>
-      Paciente: {{ paciente.papell }} {{ paciente.sapell }} {{ paciente.nom_pac }}
-    </h3>
+    <!-- Tarjeta principal de diagnóstico -->
+    <div class="main-card">
+      <div class="card-header-custom">
+        <div class="d-flex align-items-center">
+          <i class="fas fa-clipboard-list me-2"></i>
+          <h5 class="mb-0">Registro de Diagnóstico</h5>
+        </div>
+      </div>
+
+      <form method="POST">
+        <div class="card-body-custom">
+
+          <!-- DIAGNÓSTICO PRINCIPAL -->
+          <div class="diagnostico-section">
+            <div class="section-header">
+              <span class="section-badge">1</span>
+              <h6 class="section-title-diagnostico">Diagnóstico principal</h6>
+            </div>
+
+            <div class="voice-controls">
+              <button type="button" class="voice-btn voice-record" onclick="iniciarDictado('diagnostico_principal')" title="Iniciar dictado" {% if bloqueado %}disabled{% endif %}>
+                <i class="fas fa-microphone"></i>
+              </button>
+              <button type="button" class="voice-btn voice-stop" onclick="detenerDictado()" title="Detener dictado">
+                <i class="fas fa-stop"></i>
+              </button>
+              <button type="button" class="voice-btn voice-play" onclick="leerCampo('diagnostico_principal')" title="Leer texto">
+                <i class="fas fa-volume-up"></i>
+              </button>
+            </div>
+
+            <input type="text" id="diagnostico_principal" name="diagnostico_principal"
+                   class="form-control-diagnostico {% if bloqueado %}campo-bloqueado{% endif %}"
+                   {% if bloqueado %}disabled{% endif %}
+                   value="{{ diagnostico.diagnostico_principal if diagnostico }}"
+                   placeholder="Ej: Diabetes mellitus tipo 2">
+          </div>
+
+          <!-- DIAGNÓSTICOS SECUNDARIOS -->
+          <div class="diagnostico-section">
+            <div class="section-header">
+              <span class="section-badge">2</span>
+              <h6 class="section-title-diagnostico">Diagnósticos secundarios</h6>
+            </div>
+
+            <div class="voice-controls">
+              <button type="button" class="voice-btn voice-record" onclick="iniciarDictado('diagnosticos_secundarios')" title="Iniciar dictado" {% if bloqueado %}disabled{% endif %}>
+                <i class="fas fa-microphone"></i>
+              </button>
+              <button type="button" class="voice-btn voice-stop" onclick="detenerDictado()" title="Detener dictado">
+                <i class="fas fa-stop"></i>
+              </button>
+              <button type="button" class="voice-btn voice-play" onclick="leerCampo('diagnosticos_secundarios')" title="Leer texto">
+                <i class="fas fa-volume-up"></i>
+              </button>
+            </div>
+
+            <textarea id="diagnosticos_secundarios" name="diagnosticos_secundarios"
+                      class="form-control-diagnostico textarea {% if bloqueado %}campo-bloqueado{% endif %}"
+                      {% if bloqueado %}disabled{% endif %}
+                      rows="3"
+                      placeholder="Diagnósticos adicionales (uno por línea o separados por comas)">{{ diagnostico.diagnosticos_secundarios if diagnostico }}</textarea>
+          </div>
+
+          <!-- OBSERVACIONES -->
+          <div class="diagnostico-section">
+            <div class="section-header">
+              <span class="section-badge">3</span>
+              <h6 class="section-title-diagnostico">Observaciones</h6>
+            </div>
+
+            <div class="voice-controls">
+              <button type="button" class="voice-btn voice-record" onclick="iniciarDictado('observaciones')" title="Iniciar dictado" {% if bloqueado %}disabled{% endif %}>
+                <i class="fas fa-microphone"></i>
+              </button>
+              <button type="button" class="voice-btn voice-stop" onclick="detenerDictado()" title="Detener dictado">
+                <i class="fas fa-stop"></i>
+              </button>
+              <button type="button" class="voice-btn voice-play" onclick="leerCampo('observaciones')" title="Leer texto">
+                <i class="fas fa-volume-up"></i>
+              </button>
+            </div>
+
+            <textarea id="observaciones" name="observaciones"
+                      class="form-control-diagnostico textarea {% if bloqueado %}campo-bloqueado{% endif %}"
+                      {% if bloqueado %}disabled{% endif %}
+                      rows="4"
+                      placeholder="Notas adicionales, consideraciones clínicas, etc.">{{ diagnostico.observaciones if diagnostico }}</textarea>
+          </div>
+
+        </div>
+
+        <div class="card-footer-custom">
+          <div class="d-flex justify-content-center gap-3 flex-wrap">
+            {% if not bloqueado %}
+            <button type="submit" class="btn-save-diagnostico">
+              <i class="fas fa-save me-2"></i>
+              Guardar Diagnóstico
+            </button>
+            {% else %}
+            <div class="alert-bloqueado">
+              <i class="fas fa-lock me-2"></i>
+              Atención cerrada. Solo lectura.
+            </div>
+            {% endif %}
+
+            <a href="{{ url_for('resultados_estudios', id_atencion=id_atencion) }}" class="btn-cancel-diagnostico">
+              <i class="fas fa-arrow-left me-2"></i>
+              Cancelar
+            </a>
+          </div>
+        </div>
+      </form>
+    </div>
+
   </div>
-
-<form method="POST">
-<div class="card-body">
-
-<!-- DIAGNÓSTICO PRINCIPAL -->
-<label>Diagnóstico principal</label>
-  <div class="mb-2">
-    <button type="button" class="btn btn-success btn-sm" onclick="iniciarDictado('diagnostico_principal')"><i class="fas fa-microphone"></i></button>
-    <button type="button" class="btn btn-warning btn-sm" onclick="detenerDictado()"><i class="fas fa-stop"></i></button>
-    <button type="button" class="btn btn-info btn-sm" onclick="leerCampo('diagnostico_principal')"><i class="fas fa-volume-up"></i></button>
-  </div>
-  <br>
-<div class="input-group mb-3">
-  <input type="text" id="diagnostico_principal" name="diagnostico_principal"
-         class="form-control"
-         {% if bloqueado %}disabled{% endif %}
-         value="{{ diagnostico.diagnostico_principal if diagnostico }}">
-</div>
-
-<!-- SECUNDARIOS -->
-<label>Diagnósticos secundarios</label>
-  <div class="mb-2">
-    <button type="button" class="btn btn-success btn-sm" onclick="iniciarDictado('diagnosticos_secundarios')"><i class="fas fa-microphone"></i></button>
-    <button type="button" class="btn btn-warning btn-sm" onclick="detenerDictado()"><i class="fas fa-stop"></i></button>
-    <button type="button" class="btn btn-info btn-sm" onclick="leerCampo('diagnosticos_secundarios')"><i class="fas fa-volume-up"></i></button>
-  </div>
-  <br>
-<div class="input-group mb-3">
-  <textarea id="diagnosticos_secundarios" name="diagnosticos_secundarios"
-            class="form-control"
-            {% if bloqueado %}disabled{% endif %}>{{ diagnostico.diagnosticos_secundarios if diagnostico }}</textarea>
-</div>
-
-<!-- OBSERVACIONES -->
-<label>Observaciones</label>
-  <div class="mb-2">
-    <button type="button" class="btn btn-success btn-sm" onclick="iniciarDictado('observaciones')"><i class="fas fa-microphone"></i></button>
-    <button type="button" class="btn btn-warning btn-sm" onclick="detenerDictado()"><i class="fas fa-stop"></i></button>
-    <button type="button" class="btn btn-info btn-sm" onclick="leerCampo('observaciones')"><i class="fas fa-volume-up"></i></button>
-  </div>
-  <br>
-<div class="input-group mb-3">
-  <textarea id="observaciones" name="observaciones"
-            class="form-control"
-            {% if bloqueado %}disabled{% endif %}>{{ diagnostico.observaciones if diagnostico }}</textarea>
-</div>
-
-</div>
-
-<div class="card-footer text-center">
-
-{% if not bloqueado %}
-<button type="submit" class="btn btn-primary">
-  <i class="fas fa-save"></i> Guardar Diagnostico
-</button>
-{% else %}
-<div class="alert alert-warning">
-  <i class="fas fa-lock"></i> Atención cerrada. Solo lectura.
-</div>
-{% endif %}
-
-<a href="{{ url_for('historial_diagnostico', id_atencion=id_atencion) }}" class="btn btn-info">
-  <i class="fas fa-history"></i> Historial
-</a>
-
-<a href="{{ url_for('resultados_estudios', id_atencion=id_atencion) }}" class="btn btn-secondary">
-  <i class="fas fa-arrow-left"></i> Cancelar
-</a>
-
-</div>
-</form>
-</div>
 </section>
+
+<style>
+  /* Tarjeta de información del paciente */
+  .patient-info-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: none;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    border-left: 5px solid #667eea;
+  }
+
+  .patient-info-content {
+    display: flex;
+    align-items: center;
+    padding: 1.2rem 1.5rem;
+  }
+
+  .patient-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 15px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1.2rem;
+  }
+
+  .patient-avatar i {
+    font-size: 2.5rem;
+    color: white;
+  }
+
+  .patient-name {
+    font-weight: 700;
+    color: #2d3748;
+    margin-bottom: 0.3rem;
+    font-size: 1.2rem;
+  }
+
+  .patient-meta {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  .patient-meta-item {
+    font-size: 0.85rem;
+    color: #718096;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  .patient-meta-item i {
+    color: #667eea;
+  }
+
+  /* Tarjeta principal */
+  .main-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: none;
+    border-radius: 25px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    margin-bottom: 2rem;
+  }
+
+  .card-header-custom {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 1.2rem 1.5rem;
+    color: white;
+  }
+
+  .card-header-custom h5 {
+    margin: 0;
+    font-weight: 600;
+    font-size: 1.2rem;
+  }
+
+  .card-body-custom {
+    padding: 2rem;
+  }
+
+  .card-footer-custom {
+    background: #f7fafc;
+    border-top: 2px solid #e2e8f0;
+    padding: 1.5rem;
+  }
+
+  /* Secciones de diagnóstico */
+  .diagnostico-section {
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: #f7fafc;
+    border-radius: 15px;
+    transition: all 0.3s ease;
+  }
+
+  .diagnostico-section:hover {
+    background: #ffffff;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+
+  .section-badge {
+    width: 35px;
+    height: 35px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: white;
+    margin-right: 1rem;
+  }
+
+  .section-title-diagnostico {
+    font-weight: 700;
+    color: #2d3748;
+    margin: 0;
+    font-size: 1rem;
+  }
+
+  /* Controles de voz */
+  .voice-controls {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .voice-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    border: none;
+    color: white;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .voice-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  .voice-record {
+    background: linear-gradient(135deg, #48bb78, #38a169);
+    box-shadow: 0 4px 10px rgba(72, 187, 120, 0.3);
+  }
+
+  .voice-stop {
+    background: linear-gradient(135deg, #f56565, #e53e3e);
+    box-shadow: 0 4px 10px rgba(229, 62, 62, 0.3);
+  }
+
+  .voice-play {
+    background: linear-gradient(135deg, #4299e1, #3182ce);
+    box-shadow: 0 4px 10px rgba(66, 153, 225, 0.3);
+  }
+
+  .voice-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+  }
+
+  .voice-record:hover:not(:disabled) {
+    box-shadow: 0 8px 20px rgba(72, 187, 120, 0.4);
+  }
+
+  .voice-stop:hover:not(:disabled) {
+    box-shadow: 0 8px 20px rgba(229, 62, 62, 0.4);
+  }
+
+  .voice-play:hover:not(:disabled) {
+    box-shadow: 0 8px 20px rgba(66, 153, 225, 0.4);
+  }
+
+  /* Campos de formulario */
+  .form-control-diagnostico {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    background: white;
+    font-size: 0.95rem;
+  }
+
+  .form-control-diagnostico.textarea {
+    resize: vertical;
+    min-height: 80px;
+  }
+
+  .form-control-diagnostico:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+    outline: none;
+  }
+
+  .form-control-diagnostico::placeholder {
+    color: #a0aec0;
+    font-size: 0.9rem;
+  }
+
+  .campo-bloqueado {
+    background: #f7fafc;
+    color: #718096;
+    border-color: #e2e8f0;
+  }
+
+  /* Botones de acción */
+  .btn-save-diagnostico {
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 0.8rem 2rem;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(72, 187, 120, 0.3);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    text-decoration: none;
+  }
+
+  .btn-save-diagnostico:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(72, 187, 120, 0.4);
+    color: white;
+  }
+
+  .btn-history {
+    background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 0.8rem 2rem;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(66, 153, 225, 0.3);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+  }
+
+  .btn-history:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(66, 153, 225, 0.4);
+    color: white;
+  }
+
+  .btn-cancel-diagnostico {
+    background: white;
+    color: #718096;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 0.8rem 2rem;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+  }
+
+  .btn-cancel-diagnostico:hover {
+    background: #f7fafc;
+    color: #4a5568;
+    transform: translateY(-2px);
+  }
+
+  /* Alerta de bloqueo */
+  .alert-bloqueado {
+    background: #fed7d7;
+    color: #c53030;
+    border: 1px solid #feb2b2;
+    border-radius: 12px;
+    padding: 0.8rem 2rem;
+    font-weight: 600;
+    font-size: 1rem;
+    display: inline-flex;
+    align-items: center;
+    box-shadow: 0 4px 10px rgba(245, 101, 101, 0.1);
+  }
+
+  /* Mensajes flash */
+  .flash-messages {
+    margin-bottom: 1.5rem;
+  }
+
+  .alert {
+    border-radius: 15px;
+    border: none;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .patient-info-content {
+      flex-direction: column;
+      text-align: center;
+    }
+
+    .patient-avatar {
+      margin-right: 0;
+      margin-bottom: 1rem;
+    }
+
+    .patient-meta {
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .card-body-custom {
+      padding: 1rem;
+    }
+
+    .diagnostico-section {
+      padding: 1rem;
+    }
+
+    .voice-controls {
+      justify-content: center;
+    }
+
+    .d-flex.gap-3 {
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .btn-save-diagnostico, .btn-history, .btn-cancel-diagnostico, .alert-bloqueado {
+      width: 100%;
+      text-align: center;
+    }
+  }
+</style>
 
 <script>
 let recognition;

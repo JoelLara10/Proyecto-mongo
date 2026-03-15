@@ -1,117 +1,568 @@
 {% extends 'medico/header_medico.html' %}
 {% block content %}
 
-<section class="content-header">
-  <h1 class="text-dark">
-    <i class="fas fa-prescription-bottle-alt"></i> Receta Médica
-  </h1>
-</section>
-
-<section class="content">
-
+<!-- Mensajes Flash con diseño mejorado -->
 {% with messages = get_flashed_messages(with_categories=true) %}
   {% if messages %}
-    {% for category, message in messages %}
-      <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show">
-        {{ message }}
-        <button type="button" class="close" data-dismiss="alert">&times;</button>
-      </div>
-    {% endfor %}
+    <div class="flash-messages">
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm" role="alert">
+          <div class="d-flex align-items-center">
+            <i class="fas {% if category == 'success' %}fa-check-circle text-success{% else %}fa-exclamation-circle text-danger{% endif %} me-3 fa-2x"></i>
+            <div class="flex-grow-1">
+              <strong class="d-block">{% if category == 'success' %}Éxito{% else %}Error{% endif %}</strong>
+              <span>{{ message }}</span>
+            </div>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      {% endfor %}
+    </div>
   {% endif %}
 {% endwith %}
 
-<div class="card card-success shadow">
-  <div class="card-header">
-    <h3 class="card-title">
-      <i class="fas fa-user"></i>
-      Paciente: {{ paciente.papell }} {{ paciente.sapell }} {{ paciente.nom_pac }}
-    </h3>
+<section class="content-header">
+  <div class="container-fluid">
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="page-header" style="background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border-radius: 15px; padding: 1.2rem;">
+          <h1 class="text-white mb-0">
+            <i class="fas fa-prescription-bottle-alt me-3"></i>
+            Receta Médica
+          </h1>
+        </div>
+      </div>
+    </div>
   </div>
+</section>
 
-  <form method="POST">
-    <div class="card-body" id="contenedor-medicamentos">
+<section class="content">
+  <div class="container-fluid">
 
-      <div class="medicamento border rounded p-3 mb-4 shadow-sm bg-light">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-            <h5 class="text-success text-bold">Medicamento #1</h5>
+    <!-- Tarjeta de información del paciente -->
+    <div class="patient-info-card mb-4">
+      <div class="patient-info-content">
+        <div class="patient-avatar">
+          <i class="fas fa-user-circle"></i>
         </div>
-
-        <label>Medicamento</label>
-        <div class="mb-2">
-            <button type="button" class="btn btn-success btn-sm" onclick="iniciarDictado('med_0')"><i class="fas fa-microphone"></i></button>
-            <button type="button" class="btn btn-warning btn-sm" onclick="detenerDictado()"><i class="fas fa-stop"></i></button>
-            <button type="button" class="btn btn-info btn-sm" onclick="leerCampo('med_0')"><i class="fas fa-volume-up"></i></button>
-        </div>
-        <div class="input-group mb-2">
-          <input name="medicamento[]" id="med_0" class="form-control" required>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group col-md-4">
-            <label>Dosis</label>
-            <div class="mb-2">
-                <button type="button" class="btn btn-success btn-sm" onclick="iniciarDictado('dosis_0')"><i class="fas fa-microphone"></i></button>
-                <button type="button" class="btn btn-warning btn-sm" onclick="detenerDictado()"><i class="fas fa-stop"></i></button>
-                <button type="button" class="btn btn-info btn-sm" onclick="leerCampo('dosis_0')"><i class="fas fa-volume-up"></i></button>
-              </div>
-            <div class="input-group">
-              <input name="dosis[]" id="dosis_0" class="form-control">
-            </div>
-          </div>
-
-          <div class="form-group col-md-4">
-            <label>Frecuencia</label>
-            <div class="mb-2">
-                <button type="button" class="btn btn-success btn-sm" onclick="iniciarDictado('freq_0')"><i class="fas fa-microphone"></i></button>
-                <button type="button" class="btn btn-warning btn-sm" onclick="detenerDictado()"><i class="fas fa-stop"></i></button>
-                <button type="button" class="btn btn-info btn-sm" onclick="leerCampo('freq_0')"><i class="fas fa-volume-up"></i></button>
-              </div>
-            <div class="input-group">
-              <input name="frecuencia[]" id="freq_0" class="form-control">
-            </div>
-          </div>
-
-          <div class="form-group col-md-4">
-            <label>Duración</label>
-            <div class="mb-2">
-                <button type="button" class="btn btn-success btn-sm" onclick="iniciarDictado('dur_0')"><i class="fas fa-microphone"></i></button>
-                <button type="button" class="btn btn-warning btn-sm" onclick="detenerDictado()"><i class="fas fa-stop"></i></button>
-                <button type="button" class="btn btn-info btn-sm" onclick="leerCampo('dur_0')"><i class="fas fa-volume-up"></i></button>
-              </div>
-            <div class="input-group">
-              <input name="duracion[]" id="dur_0" class="form-control">
-            </div>
+        <div class="patient-details">
+          <h5 class="patient-name">{{ paciente.papell }} {{ paciente.sapell }} {{ paciente.nom_pac }}</h5>
+          <div class="patient-meta">
+            <span class="patient-meta-item">
+              <i class="fas fa-id-card"></i> Exp: {{ paciente.Id_exp }}
+            </span>
+            <span class="patient-meta-item">
+              <i class="fas fa-calendar-alt"></i> Edad: {{ paciente.edad }} años
+            </span>
           </div>
         </div>
+      </div>
+    </div>
 
-        <label>Indicaciones</label>
-        <div class="mb-2">
-            <button type="button" class="btn btn-success btn-sm" onclick="iniciarDictado('ind_0')"><i class="fas fa-microphone"></i></button>
-            <button type="button" class="btn btn-warning btn-sm" onclick="detenerDictado()"><i class="fas fa-stop"></i></button>
-            <button type="button" class="btn btn-info btn-sm" onclick="leerCampo('ind_0')"><i class="fas fa-volume-up"></i></button>
-          </div>
-        <div class="input-group">
-          <textarea name="indicaciones[]" id="ind_0" class="form-control" rows="2"></textarea>
+    <!-- Tarjeta principal de receta -->
+    <div class="main-card">
+      <div class="card-header-custom">
+        <div class="d-flex align-items-center">
+          <i class="fas fa-prescription-bottle-alt me-2"></i>
+          <h5 class="mb-0">Registro de Receta Médica</h5>
         </div>
       </div>
 
-    </div>
+      <form method="POST">
+        <div class="card-body-custom" id="contenedor-medicamentos">
 
-    <div class="card-footer">
-        <button type="button" class="btn btn-outline-primary mb-3" onclick="agregarMedicamento()">
-            <i class="fas fa-plus"></i> Agregar otro Medicamento
-        </button>
-        <hr>
-        <div class="text-center">
-            <button type="submit" class="btn btn-success btn-lg">
-                <i class="fas fa-save"></i> Guardar Receta
-            </button>
+          <!-- Medicamento #1 -->
+          <div class="medicamento-card" id="medicamento-base">
+            <div class="medicamento-header">
+              <h6 class="medicamento-titulo">
+                <i class="fas fa-pills me-2"></i>
+                Medicamento #1
+              </h6>
+            </div>
+
+            <div class="medicamento-body">
+              <!-- Medicamento -->
+              <div class="campo-grupo">
+                <label class="campo-label">
+                  <i class="fas fa-capsules"></i>
+                  Medicamento
+                </label>
+                <div class="voice-controls">
+                  <button type="button" class="voice-btn voice-record" onclick="iniciarDictado('med_0')" title="Iniciar dictado">
+                    <i class="fas fa-microphone"></i>
+                  </button>
+                  <button type="button" class="voice-btn voice-stop" onclick="detenerDictado()" title="Detener dictado">
+                    <i class="fas fa-stop"></i>
+                  </button>
+                  <button type="button" class="voice-btn voice-play" onclick="leerCampo('med_0')" title="Leer texto">
+                    <i class="fas fa-volume-up"></i>
+                  </button>
+                </div>
+                <input name="medicamento[]" id="med_0" class="campo-input" placeholder="Nombre del medicamento" required>
+              </div>
+
+              <div class="row">
+                <!-- Dosis -->
+                <div class="col-md-4">
+                  <div class="campo-grupo">
+                    <label class="campo-label">
+                      <i class="fas fa-weight-scale"></i>
+                      Dosis
+                    </label>
+                    <div class="voice-controls">
+                      <button type="button" class="voice-btn voice-record" onclick="iniciarDictado('dosis_0')" title="Iniciar dictado">
+                        <i class="fas fa-microphone"></i>
+                      </button>
+                      <button type="button" class="voice-btn voice-stop" onclick="detenerDictado()" title="Detener dictado">
+                        <i class="fas fa-stop"></i>
+                      </button>
+                      <button type="button" class="voice-btn voice-play" onclick="leerCampo('dosis_0')" title="Leer texto">
+                        <i class="fas fa-volume-up"></i>
+                      </button>
+                    </div>
+                    <input name="dosis[]" id="dosis_0" class="campo-input" placeholder="Ej: 500mg">
+                  </div>
+                </div>
+
+                <!-- Frecuencia -->
+                <div class="col-md-4">
+                  <div class="campo-grupo">
+                    <label class="campo-label">
+                      <i class="fas fa-clock"></i>
+                      Frecuencia
+                    </label>
+                    <div class="voice-controls">
+                      <button type="button" class="voice-btn voice-record" onclick="iniciarDictado('freq_0')" title="Iniciar dictado">
+                        <i class="fas fa-microphone"></i>
+                      </button>
+                      <button type="button" class="voice-btn voice-stop" onclick="detenerDictado()" title="Detener dictado">
+                        <i class="fas fa-stop"></i>
+                      </button>
+                      <button type="button" class="voice-btn voice-play" onclick="leerCampo('freq_0')" title="Leer texto">
+                        <i class="fas fa-volume-up"></i>
+                      </button>
+                    </div>
+                    <input name="frecuencia[]" id="freq_0" class="campo-input" placeholder="Ej: Cada 8 horas">
+                  </div>
+                </div>
+
+                <!-- Duración -->
+                <div class="col-md-4">
+                  <div class="campo-grupo">
+                    <label class="campo-label">
+                      <i class="fas fa-calendar-alt"></i>
+                      Duración
+                    </label>
+                    <div class="voice-controls">
+                      <button type="button" class="voice-btn voice-record" onclick="iniciarDictado('dur_0')" title="Iniciar dictado">
+                        <i class="fas fa-microphone"></i>
+                      </button>
+                      <button type="button" class="voice-btn voice-stop" onclick="detenerDictado()" title="Detener dictado">
+                        <i class="fas fa-stop"></i>
+                      </button>
+                      <button type="button" class="voice-btn voice-play" onclick="leerCampo('dur_0')" title="Leer texto">
+                        <i class="fas fa-volume-up"></i>
+                      </button>
+                    </div>
+                    <input name="duracion[]" id="dur_0" class="campo-input" placeholder="Ej: 7 días">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Indicaciones -->
+              <div class="campo-grupo">
+                <label class="campo-label">
+                  <i class="fas fa-file-prescription"></i>
+                  Indicaciones
+                </label>
+                <div class="voice-controls">
+                  <button type="button" class="voice-btn voice-record" onclick="iniciarDictado('ind_0')" title="Iniciar dictado">
+                    <i class="fas fa-microphone"></i>
+                  </button>
+                  <button type="button" class="voice-btn voice-stop" onclick="detenerDictado()" title="Detener dictado">
+                    <i class="fas fa-stop"></i>
+                  </button>
+                  <button type="button" class="voice-btn voice-play" onclick="leerCampo('ind_0')" title="Leer texto">
+                    <i class="fas fa-volume-up"></i>
+                  </button>
+                </div>
+                <textarea name="indicaciones[]" id="ind_0" class="campo-textarea" rows="2" placeholder="Instrucciones adicionales para el paciente"></textarea>
+              </div>
+            </div>
+          </div>
+
         </div>
-    </div>
-  </form>
-</div>
 
+        <div class="card-footer-custom">
+          <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <button type="button" class="btn-add-medicamento" onclick="agregarMedicamento()">
+              <i class="fas fa-plus me-2"></i>
+              Agregar otro Medicamento
+            </button>
+
+            <button type="submit" class="btn-save-receta">
+              <i class="fas fa-save me-2"></i>
+              Guardar Receta
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+  </div>
 </section>
+
+<style>
+  /* Tarjeta de información del paciente */
+  .patient-info-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: none;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    border-left: 5px solid #48bb78;
+  }
+
+  .patient-info-content {
+    display: flex;
+    align-items: center;
+    padding: 1.2rem 1.5rem;
+  }
+
+  .patient-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 15px;
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1.2rem;
+  }
+
+  .patient-avatar i {
+    font-size: 2.5rem;
+    color: white;
+  }
+
+  .patient-name {
+    font-weight: 700;
+    color: #2d3748;
+    margin-bottom: 0.3rem;
+    font-size: 1.2rem;
+  }
+
+  .patient-meta {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  .patient-meta-item {
+    font-size: 0.85rem;
+    color: #718096;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  .patient-meta-item i {
+    color: #48bb78;
+  }
+
+  /* Tarjeta principal */
+  .main-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: none;
+    border-radius: 25px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    margin-bottom: 2rem;
+  }
+
+  .card-header-custom {
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+    padding: 1.2rem 1.5rem;
+    color: white;
+  }
+
+  .card-header-custom h5 {
+    margin: 0;
+    font-weight: 600;
+    font-size: 1.2rem;
+  }
+
+  .card-body-custom {
+    padding: 2rem;
+  }
+
+  .card-footer-custom {
+    background: #f7fafc;
+    border-top: 2px solid #e2e8f0;
+    padding: 1.5rem;
+  }
+
+  /* Tarjeta de medicamento */
+  .medicamento-card {
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 15px;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+    transition: all 0.3s ease;
+  }
+
+  .medicamento-card:hover {
+    border-color: #48bb78;
+    box-shadow: 0 5px 15px rgba(72, 187, 120, 0.1);
+  }
+
+  .medicamento-header {
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+    padding: 1rem 1.5rem;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .medicamento-titulo {
+    margin: 0;
+    font-weight: 600;
+    font-size: 1rem;
+  }
+
+  .medicamento-titulo i {
+    margin-right: 0.5rem;
+  }
+
+  .medicamento-body {
+    padding: 1.5rem;
+  }
+
+  /* Campos de formulario */
+  .campo-grupo {
+    margin-bottom: 1.2rem;
+  }
+
+  .campo-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+  }
+
+  .campo-label i {
+    color: #48bb78;
+    font-size: 1rem;
+  }
+
+  .campo-input {
+    width: 100%;
+    padding: 0.7rem 1rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+    background: white;
+    font-size: 0.9rem;
+    margin-top: 0.3rem;
+  }
+
+  .campo-input:focus {
+    border-color: #48bb78;
+    box-shadow: 0 0 0 3px rgba(72, 187, 120, 0.2);
+    outline: none;
+  }
+
+  .campo-textarea {
+    width: 100%;
+    padding: 0.7rem 1rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+    background: white;
+    font-size: 0.9rem;
+    resize: vertical;
+    margin-top: 0.3rem;
+  }
+
+  .campo-textarea:focus {
+    border-color: #48bb78;
+    box-shadow: 0 0 0 3px rgba(72, 187, 120, 0.2);
+    outline: none;
+  }
+
+  /* Controles de voz */
+  .voice-controls {
+    display: flex;
+    gap: 0.5rem;
+    margin: 0.3rem 0;
+  }
+
+  .voice-btn {
+    width: 35px;
+    height: 35px;
+    border-radius: 8px;
+    border: none;
+    color: white;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .voice-record {
+    background: linear-gradient(135deg, #48bb78, #38a169);
+    box-shadow: 0 4px 10px rgba(72, 187, 120, 0.3);
+  }
+
+  .voice-stop {
+    background: linear-gradient(135deg, #f56565, #e53e3e);
+    box-shadow: 0 4px 10px rgba(229, 62, 62, 0.3);
+  }
+
+  .voice-play {
+    background: linear-gradient(135deg, #4299e1, #3182ce);
+    box-shadow: 0 4px 10px rgba(66, 153, 225, 0.3);
+  }
+
+  .voice-btn:hover {
+    transform: translateY(-2px);
+  }
+
+  .voice-record:hover {
+    box-shadow: 0 8px 20px rgba(72, 187, 120, 0.4);
+  }
+
+  .voice-stop:hover {
+    box-shadow: 0 8px 20px rgba(229, 62, 62, 0.4);
+  }
+
+  .voice-play:hover {
+    box-shadow: 0 8px 20px rgba(66, 153, 225, 0.4);
+  }
+
+  /* Botones de acción */
+  .btn-add-medicamento {
+    background: white;
+    color: #48bb78;
+    border: 2px solid #48bb78;
+    border-radius: 12px;
+    padding: 0.8rem 1.5rem;
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+  }
+
+  .btn-add-medicamento:hover {
+    background: #48bb78;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(72, 187, 120, 0.2);
+  }
+
+  .btn-save-receta {
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 0.8rem 2rem;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(72, 187, 120, 0.3);
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+  }
+
+  .btn-save-receta:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(72, 187, 120, 0.4);
+  }
+
+  /* Botón eliminar */
+  .btn-eliminar {
+    background: none;
+    border: none;
+    color: #f56565;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0.3rem 0.8rem;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  .btn-eliminar:hover {
+    background: #fed7d7;
+    color: #c53030;
+  }
+
+  /* Mensajes flash */
+  .flash-messages {
+    margin-bottom: 1.5rem;
+  }
+
+  .alert {
+    border-radius: 15px;
+    border: none;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .patient-info-content {
+      flex-direction: column;
+      text-align: center;
+    }
+
+    .patient-avatar {
+      margin-right: 0;
+      margin-bottom: 1rem;
+    }
+
+    .patient-meta {
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .card-body-custom {
+      padding: 1rem;
+    }
+
+    .medicamento-body {
+      padding: 1rem;
+    }
+
+    .voice-controls {
+      justify-content: center;
+    }
+
+    .d-flex.justify-content-between {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .btn-add-medicamento, .btn-save-receta {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+</style>
 
 <script>
 let recognition;
@@ -123,65 +574,91 @@ function agregarMedicamento() {
   const idActual = contador;
 
   const div = document.createElement('div');
-  div.className = 'medicamento border rounded p-3 mb-4 shadow-sm bg-light';
+  div.className = 'medicamento-card';
   div.innerHTML = `
-    <div class="d-flex justify-content-between align-items-center mb-2">
-        <h5 class="text-success text-bold">Medicamento #${idActual + 1}</h5>
-        <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('.medicamento').remove()">
-            <i class="fas fa-trash"></i> Eliminar
-        </button>
+    <div class="medicamento-header">
+      <h6 class="medicamento-titulo">
+        <i class="fas fa-pills me-2"></i>
+        Medicamento #${idActual + 1}
+      </h6>
+      <button type="button" class="btn-eliminar" onclick="this.closest('.medicamento-card').remove()">
+        <i class="fas fa-trash me-1"></i> Eliminar
+      </button>
     </div>
 
-    <label>Medicamento</label>
-    <div class="mb-2">
-        <button type="button" class="btn btn-success btn-sm" onclick="iniciarDictado('med_${idActual}')"><i class="fas fa-microphone"></i></button>
-        <button type="button" class="btn btn-warning btn-sm" onclick="detenerDictado()"><i class="fas fa-stop"></i></button>
-        <button type="button" class="btn btn-info btn-sm" onclick="leerCampo('med_${idActual}')"><i class="fas fa-volume-up"></i></button>
-    </div>
-    <div class="input-group mb-2">
-      <input name="medicamento[]" id="med_${idActual}" class="form-control" required>
-    </div>
-
-    <div class="form-row">
-      <div class="form-group col-md-4">
-        <label>Dosis</label>
-        <div class="mb-2">
-            <button type="button" class="btn btn-success btn-sm" onclick="iniciarDictado('dosis_${idActual}')"><i class="fas fa-microphone"></i></button>
-            <button type="button" class="btn btn-warning btn-sm" onclick="detenerDictado()"><i class="fas fa-stop"></i></button>
-            <button type="button" class="btn btn-info btn-sm" onclick="leerCampo('dosis_${idActual}')"><i class="fas fa-volume-up"></i></button>
+    <div class="medicamento-body">
+      <div class="campo-grupo">
+        <label class="campo-label">
+          <i class="fas fa-capsules"></i>
+          Medicamento
+        </label>
+        <div class="voice-controls">
+          <button type="button" class="voice-btn voice-record" onclick="iniciarDictado('med_${idActual}')"><i class="fas fa-microphone"></i></button>
+          <button type="button" class="voice-btn voice-stop" onclick="detenerDictado()"><i class="fas fa-stop"></i></button>
+          <button type="button" class="voice-btn voice-play" onclick="leerCampo('med_${idActual}')"><i class="fas fa-volume-up"></i></button>
         </div>
-        <input name="dosis[]" id="dosis_${idActual}" class="form-control">
+        <input name="medicamento[]" id="med_${idActual}" class="campo-input" placeholder="Nombre del medicamento" required>
       </div>
 
-      <div class="form-group col-md-4">
-        <label>Frecuencia</label>
-        <div class="mb-2">
-            <button type="button" class="btn btn-success btn-sm" onclick="iniciarDictado('freq_${idActual}')"><i class="fas fa-microphone"></i></button>
-            <button type="button" class="btn btn-warning btn-sm" onclick="detenerDictado()"><i class="fas fa-stop"></i></button>
-            <button type="button" class="btn btn-info btn-sm" onclick="leerCampo('freq_${idActual}')"><i class="fas fa-volume-up"></i></button>
+      <div class="row">
+        <div class="col-md-4">
+          <div class="campo-grupo">
+            <label class="campo-label">
+              <i class="fas fa-weight-scale"></i>
+              Dosis
+            </label>
+            <div class="voice-controls">
+              <button type="button" class="voice-btn voice-record" onclick="iniciarDictado('dosis_${idActual}')"><i class="fas fa-microphone"></i></button>
+              <button type="button" class="voice-btn voice-stop" onclick="detenerDictado()"><i class="fas fa-stop"></i></button>
+              <button type="button" class="voice-btn voice-play" onclick="leerCampo('dosis_${idActual}')"><i class="fas fa-volume-up"></i></button>
+            </div>
+            <input name="dosis[]" id="dosis_${idActual}" class="campo-input" placeholder="Ej: 500mg">
+          </div>
         </div>
-        <input name="frecuencia[]" id="freq_${idActual}" class="form-control">
+
+        <div class="col-md-4">
+          <div class="campo-grupo">
+            <label class="campo-label">
+              <i class="fas fa-clock"></i>
+              Frecuencia
+            </label>
+            <div class="voice-controls">
+              <button type="button" class="voice-btn voice-record" onclick="iniciarDictado('freq_${idActual}')"><i class="fas fa-microphone"></i></button>
+              <button type="button" class="voice-btn voice-stop" onclick="detenerDictado()"><i class="fas fa-stop"></i></button>
+              <button type="button" class="voice-btn voice-play" onclick="leerCampo('freq_${idActual}')"><i class="fas fa-volume-up"></i></button>
+            </div>
+            <input name="frecuencia[]" id="freq_${idActual}" class="campo-input" placeholder="Ej: Cada 8 horas">
+          </div>
+        </div>
+
+        <div class="col-md-4">
+          <div class="campo-grupo">
+            <label class="campo-label">
+              <i class="fas fa-calendar-alt"></i>
+              Duración
+            </label>
+            <div class="voice-controls">
+              <button type="button" class="voice-btn voice-record" onclick="iniciarDictado('dur_${idActual}')"><i class="fas fa-microphone"></i></button>
+              <button type="button" class="voice-btn voice-stop" onclick="detenerDictado()"><i class="fas fa-stop"></i></button>
+              <button type="button" class="voice-btn voice-play" onclick="leerCampo('dur_${idActual}')"><i class="fas fa-volume-up"></i></button>
+            </div>
+            <input name="duracion[]" id="dur_${idActual}" class="campo-input" placeholder="Ej: 7 días">
+          </div>
+        </div>
       </div>
 
-      <div class="form-group col-md-4">
-        <label>Duración</label>
-        <div class="mb-2">
-            <button type="button" class="btn btn-success btn-sm" onclick="iniciarDictado('dur_${idActual}')"><i class="fas fa-microphone"></i></button>
-            <button type="button" class="btn btn-warning btn-sm" onclick="detenerDictado()"><i class="fas fa-stop"></i></button>
-            <button type="button" class="btn btn-info btn-sm" onclick="leerCampo('dur_${idActual}')"><i class="fas fa-volume-up"></i></button>
+      <div class="campo-grupo">
+        <label class="campo-label">
+          <i class="fas fa-file-prescription"></i>
+          Indicaciones
+        </label>
+        <div class="voice-controls">
+          <button type="button" class="voice-btn voice-record" onclick="iniciarDictado('ind_${idActual}')"><i class="fas fa-microphone"></i></button>
+          <button type="button" class="voice-btn voice-stop" onclick="detenerDictado()"><i class="fas fa-stop"></i></button>
+          <button type="button" class="voice-btn voice-play" onclick="leerCampo('ind_${idActual}')"><i class="fas fa-volume-up"></i></button>
         </div>
-        <input name="duracion[]" id="dur_${idActual}" class="form-control">
+        <textarea name="indicaciones[]" id="ind_${idActual}" class="campo-textarea" rows="2" placeholder="Instrucciones adicionales"></textarea>
       </div>
-    </div>
-
-    <label>Indicaciones</label>
-    <div class="mb-2">
-        <button type="button" class="btn btn-success btn-sm" onclick="iniciarDictado('ind_${idActual}')"><i class="fas fa-microphone"></i></button>
-        <button type="button" class="btn btn-warning btn-sm" onclick="detenerDictado()"><i class="fas fa-stop"></i></button>
-        <button type="button" class="btn btn-info btn-sm" onclick="leerCampo('ind_${idActual}')"><i class="fas fa-volume-up"></i></button>
-    </div>
-    <div class="input-group">
-      <textarea name="indicaciones[]" id="ind_${idActual}" class="form-control" rows="2"></textarea>
     </div>
   `;
   contenedor.appendChild(div);

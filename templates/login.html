@@ -3,101 +3,588 @@
 <head>
     <meta charset="UTF-8">
     <title>Login - INEO</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Bootstrap 5 -->
+  <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet">
+
+  <!-- Bootstrap Icons -->
+  <link href="{{ url_for('static', filename='css/bootstrap-icons.css') }}" rel="stylesheet">
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/all.min.css') }}">
+
+  <!-- Google Fonts - Inter -->
+  <link href="{{ url_for('static', filename='css/fonts.css') }}" rel="stylesheet">
+
     <style>
-        body {
-            font-family: Arial, Helvetica, sans-serif;
-            background: linear-gradient(135deg, #1e3c72, #2a5298);
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+        * {
+            font-family: 'Inter', sans-serif;
             margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
-        .login-container {
-            background: #ffffff;
-            padding: 30px;
-            width: 320px;
-            border-radius: 10px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
         }
 
-        h1 {
-            text-align: center;
-            margin-bottom: 20px;
-            color: #1e3c72;
+        /* Elementos decorativos de fondo */
+        body::before {
+            content: '';
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            top: -100px;
+            right: -100px;
+            filter: blur(50px);
         }
 
-        label {
-            font-weight: bold;
-            font-size: 14px;
-            display: block;
-            margin-top: 10px;
+        body::after {
+            content: '';
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            bottom: -150px;
+            left: -150px;
+            filter: blur(60px);
         }
 
-        input {
+        .login-wrapper {
             width: 100%;
-            padding: 10px;
-            margin-top: 5px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
+            max-width: 1100px;
+            padding: 20px;
+            position: relative;
+            z-index: 10;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .login-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 30px;
+            overflow: hidden;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+        /* Lado izquierdo - Branding */
+        .login-brand {
+            flex: 1;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 50px 40px;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-width: 300px;
+        }
+
+        .brand-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            filter: drop-shadow(0 10px 15px rgba(0,0,0,0.2));
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .brand-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+
+        .brand-subtitle {
+            font-size: 1rem;
+            opacity: 0.9;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+
+        .brand-features {
+            list-style: none;
+            padding: 0;
+        }
+
+        .brand-features li {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            font-size: 0.95rem;
+            opacity: 0.9;
+        }
+
+        .brand-features i {
+            font-size: 1.2rem;
+            background: rgba(255,255,255,0.2);
+            padding: 5px;
+            border-radius: 10px;
+        }
+
+        /* Lado derecho - Formulario */
+        .login-form {
+            flex: 1;
+            padding: 50px 40px;
+            min-width: 300px;
+        }
+
+        .form-header {
+            margin-bottom: 30px;
+        }
+
+        .form-header h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 8px;
+        }
+
+        .form-header p {
+            color: #718096;
+            font-size: 0.95rem;
+        }
+
+        .input-group-custom {
+            margin-bottom: 20px;
+        }
+
+        .input-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            color: #4a5568;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+        .input-label i {
+            color: #667eea;
+            font-size: 1rem;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .input-field:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.2);
             outline: none;
         }
 
-        input:focus {
-            border-color: #1e3c72;
+        .input-field::placeholder {
+            color: #a0aec0;
         }
 
-        button {
-            width: 100%;
-            margin-top: 20px;
-            padding: 10px;
-            background-color: #1e3c72;
-            color: #ffffff;
-            border: none;
-            border-radius: 5px;
-            font-size: 16px;
+        .password-wrapper {
+            position: relative;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #718096;
+            transition: color 0.2s ease;
+        }
+
+        .toggle-password:hover {
+            color: #667eea;
+        }
+
+        .form-options {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 25px 0;
+        }
+
+        .remember-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #4a5568;
+            font-size: 0.9rem;
             cursor: pointer;
         }
 
-        button:hover {
-            background-color: #16315e;
+        .remember-checkbox input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #667eea;
+            cursor: pointer;
         }
 
-        .message {
+        .forgot-link {
+            color: #667eea;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+
+        .forgot-link:hover {
+            color: #764ba2;
+            text-decoration: underline;
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.5);
+        }
+
+        .btn-login:active {
+            transform: translateY(0);
+        }
+
+        .btn-login i {
+            margin-right: 8px;
+            transition: transform 0.3s ease;
+        }
+
+        .btn-login:hover i {
+            transform: translateX(5px);
+        }
+
+        .divider {
+            position: relative;
             text-align: center;
-            font-size: 14px;
-            margin-bottom: 10px;
+            margin: 25px 0;
         }
 
-        .error { color: red; }
-        .success { color: green; }
-        .info { color: blue; }
+        .divider::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #e2e8f0, transparent);
+        }
+
+        .divider span {
+            background: white;
+            padding: 0 15px;
+            color: #718096;
+            font-size: 0.85rem;
+            position: relative;
+        }
+
+        .social-login {
+            display: flex;
+            gap: 10px;
+        }
+
+        .social-btn {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            background: white;
+            color: #4a5568;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .social-btn:hover {
+            border-color: #667eea;
+            color: #667eea;
+            transform: translateY(-2px);
+        }
+
+        .social-btn i {
+            font-size: 1.1rem;
+        }
+
+        /* Mensajes flash */
+        .flash-messages {
+            margin-bottom: 20px;
+        }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .alert-error {
+            background: #fed7d7;
+            color: #c53030;
+            border-left: 4px solid #c53030;
+        }
+
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+            border-left: 4px solid #065f46;
+        }
+
+        .alert-info {
+            background: #dbeafe;
+            color: #1e40af;
+            border-left: 4px solid #1e40af;
+        }
+
+        .alert i {
+            font-size: 1.2rem;
+        }
+
+        /* Footer */
+        .login-footer {
+            text-align: center;
+            margin-top: 20px;
+            color: rgba(255,255,255,0.7);
+            font-size: 0.85rem;
+        }
+
+        .login-footer a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .login-footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .login-card {
+                flex-direction: column;
+            }
+
+            .login-brand {
+                padding: 30px 20px;
+            }
+
+            .login-form {
+                padding: 30px 20px;
+            }
+
+            .brand-title {
+                font-size: 2rem;
+            }
+        }
     </style>
 </head>
 <body>
 
-<div class="login-container">
-    <h1>INEO</h1>
+<div class="login-wrapper">
+    <div class="login-card">
+        <!-- Lado izquierdo - Branding -->
+        <div class="login-brand">
+            <div class="brand-icon">
+                <i class="fas fa-hospital-user"></i>
+            </div>
+            <h1 class="brand-title">INEO</h1>
+            <p class="brand-subtitle">Sistema de Gestión Hospitalaria</p>
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <p class="message {{ category }}">{{ message }}</p>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
+            <ul class="brand-features">
+                <li>
+                    <i class="fas fa-check-circle"></i>
+                    <span>Gestión integral de pacientes</span>
+                </li>
+                <li>
+                    <i class="fas fa-check-circle"></i>
+                    <span>Control de estudios médicos</span>
+                </li>
+                <li>
+                    <i class="fas fa-check-circle"></i>
+                    <span>Administración hospitalaria</span>
+                </li>
+                <li>
+                    <i class="fas fa-check-circle"></i>
+                    <span>Reportes y estadísticas</span>
+                </li>
+            </ul>
+        </div>
 
-    <form method="POST">
-        <label>Usuario</label>
-        <input type="text" name="username" required>
+        <!-- Lado derecho - Formulario -->
+        <div class="login-form">
+            <div class="form-header">
+                <h2>Bienvenido</h2>
+                <p>Ingresa tus credenciales para acceder</p>
+            </div>
 
-        <label>Contraseña</label>
-        <input type="password" name="password" required>
+            <!-- Mensajes flash -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="flash-messages">
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }}">
+                                <i class="fas
+                                    {% if category == 'error' %}fa-exclamation-circle
+                                    {% elif category == 'success' %}fa-check-circle
+                                    {% else %}fa-info-circle
+                                    {% endif %}">
+                                </i>
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
 
-        <button type="submit">Iniciar Sesión</button>
-    </form>
+            <form method="POST">
+                <div class="input-group-custom">
+                    <label class="input-label">
+                        <i class="fas fa-user"></i>
+                        Usuario
+                    </label>
+                    <input
+                        type="text"
+                        name="username"
+                        class="input-field"
+                        placeholder="Ingresa tu usuario"
+                        required
+                        autofocus
+                    >
+                </div>
+
+                <div class="input-group-custom">
+                    <label class="input-label">
+                        <i class="fas fa-lock"></i>
+                        Contraseña
+                    </label>
+                    <div class="password-wrapper">
+                        <input
+                            type="password"
+                            name="password"
+                            id="password"
+                            class="input-field"
+                            placeholder="Ingresa tu contraseña"
+                            required
+                        >
+                        <i class="fas fa-eye toggle-password" onclick="togglePassword()"></i>
+                    </div>
+                </div>
+
+<!--                <div class="form-options">-->
+<!--                    <label class="remember-checkbox">-->
+<!--                        <input type="checkbox" name="remember">-->
+<!--                        <span>Recordarme</span>-->
+<!--                    </label>-->
+<!--                    <a href="#" class="forgot-link">¿Olvidaste tu contraseña?</a>-->
+<!--                </div>-->
+
+                <button type="submit" class="btn-login">
+                    <i class="fas fa-arrow-right"></i>
+                    Iniciar Sesión
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="login-footer">
+        <p>
+            <i class="fas fa-shield-alt me-1"></i>
+            INEO v2.0 - Sistema de Gestión Hospitalaria
+        </p>
+    </div>
 </div>
+
+<script>
+    // Función para mostrar/ocultar contraseña
+    function togglePassword() {
+        const passwordInput = document.getElementById('password');
+        const toggleIcon = document.querySelector('.toggle-password');
+
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            toggleIcon.classList.remove('fa-eye');
+            toggleIcon.classList.add('fa-eye-slash');
+        } else {
+            passwordInput.type = 'password';
+            toggleIcon.classList.remove('fa-eye-slash');
+            toggleIcon.classList.add('fa-eye');
+        }
+    }
+
+    // Animación de entrada para los mensajes flash
+    document.addEventListener('DOMContentLoaded', function() {
+        const alerts = document.querySelectorAll('.alert');
+        alerts.forEach((alert, index) => {
+            setTimeout(() => {
+                alert.style.animation = 'slideIn 0.3s ease';
+            }, index * 100);
+        });
+    });
+</script>
 
 </body>
 </html>

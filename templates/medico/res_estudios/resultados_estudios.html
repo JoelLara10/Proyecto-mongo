@@ -2,115 +2,489 @@
 
 {% block content %}
 
-<div class="container mt-4">
-
-    <!-- ================= PACIENTE ================= -->
-    <div class="card mb-4">
-        <div class="card-header bg-primary text-white">
-            <i class="fas fa-user-injured"></i> Datos del Paciente
+<!-- Mensajes Flash -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="flash-messages">
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm" role="alert">
+          <div class="d-flex align-items-center">
+            <i class="fas {% if category == 'success' %}fa-check-circle text-success{% else %}fa-exclamation-circle text-danger{% endif %} me-3 fa-2x"></i>
+            <div class="flex-grow-1">
+              <strong class="d-block">{% if category == 'success' %}Éxito{% else %}Error{% endif %}</strong>
+              <span>{{ message }}</span>
+            </div>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
-        <div class="card-body">
-            <p><strong>Expediente:</strong> {{ paciente.Id_exp }}</p>
-            <p><strong>Nombre:</strong>
-                {{ paciente.nom_pac }} {{ paciente.papell }} {{ paciente.sapell }}
-            </p>
-            <p><strong>Área:</strong> {{ paciente.area }}</p>
-            <p><strong>Fecha de Ingreso:</strong> {{ paciente.fecha_ing }}</p>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+<section class="content-header">
+  <div class="container-fluid">
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="page-header" style="background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border-radius: 15px; padding: 1.2rem;">
+          <h1 class="text-white mb-0">
+            <i class="fas fa-file-medical-alt me-3"></i>
+            Resultados de Estudios
+          </h1>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="container-fluid mt-4">
+
+    <!-- ================= TARJETA DEL PACIENTE ================= -->
+    <div class="patient-info-card mb-4">
+        <div class="patient-info-content">
+            <div class="patient-avatar">
+                <i class="fas fa-user-circle"></i>
+            </div>
+            <div class="patient-details">
+                <h5 class="patient-name">{{ paciente.nom_pac }} {{ paciente.papell }} {{ paciente.sapell }}</h5>
+                <div class="patient-meta">
+                    <span class="patient-meta-item">
+                        <i class="fas fa-id-card"></i> Exp: {{ paciente.Id_exp }}
+                    </span>
+                    <span class="patient-meta-item">
+                        <i class="fas fa-hospital"></i> Área: {{ paciente.area }}
+                    </span>
+                    <span class="patient-meta-item">
+                        <i class="fas fa-calendar-alt"></i> Ingreso:
+                        {% if paciente.fecha_ing %}
+                            {{ paciente.fecha_ing.strftime('%d/%m/%Y %H:%M') }}
+                        {% else %}
+                            No registrado
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
         </div>
     </div>
 
     <!-- ================= LABORATORIO ================= -->
-    <div class="card mb-4">
-        <div class="card-header bg-success text-white">
-            <i class="fas fa-vials"></i> Resultados de Laboratorio
+    <div class="main-card mb-4">
+        <div class="card-header-custom" style="background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);">
+            <div class="d-flex align-items-center justify-content-between">
+                <h5 class="mb-0">
+                    <i class="fas fa-vials me-2"></i>
+                    Resultados de Laboratorio
+                </h5>
+                <span class="badge bg-white text-success">
+                    <i class="fas fa-flask me-1"></i> {{ laboratorio|length }} resultado(s)
+                </span>
+            </div>
         </div>
-        <div class="card-body">
 
+        <div class="card-body-custom">
             {% if laboratorio %}
-            <table class="table table-bordered table-striped">
-                <thead class="table-light">
-                    <tr>
-                        <th>Fecha</th>
-                        <th>Estudios</th>
-                        <th>Médico</th>
-                        <th>Observaciones</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for l in laboratorio %}
-                    <tr>
-                        <td>{{ l.fecha.strftime('%d/%m/%Y %H:%M') }}</td>
-                        <td>
-                            {% for estudio in l.detalles %}
-                                {{ estudio.nombre }}{% if not loop.last %}, {% endif %}
-                            {% endfor %}
-                        </td>
-                        <td>{{ l.medico }}</td>
-                        <td>{{ l.observaciones or '—' }}</td>
-                        <td class="text-center">
-                            <a href="{{ url_for('ver_resultado_laboratorio', id_examen=l.id_examen) }}"
-                               class="btn btn-sm btn-info">
-                                <i class="fas fa-eye"></i> Ver
-                            </a>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+            <div class="table-responsive">
+                <table class="table table-hover resultados-table">
+                    <thead>
+                        <tr>
+                            <th class="text-center">Fecha</th>
+                            <th>Estudios</th>
+                            <th>Médico</th>
+                            <th>Observaciones</th>
+                            <th class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for l in laboratorio %}
+                        <tr>
+                            <td class="text-center">
+                                <div class="fecha-badge">
+                                    <i class="far fa-calendar-alt me-1"></i>
+                                    <span>{{ l.fecha.strftime('%d/%m/%Y') }}</span>
+                                    <small class="text-muted d-block">{{ l.fecha.strftime('%H:%M') }}</small>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="estudios-container">
+                                    {% for estudio in l.detalles %}
+                                        <span class="estudio-item">{{ estudio.nombre }}</span>
+                                    {% endfor %}
+                                </div>
+                            </td>
+                            <td>
+                                <div class="medico-info">
+                                    <i class="fas fa-user-md text-success me-1"></i>
+                                    {{ l.medico }}
+                                </div>
+                            </td>
+                            <td>
+                                {% if l.observaciones %}
+                                    <span class="observacion-preview">{{ l.observaciones|truncate(50) }}</span>
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                <a href="{{ url_for('ver_resultado_laboratorio', id_examen=l.id_examen) }}"
+                                   class="btn-view-action" title="Ver resultado">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
             {% else %}
-            <p class="text-muted">No hay resultados de laboratorio.</p>
+            <div class="empty-state">
+                <div class="empty-state-icon" style="background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);">
+                    <i class="fas fa-flask"></i>
+                </div>
+                <h6>No hay resultados de laboratorio</h6>
+                <p class="text-muted">Aún no se han registrado resultados de laboratorio para este paciente.</p>
+            </div>
             {% endif %}
-
         </div>
     </div>
 
     <!-- ================= GABINETE ================= -->
-    <div class="card mb-4">
-        <div class="card-header bg-info text-white">
-            <i class="fas fa-x-ray"></i> Resultados de Gabinete
+    <div class="main-card mb-4">
+        <div class="card-header-custom" style="background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);">
+            <div class="d-flex align-items-center justify-content-between">
+                <h5 class="mb-0">
+                    <i class="fas fa-x-ray me-2"></i>
+                    Resultados de Gabinete
+                </h5>
+                <span class="badge bg-white text-warning">
+                    <i class="fas fa-x-ray me-1"></i> {{ gabinete|length }} resultado(s)
+                </span>
+            </div>
         </div>
-        <div class="card-body">
 
+        <div class="card-body-custom">
             {% if gabinete %}
-            <table class="table table-bordered table-striped">
-                <thead class="table-light">
-                    <tr>
-                        <th>Fecha</th>
-                        <th>Estudios</th>
-                        <th>Médico</th>
-                        <th>Observaciones</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for g in gabinete %}
-                    <tr>
-                        <td>{{ g.fecha.strftime('%d/%m/%Y %H:%M') }}</td>
-                        <td>
-                            {% for estudio in g.detalles %}
-                                {{ estudio.nombre }}{% if not loop.last %}, {% endif %}
-                            {% endfor %}
-                        </td>
-                        <td>{{ g.medico }}</td>
-                        <td>{{ g.observaciones or '—' }}</td>
-                        <td>
-                            <a href="{{ url_for('ver_resultado_gabinete', id_examen=g.id_examen) }}"
-                               class="btn btn-sm btn-info">
-                                <i class="fas fa-eye"></i> Ver
-                            </a>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+            <div class="table-responsive">
+                <table class="table table-hover resultados-table">
+                    <thead>
+                        <tr>
+                            <th class="text-center">Fecha</th>
+                            <th>Estudios</th>
+                            <th>Médico</th>
+                            <th>Observaciones</th>
+                            <th class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for g in gabinete %}
+                        <tr>
+                            <td class="text-center">
+                                <div class="fecha-badge">
+                                    <i class="far fa-calendar-alt me-1"></i>
+                                    <span>{{ g.fecha.strftime('%d/%m/%Y') }}</span>
+                                    <small class="text-muted d-block">{{ g.fecha.strftime('%H:%M') }}</small>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="estudios-container">
+                                    {% for estudio in g.detalles %}
+                                        <span class="estudio-item">{{ estudio.nombre }}</span>
+                                    {% endfor %}
+                                </div>
+                            </td>
+                            <td>
+                                <div class="medico-info">
+                                    <i class="fas fa-user-md text-warning me-1"></i>
+                                    {{ g.medico }}
+                                </div>
+                            </td>
+                            <td>
+                                {% if g.observaciones %}
+                                    <span class="observacion-preview">{{ g.observaciones|truncate(50) }}</span>
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                <a href="{{ url_for('ver_resultado_gabinete', id_examen=g.id_examen) }}"
+                                   class="btn-view-action" title="Ver resultado">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
             {% else %}
-            <p class="text-muted">No hay resultados de gabinete.</p>
+            <div class="empty-state">
+                <div class="empty-state-icon" style="background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);">
+                    <i class="fas fa-x-ray"></i>
+                </div>
+                <h6>No hay resultados de gabinete</h6>
+                <p class="text-muted">Aún no se han registrado resultados de gabinete para este paciente.</p>
+            </div>
             {% endif %}
-
         </div>
     </div>
 
 </div>
+
+<style>
+    /* Tarjeta de información del paciente */
+    .patient-info-card {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border: none;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        border-left: 5px solid #4299e1;
+    }
+
+    .patient-info-content {
+        display: flex;
+        align-items: center;
+        padding: 1.2rem 1.5rem;
+    }
+
+    .patient-avatar {
+        width: 60px;
+        height: 60px;
+        border-radius: 15px;
+        background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 1.2rem;
+    }
+
+    .patient-avatar i {
+        font-size: 2.5rem;
+        color: white;
+    }
+
+    .patient-name {
+        font-weight: 700;
+        color: #2d3748;
+        margin-bottom: 0.3rem;
+        font-size: 1.2rem;
+    }
+
+    .patient-meta {
+        display: flex;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+    }
+
+    .patient-meta-item {
+        font-size: 0.85rem;
+        color: #718096;
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+
+    .patient-meta-item i {
+        color: #4299e1;
+    }
+
+    /* Tarjeta principal */
+    .main-card {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border: none;
+        border-radius: 25px;
+        overflow: hidden;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+        margin-bottom: 2rem;
+    }
+
+    .card-header-custom {
+        padding: 1.2rem 1.5rem;
+        color: white;
+    }
+
+    .card-body-custom {
+        padding: 1.5rem;
+    }
+
+    /* Tabla de resultados */
+    .resultados-table {
+        margin-bottom: 0;
+    }
+
+    .resultados-table thead th {
+        background: #f7fafc;
+        color: #4a5568;
+        font-weight: 600;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 1rem;
+        border-bottom: 2px solid #e2e8f0;
+    }
+
+    .resultados-table tbody tr {
+        transition: all 0.3s ease;
+    }
+
+    .resultados-table tbody tr:hover {
+        background: rgba(66, 153, 225, 0.1);
+    }
+
+    .resultados-table td {
+        padding: 1rem;
+        vertical-align: middle;
+        color: #2d3748;
+        font-size: 0.95rem;
+    }
+
+    /* Fecha badge */
+    .fecha-badge {
+        background: #f7fafc;
+        padding: 0.3rem 0.8rem;
+        border-radius: 10px;
+        display: inline-block;
+        min-width: 90px;
+    }
+
+    .fecha-badge span {
+        font-weight: 600;
+        color: #2d3748;
+    }
+
+    .fecha-badge small {
+        font-size: 0.7rem;
+    }
+
+    /* Estudios */
+    .estudios-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.3rem;
+    }
+
+    .estudio-item {
+        background: #f0f4f8;
+        color: #2d3748;
+        padding: 0.2rem 0.6rem;
+        border-radius: 15px;
+        font-size: 0.8rem;
+        display: inline-block;
+        border: 1px solid #e2e8f0;
+    }
+
+    /* Médico */
+    .medico-info {
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+        font-weight: 500;
+    }
+
+    /* Observaciones */
+    .observacion-preview {
+        color: #718096;
+        font-size: 0.85rem;
+        font-style: italic;
+    }
+
+    /* Botón de acción */
+    .btn-view-action {
+        width: 35px;
+        height: 35px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+        color: white;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 10px rgba(66, 153, 225, 0.3);
+        text-decoration: none;
+    }
+
+    .btn-view-action:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(66, 153, 225, 0.4);
+        color: white;
+    }
+
+    /* Estado vacío */
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+    }
+
+    .empty-state-icon {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1.5rem;
+        box-shadow: 0 10px 25px rgba(66, 153, 225, 0.3);
+    }
+
+    .empty-state-icon i {
+        font-size: 2.5rem;
+        color: white;
+    }
+
+    .empty-state h6 {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #2d3748;
+        margin-bottom: 0.5rem;
+    }
+
+    .empty-state p {
+        color: #718096;
+        margin-bottom: 1rem;
+    }
+
+    /* Mensajes flash */
+    .flash-messages {
+        margin-bottom: 1.5rem;
+    }
+
+    .alert {
+        border-radius: 15px;
+        border: none;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .patient-info-content {
+            flex-direction: column;
+            text-align: center;
+        }
+
+        .patient-avatar {
+            margin-right: 0;
+            margin-bottom: 1rem;
+        }
+
+        .patient-meta {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .card-body-custom {
+            padding: 1rem;
+        }
+
+        .resultados-table td {
+            font-size: 0.8rem;
+        }
+
+        .estudios-container {
+            flex-direction: column;
+        }
+    }
+</style>
 
 {% endblock %}

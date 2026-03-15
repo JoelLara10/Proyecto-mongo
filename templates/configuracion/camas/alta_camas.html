@@ -1,94 +1,352 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <title>Agregar cama</title>
+{% extends "configuracion/header_configuracion.html" %}
 
-  <!-- Bootstrap & Icons -->
-  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
-  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.0/css/all.css">
+{% block content %}
 
-  <!-- ESTILOS MODERNOS -->
-  <style>
-    body { background:#f8f9fa; font-family:'Segoe UI',Tahoma; }
-    .form-container{background:#fff;border-radius:15px;box-shadow:0 4px 20px rgba(43,45,127,.1);max-width:700px;margin:40px auto;overflow:hidden;animation:fadeIn .5s}
-    .form-header{background:linear-gradient(135deg,#2b2d7f,#1a1d5f);color:#fff;padding:25px;text-align:center}
-    .form-header h3{margin:0;font-weight:600}
-    .form-body{padding:40px}
-    .form-section{background:#f8f9fa;border-radius:16px;padding:25px;margin-bottom:25px;border-left:4px solid #2b2d7f}
-    .section-title{color:#2b2d7f;font-weight:700;margin-bottom:20px;font-size:18px;display:flex;align-items:center}
-    .section-title i{margin-right:10px}
-    .form-label-modern{font-weight:600;color:#2b2d7f;margin-bottom:8px}
-    .form-control-modern,.select-modern{width:100%;height:50px;border-radius:10px;border:2px solid #e9ecef;padding:12px 18px;font-size:16px}
-    .form-control-modern:focus,.select-modern:focus{border-color:#2b2d7f;box-shadow:0 0 0 .25rem rgba(43,45,127,.15);outline:none}
-    .btn-actions{text-align:center;background:#f8f9fa;padding:25px}
-    .btn-save-modern{background:linear-gradient(135deg,#28a745,#20c997);border:none;border-radius:25px;padding:12px 35px;color:#fff;font-weight:600;font-size:16px}
-    @keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1}}
-  </style>
-</head>
+<style>
+  * {
+    font-family: 'Inter', sans-serif;
+  }
 
-<body>
-<section class="content container-fluid">
-  <div class="form-container">
+  body {
+    background: transparent;
+  }
 
-    <div class="form-header">
-      <h3><i class="fas fa-bed"></i> Agregar cama</h3>
-    </div>
+  /* Tarjeta principal */
+  .main-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: none;
+    border-radius: 25px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    max-width: 700px;
+    margin: 20px auto;
+    animation: fadeIn 0.5s ease;
+  }
 
-    <div class="form-body">
-      <form method="POST">
+  .card-header-custom {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 1.5rem 2rem;
+    color: white;
+    text-align: center;
+  }
 
-        <!-- Información básica -->
-        <div class="form-section">
-          <div class="section-title">
-            <i class="fas fa-hashtag"></i> Información básica
-          </div>
-          <label class="form-label-modern">Número de cama</label>
-          <input name="numero" type="text" required class="form-control-modern" placeholder="Ej. H-101">
+  .card-header-custom h3 {
+    margin: 0;
+    font-weight: 600;
+    font-size: 1.5rem;
+  }
 
-          <label class="form-label-modern mt-3">Área</label>
-          <select name="area" class="select-modern" required>
-            <option value="Hospitalizado">Hospitalizado</option>
-            <option value="Urgencias">Urgencias</option>
-          </select>
-        </div>
+  .card-header-custom i {
+    margin-right: 1rem;
+    font-size: 1.8rem;
+  }
 
-        <!-- Detalles adicionales -->
-        <div class="form-section">
-          <div class="section-title">
-            <i class="fas fa-hospital"></i> Detalles adicionales
-          </div>
-          <label class="form-label-modern">Tipo de habitación</label>
-          <input name="tipo_habitacion" type="text" class="form-control-modern" placeholder="Ej. Individual">
+  .card-body-custom {
+    padding: 2rem;
+  }
 
-          <label class="form-label-modern mt-3">Piso</label>
-          <input name="piso" type="text" class="form-control-modern" placeholder="Ej. 1">
+  /* Secciones del formulario */
+  .form-section {
+    background: #f7fafc;
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    border-left: 4px solid #667eea;
+    transition: all 0.3s ease;
+  }
 
-          <label class="form-label-modern mt-3">Sección</label>
-          <input name="seccion" type="text" class="form-control-modern" placeholder="Ej. A">
+  .form-section:hover {
+    background: #ffffff;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+  }
 
-          <label class="form-label-modern mt-3">¿Está ocupada?</label>
-          <select name="ocupada" class="select-modern" required>
-            <option value="0">No</option>
-            <option value="1">Sí</option>
-          </select>
-        </div>
+  .section-title {
+    color: #667eea;
+    font-weight: 700;
+    margin-bottom: 1.2rem;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+  }
 
-        <!-- Botón -->
-        <div class="btn-actions">
-          <button type="submit" class="btn btn-save-modern">
-            <i class="fas fa-save mr-2"></i> Guardar
+  .section-title i {
+    margin-right: 0.8rem;
+    font-size: 1.3rem;
+    background: rgba(102, 126, 234, 0.1);
+    padding: 0.5rem;
+    border-radius: 10px;
+    color: #667eea;
+  }
+
+  /* Etiquetas */
+  .form-label-custom {
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .form-label-custom i {
+    color: #667eea;
+    font-size: 0.9rem;
+  }
+
+  /* Campos de formulario */
+  .form-control-custom, .form-select-custom {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    background: white;
+    font-size: 0.95rem;
+    margin-top: 0.3rem;
+  }
+
+  .form-control-custom:focus, .form-select-custom:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+    outline: none;
+  }
+
+  .form-control-custom::placeholder {
+    color: #a0aec0;
+  }
+
+  /* Espaciado entre campos */
+  .mt-3 {
+    margin-top: 1.2rem;
+  }
+
+  /* Botones de acción */
+  .btn-actions {
+    text-align: center;
+    background: #f7fafc;
+    padding: 1.5rem;
+    border-radius: 16px;
+    margin-top: 1.5rem;
+  }
+
+  .btn-save {
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 0.8rem 2rem;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(72, 187, 120, 0.3);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+  }
+
+  .btn-save:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(72, 187, 120, 0.4);
+    color: white;
+  }
+
+  /* Mensajes flash */
+  .flash-messages {
+    margin-top: 1.5rem;
+  }
+
+  .alert {
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .alert-success {
+    background: #d1fae5;
+    color: #065f46;
+    border-left: 4px solid #38a169;
+  }
+
+  .alert-danger {
+    background: #fed7d7;
+    color: #991b1b;
+    border-left: 4px solid #e53e3e;
+  }
+
+  .alert i {
+    font-size: 1.2rem;
+  }
+
+  /* Animaciones */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .card-body-custom {
+      padding: 1rem;
+    }
+    
+    .form-section {
+      padding: 1rem;
+    }
+    
+    .btn-save {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+</style>
+
+<section class="content">
+  <div class="container-fluid">
+
+    <!-- Tarjeta principal -->
+    <div class="main-card">
+      <div class="card-header-custom">
+        <h3>
+          <i class="fas fa-bed"></i>
+          Agregar Cama
+        </h3>
+      </div>
+
+             <!-- MENSAJES FLASH -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="flash-messages">
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+          <span>
+            <i class="fas {% if category == 'success' %}fa-check-circle text-success{% else %}fa-exclamation-circle text-danger{% endif %} mr-2"></i>
+            {{ message }}
+          </span>
+          <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
           </button>
         </div>
-      </form>
-
-      {% with messages = get_flashed_messages(with_categories=true) %}
-        {% for category, message in messages %}
-          <div class="alert alert-{{ category }} mt-3">{{ message }}</div>
-        {% endfor %}
-      {% endwith %}
+      {% endfor %}
     </div>
+  {% endif %}
+{% endwith %}
+
+      <div class="card-body-custom">
+        <form method="POST">
+
+          <!-- Información básica -->
+          <div class="form-section">
+            <div class="section-title">
+              <i class="fas fa-hashtag"></i>
+              Información básica
+            </div>
+
+            <div>
+              <label class="form-label-custom">
+                <i class="fas fa-sort-numeric-up-alt"></i>
+                Número de cama
+              </label>
+              <input name="numero" 
+                     type="text" 
+                     required 
+                     class="form-control-custom" 
+                     placeholder="Ej. H-101">
+            </div>
+
+            <div class="mt-3">
+              <label class="form-label-custom">
+                <i class="fas fa-building"></i>
+                Área
+              </label>
+              <select name="area" class="form-select-custom" required>
+                <option value="Hospitalizado">Hospitalizado</option>
+                <option value="Urgencias">Urgencias</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Detalles adicionales -->
+          <div class="form-section">
+            <div class="section-title">
+              <i class="fas fa-hospital"></i>
+              Detalles adicionales
+            </div>
+
+            <div>
+              <label class="form-label-custom">
+                <i class="fas fa-door-open"></i>
+                Tipo de habitación
+              </label>
+              <input name="tipo_habitacion" 
+                     type="text" 
+                     class="form-control-custom" 
+                     placeholder="Ej. Individual, Compartida, Suite">
+            </div>
+
+            <div class="mt-3">
+              <label class="form-label-custom">
+                <i class="fas fa-layer-group"></i>
+                Piso
+              </label>
+              <input name="piso" 
+                     type="text" 
+                     class="form-control-custom" 
+                     placeholder="Ej. 1, 2, 3">
+            </div>
+
+            <div class="mt-3">
+              <label class="form-label-custom">
+                <i class="fas fa-cubes"></i>
+                Sección
+              </label>
+              <input name="seccion" 
+                     type="text" 
+                     class="form-control-custom" 
+                     placeholder="Ej. A, B, C">
+            </div>
+
+            <div class="mt-3">
+              <label class="form-label-custom">
+                <i class="fas fa-circle"></i>
+                Estado inicial
+              </label>
+              <select name="ocupada" class="form-select-custom" required>
+                <option value="0">Disponible</option>
+                <option value="1">Ocupada</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Botón de guardar -->
+          <div class="btn-actions">
+            <button type="submit" class="btn-save">
+              <i class="fas fa-save"></i>
+              Guardar Cama
+            </button>
+          </div>
+
+        </form>
+
+
+      </div>
+    </div>
+
   </div>
 </section>
-</body>
-</html>
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+{% endblock %}

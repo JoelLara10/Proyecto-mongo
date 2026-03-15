@@ -2,86 +2,522 @@
 
 {% block content %}
 
+<!-- Mensajes Flash con diseño mejorado -->
 {% with messages = get_flashed_messages(with_categories=true) %}
   {% if messages %}
-    {% for category, message in messages %}
-      <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show">
-        <i class="fas fa-check-circle"></i>
-        {{ message }}
-        <button type="button" class="close" data-dismiss="alert">
-          <span>&times;</span>
-        </button>
-      </div>
-    {% endfor %}
+    <div class="flash-messages">
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm" role="alert">
+          <div class="d-flex align-items-center">
+            <i class="fas {% if category == 'success' %}fa-check-circle text-success{% else %}fa-exclamation-circle text-danger{% endif %} me-3 fa-2x"></i>
+            <div class="flex-grow-1">
+              <strong class="d-block">{% if category == 'success' %}Éxito{% else %}Error{% endif %}</strong>
+              <span>{{ message }}</span>
+            </div>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      {% endfor %}
+    </div>
   {% endif %}
 {% endwith %}
 
 <section class="content-header">
-  <h1 class="text-dark">
-    <i class="fas fa-x-ray"></i> Exámenes de Gabinete
-  </h1>
+  <div class="container-fluid">
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="page-header" style="background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border-radius: 15px; padding: 1.2rem;">
+          <h1 class="text-white mb-0">
+            <i class="fas fa-x-ray me-3"></i>
+            Exámenes de Gabinete
+          </h1>
+        </div>
+      </div>
+    </div>
+  </div>
 </section>
 
 <section class="content">
+  <div class="container-fluid">
 
-  <div class="card card-primary">
-    <div class="card-header">
-      <h3 class="card-title">
-        Paciente: {{ paciente.papell }} {{ paciente.sapell }} {{ paciente.nom_pac }}
-      </h3>
+    <!-- Tarjeta de información del paciente -->
+    <div class="patient-info-card mb-4">
+      <div class="patient-info-content">
+        <div class="patient-avatar">
+          <i class="fas fa-user-circle"></i>
+        </div>
+        <div class="patient-details">
+          <h5 class="patient-name">{{ paciente.papell }} {{ paciente.sapell }} {{ paciente.nom_pac }}</h5>
+          <div class="patient-meta">
+            <span class="patient-meta-item">
+              <i class="fas fa-id-card"></i> Exp: {{ paciente.Id_exp }}
+            </span>
+            <span class="patient-meta-item">
+              <i class="fas fa-calendar-alt"></i> Edad: {{ paciente.edad }} años
+            </span>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <form method="POST" action="{{ url_for('guardar_examenes_gabinete') }}">
+    <!-- Tarjeta principal de exámenes -->
+    <div class="main-card">
+      <div class="card-header-custom">
+        <div class="d-flex align-items-center">
+          <i class="fas fa-x-ray me-2"></i>
+          <h5 class="mb-0">Selección de Exámenes de Gabinete</h5>
+        </div>
+      </div>
 
-      <div class="card-body">
+      <form method="POST" action="{{ url_for('guardar_examenes_gabinete') }}">
+        <div class="card-body-custom">
 
-        <input type="hidden" name="id_atencion" value="{{ id_atencion }}">
-        <input type="hidden" name="Id_exp" value="{{ paciente.Id_exp }}">
+          <input type="hidden" name="id_atencion" value="{{ id_atencion }}">
+          <input type="hidden" name="Id_exp" value="{{ paciente.Id_exp }}">
 
-        <div class="form-group">
-          <label>Seleccione los exámenes de gabinete</label>
+          <div class="examenes-section">
+            <div class="section-header">
+              <span class="section-badge">
+                <i class="fas fa-x-ray"></i>
+              </span>
+              <h6 class="section-title">Lista de Exámenes Disponibles</h6>
+              <span class="section-count">{{ examenes|length }} exámenes</span>
+            </div>
 
-          <div class="row">
-            {% for examen in examenes %}
-              <div class="col-md-6">
-                <div class="form-check">
-                  <input class="form-check-input"
+            <div class="examenes-grid">
+              {% for examen in examenes %}
+                <div class="examen-item">
+                  <input class="examen-checkbox"
                          type="checkbox"
                          name="examenes[]"
                          value="{{ examen.id_catalogo }}"
                          id="ex{{ examen.id_catalogo }}">
-                  <label class="form-check-label" for="ex{{ examen.id_catalogo }}">
-                    {{ examen.nombre }}
+                  <label class="examen-label" for="ex{{ examen.id_catalogo }}">
+                    <span class="examen-icon">
+                      <i class="fas fa-x-ray"></i>
+                    </span>
+                    <span class="examen-nombre">{{ examen.nombre }}</span>
+                    <span class="examen-check">
+                      <i class="fas fa-check"></i>
+                    </span>
                   </label>
                 </div>
-              </div>
-            {% endfor %}
+              {% else %}
+                <div class="empty-examenes">
+                  <i class="fas fa-x-ray fa-3x mb-3"></i>
+                  <p>No hay exámenes de gabinete disponibles</p>
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+
+          <!-- Observaciones -->
+          <div class="observaciones-section mt-4">
+            <div class="section-header">
+              <span class="section-badge">
+                <i class="fas fa-pen"></i>
+              </span>
+              <h6 class="section-title">Observaciones</h6>
+            </div>
+
+            <div class="observaciones-container">
+              <textarea class="observaciones-textarea"
+                        name="otros"
+                        rows="4"
+                        placeholder="Escriba aquí cualquier observación adicional para los exámenes solicitados..."></textarea>
+              <small class="text-muted">
+                <i class="fas fa-info-circle me-1"></i>
+                Puede agregar notas específicas para el área de gabinete
+              </small>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="card-footer-custom">
+          <div class="d-flex justify-content-center gap-3">
+            <a href="{{ url_for('paciente', id_atencion=id_atencion, Id_exp=paciente.Id_exp) }}"
+               class="btn-cancel">
+              <i class="fas fa-times me-2"></i>
+              Cancelar
+            </a>
+            <button type="submit" class="btn-save">
+              <i class="fas fa-save me-2"></i>
+              Guardar Exámenes
+            </button>
           </div>
         </div>
+      </form>
+    </div>
 
-        <div class="form-group mt-3">
-          <label>Observaciones</label>
-          <textarea class="form-control" name="otros" rows="3"></textarea>
-        </div>
-
-      </div>
-
-      <div class="card-footer text-center">
-        <button type="submit" class="btn btn-primary">
-          <i class="fas fa-save"></i> Guardar Exámenes
-        </button>
-
-        <a href="{{ url_for('paciente',
-                            id_atencion=id_atencion,
-                            Id_exp=paciente.Id_exp) }}"
-           class="btn btn-secondary">
-          Cancelar
-        </a>
-      </div>
-
-    </form>
   </div>
-
 </section>
+
+<style>
+  /* Tarjeta de información del paciente */
+  .patient-info-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: none;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    border-left: 5px solid #ed8936;
+  }
+
+  .patient-info-content {
+    display: flex;
+    align-items: center;
+    padding: 1.2rem 1.5rem;
+  }
+
+  .patient-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 15px;
+    background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1.2rem;
+  }
+
+  .patient-avatar i {
+    font-size: 2.5rem;
+    color: white;
+  }
+
+  .patient-name {
+    font-weight: 700;
+    color: #2d3748;
+    margin-bottom: 0.3rem;
+    font-size: 1.2rem;
+  }
+
+  .patient-meta {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  .patient-meta-item {
+    font-size: 0.85rem;
+    color: #718096;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  .patient-meta-item i {
+    color: #ed8936;
+  }
+
+  /* Tarjeta principal */
+  .main-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: none;
+    border-radius: 25px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    margin-bottom: 2rem;
+  }
+
+  .card-header-custom {
+    background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);
+    padding: 1.2rem 1.5rem;
+    color: white;
+  }
+
+  .card-header-custom h5 {
+    margin: 0;
+    font-weight: 600;
+    font-size: 1.2rem;
+  }
+
+  .card-body-custom {
+    padding: 2rem;
+  }
+
+  .card-footer-custom {
+    background: #f7fafc;
+    border-top: 2px solid #e2e8f0;
+    padding: 1.5rem;
+  }
+
+  /* Secciones */
+  .examenes-section, .observaciones-section {
+    background: #f7fafc;
+    border-radius: 15px;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+  }
+
+  .examenes-section:hover, .observaciones-section:hover {
+    background: #ffffff;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #e2e8f0;
+  }
+
+  .section-badge {
+    width: 35px;
+    height: 35px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #ed8936, #dd6b20);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    margin-right: 1rem;
+  }
+
+  .section-badge i {
+    font-size: 1rem;
+  }
+
+  .section-title {
+    font-weight: 700;
+    color: #2d3748;
+    margin: 0;
+    font-size: 1rem;
+    flex: 1;
+  }
+
+  .section-count {
+    font-size: 0.8rem;
+    color: #718096;
+    background: white;
+    padding: 0.2rem 0.8rem;
+    border-radius: 20px;
+    border: 1px solid #e2e8f0;
+  }
+
+  /* Grid de exámenes */
+  .examenes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1rem;
+  }
+
+  .examen-item {
+    position: relative;
+  }
+
+  .examen-checkbox {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  .examen-label {
+    display: flex;
+    align-items: center;
+    padding: 0.8rem 1rem;
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+  }
+
+  .examen-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    background: #f7fafc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1rem;
+    color: #ed8936;
+  }
+
+  .examen-nombre {
+    flex: 1;
+    font-size: 0.9rem;
+    color: #2d3748;
+  }
+
+  .examen-check {
+    width: 20px;
+    height: 20px;
+    border-radius: 5px;
+    border: 2px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 0.7rem;
+    margin-left: 0.5rem;
+  }
+
+  .examen-checkbox:checked + .examen-label {
+    border-color: #ed8936;
+    background: #fffaf0;
+  }
+
+  .examen-checkbox:checked + .examen-label .examen-check {
+    background: #ed8936;
+    border-color: #ed8936;
+  }
+
+  .examen-checkbox:checked + .examen-label .examen-check i {
+    color: white;
+  }
+
+  .examen-label:hover {
+    border-color: #ed8936;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(237, 137, 54, 0.2);
+  }
+
+  /* Observaciones */
+  .observaciones-container {
+    margin-top: 1rem;
+  }
+
+  .observaciones-textarea {
+    width: 100%;
+    padding: 1rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    background: white;
+    font-size: 0.95rem;
+    resize: vertical;
+    margin-bottom: 0.5rem;
+  }
+
+  .observaciones-textarea:focus {
+    border-color: #ed8936;
+    box-shadow: 0 0 0 3px rgba(237, 137, 54, 0.2);
+    outline: none;
+  }
+
+  .observaciones-textarea::placeholder {
+    color: #a0aec0;
+  }
+
+  /* Estado vacío */
+  .empty-examenes {
+    text-align: center;
+    padding: 3rem;
+    background: white;
+    border-radius: 12px;
+    border: 2px dashed #e2e8f0;
+  }
+
+  .empty-examenes i {
+    color: #a0aec0;
+  }
+
+  .empty-examenes p {
+    color: #718096;
+    margin: 0;
+  }
+
+  /* Botones */
+  .btn-save {
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 0.8rem 2rem;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(72, 187, 120, 0.3);
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+    text-decoration: none;
+  }
+
+  .btn-save:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(72, 187, 120, 0.4);
+    color: white;
+  }
+
+  .btn-cancel {
+    background: white;
+    color: #718096;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 0.8rem 2rem;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+  }
+
+  .btn-cancel:hover {
+    background: #f7fafc;
+    color: #4a5568;
+    transform: translateY(-2px);
+  }
+
+  /* Mensajes flash */
+  .flash-messages {
+    margin-bottom: 1.5rem;
+  }
+
+  .alert {
+    border-radius: 15px;
+    border: none;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .patient-info-content {
+      flex-direction: column;
+      text-align: center;
+    }
+
+    .patient-avatar {
+      margin-right: 0;
+      margin-bottom: 1rem;
+    }
+
+    .patient-meta {
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .card-body-custom {
+      padding: 1rem;
+    }
+
+    .examenes-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .examen-label {
+      padding: 0.6rem 0.8rem;
+    }
+
+    .d-flex.justify-content-center {
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .btn-save, .btn-cancel {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+</style>
 
 {% endblock %}

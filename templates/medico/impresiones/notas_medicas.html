@@ -1,50 +1,555 @@
 {% extends 'medico/header_medico.html' %}
+
 {% block content %}
 
+<!-- Mensajes Flash -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="flash-messages">
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm" role="alert">
+          <div class="d-flex align-items-center">
+            <i class="fas {% if category == 'success' %}fa-check-circle text-success{% else %}fa-exclamation-circle text-danger{% endif %} me-3 fa-2x"></i>
+            <div class="flex-grow-1">
+              <strong class="d-block">{% if category == 'success' %}Éxito{% else %}Error{% endif %}</strong>
+              <span>{{ message }}</span>
+            </div>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
 <section class="content-header">
-  <h1>
-    <i class="fas fa-notes-medical"></i> Notas Médicas (SOAP)
-  </h1>
+  <div class="container-fluid">
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="page-header" style="background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border-radius: 15px; padding: 1.2rem;">
+          <h1 class="text-white mb-0">
+            <i class="fas fa-notes-medical me-3"></i>
+            Notas Médicas (SOAP)
+          </h1>
+        </div>
+      </div>
+    </div>
+  </div>
 </section>
 
 <section class="content">
+  <div class="container-fluid">
 
-<div class="card shadow">
-  <div class="card-header">
-    <h3 class="card-title">
-      Paciente: {{ paciente.papell }} {{ paciente.sapell }} {{ paciente.nom_pac }}
-    </h3>
+    <!-- Tarjeta de información del paciente -->
+    <div class="patient-info-card mb-4">
+      <div class="patient-info-content">
+        <div class="patient-avatar">
+          <i class="fas fa-user-circle"></i>
+        </div>
+        <div class="patient-details">
+          <h5 class="patient-name">{{ paciente.papell }} {{ paciente.sapell }} {{ paciente.nom_pac }}</h5>
+          <div class="patient-meta">
+            <span class="patient-meta-item">
+              <i class="fas fa-id-card"></i> Exp: {{ paciente.Id_exp }}
+            </span>
+            <span class="patient-meta-item">
+              <i class="fas fa-calendar-alt"></i> Edad: {{ paciente.edad }} años
+            </span>
+            <span class="patient-meta-item">
+              <i class="fas fa-stethoscope"></i> Notas: {{ notas|length }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Botón para nueva nota (opcional) -->
+    <div class="text-end mb-4">
+      <a href="{{ url_for('nota_medica', id_atencion=id_atencion) }}" class="btn-new-nota">
+        <i class="fas fa-plus me-2"></i>
+        Nueva Nota SOAP
+      </a>
+    </div>
+
+    <!-- Tarjeta de tabla de notas médicas -->
+    <div class="main-card">
+      <div class="card-header-custom">
+        <div class="d-flex align-items-center justify-content-between">
+          <h5 class="mb-0">
+            <i class="fas fa-history me-2"></i>
+            Historial de Notas Médicas
+          </h5>
+          <span class="badge bg-white text-primary">
+            <i class="fas fa-list me-1"></i> {{ notas|length }} nota(s)
+          </span>
+        </div>
+      </div>
+
+      <div class="card-body-custom">
+        {% if notas %}
+        <div class="table-responsive">
+          <table class="table table-hover notas-table">
+            <thead>
+              <tr>
+                <th class="text-center">Fecha</th>
+                <th>Nota Subjetiva (S)</th>
+                <th class="text-center">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for nota in notas %}
+              <tr>
+                <td class="text-center">
+                  <div class="fecha-badge">
+                    <i class="far fa-calendar-alt me-1"></i>
+                    <span>{{ nota.fecha_registro.strftime('%d/%m/%Y') }}</span>
+                    <small class="text-muted d-block">{{ nota.fecha_registro.strftime('%H:%M') }}</small>
+                  </div>
+                </td>
+                <td>
+                  <div class="nota-content">
+                    <div class="nota-preview">{{ nota.subjetivo|truncate(150) }}</div>
+
+                  </div>
+                </td>
+                <td class="text-center">
+                  <div class="action-buttons">
+                    <a href="{{ url_for('pdf_med.notas_medicas_pdf', id_nota=nota.id_nota) }}"
+                       class="btn-pdf"
+                       target="_blank"
+                       title="Generar PDF">
+                      <i class="fas fa-file-pdf"></i>
+                    </a>
+
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+          <div class="empty-state-icon">
+            <i class="fas fa-notes-medical"></i>
+          </div>
+          <h6>No hay notas médicas registradas</h6>
+          <p class="text-muted">Aún no se han registrado notas SOAP para este paciente.</p>
+          <a href="{{ url_for('nota_medica', id_atencion=id_atencion) }}" class="btn-empty">
+            <i class="fas fa-plus me-2"></i>
+            Crear Primera Nota
+          </a>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
   </div>
+</section>
 
-  <div class="card-body">
-    {% if notas %}
-    <table class="table table-striped">
-      <thead>
-        <tr>
-          <th>Fecha</th>
-          <th>Subjetivo (resumen)</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for nota in notas %}
-        <tr>
-          <td>{{ nota.fecha_registro.strftime('%d/%m/%Y %H:%M') }}</td>
-          <td>{{ nota.subjetivo|truncate(100) }}</td>
-          <td>
-            <a href="{{ url_for('pdf_med.notas_medicas_pdf', id_nota=nota.id_nota) }}" class="btn btn-sm btn-primary" target="_blank">
-              <i class="fas fa-print"></i> Imprimir PDF
-            </a>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-    {% else %}
-    <p>No hay notas médicas registradas para esta atención.</p>
-    {% endif %}
+<!-- Modal para ver nota completa -->
+<div class="modal fade" id="modalNotaCompleta" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-notes-medical me-2 text-primary"></i>
+          Nota Médica Completa
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="nota-completa-content p-3" id="notaCompletaBody">
+          <!-- Contenido dinámico -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
   </div>
 </div>
 
-</section>
+<style>
+  /* Tarjeta de información del paciente */
+  .patient-info-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: none;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    border-left: 5px solid #667eea;
+  }
+
+  .patient-info-content {
+    display: flex;
+    align-items: center;
+    padding: 1.2rem 1.5rem;
+  }
+
+  .patient-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 15px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1.2rem;
+  }
+
+  .patient-avatar i {
+    font-size: 2.5rem;
+    color: white;
+  }
+
+  .patient-name {
+    font-weight: 700;
+    color: #2d3748;
+    margin-bottom: 0.3rem;
+    font-size: 1.2rem;
+  }
+
+  .patient-meta {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  .patient-meta-item {
+    font-size: 0.85rem;
+    color: #718096;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  .patient-meta-item i {
+    color: #667eea;
+  }
+
+  /* Botón nueva nota */
+  .btn-new-nota {
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 0.8rem 1.5rem;
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(72, 187, 120, 0.3);
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+  }
+
+  .btn-new-nota:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(72, 187, 120, 0.4);
+    color: white;
+  }
+
+  /* Tarjeta principal */
+  .main-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: none;
+    border-radius: 25px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    margin-bottom: 2rem;
+  }
+
+  .card-header-custom {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 1.2rem 1.5rem;
+    color: white;
+  }
+
+  .card-header-custom h5 {
+    margin: 0;
+    font-weight: 600;
+    font-size: 1.2rem;
+  }
+
+  .card-body-custom {
+    padding: 1.5rem;
+  }
+
+  /* Tabla de notas */
+  .notas-table {
+    margin-bottom: 0;
+  }
+
+  .notas-table thead th {
+    background: #f7fafc;
+    color: #4a5568;
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 1rem;
+    border-bottom: 2px solid #e2e8f0;
+  }
+
+  .notas-table tbody tr {
+    transition: all 0.3s ease;
+  }
+
+  .notas-table tbody tr:hover {
+    background: rgba(102, 126, 234, 0.1);
+  }
+
+  .notas-table td {
+    padding: 1rem;
+    vertical-align: middle;
+    color: #2d3748;
+    font-size: 0.95rem;
+  }
+
+  .fecha-badge {
+    background: #f7fafc;
+    padding: 0.3rem 0.8rem;
+    border-radius: 10px;
+    display: inline-block;
+    min-width: 90px;
+  }
+
+  .fecha-badge span {
+    font-weight: 600;
+    color: #2d3748;
+  }
+
+  .fecha-badge small {
+    font-size: 0.7rem;
+  }
+
+  .nota-content {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .nota-preview {
+    color: #4a5568;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    flex: 1;
+  }
+
+  .btn-ver-mas {
+    background: none;
+    border: none;
+    color: #667eea;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0.3rem 0.8rem;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    border: 1px solid #667eea;
+  }
+
+  .btn-ver-mas:hover {
+    background: #667eea;
+    color: white;
+  }
+
+  /* Botones de acción */
+  .action-buttons {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+  }
+
+  .btn-pdf {
+    background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    width: 35px;
+    height: 35px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 10px rgba(229, 62, 62, 0.3);
+    text-decoration: none;
+  }
+
+  .btn-view {
+    background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    width: 35px;
+    height: 35px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 10px rgba(66, 153, 225, 0.3);
+    text-decoration: none;
+  }
+
+  .btn-pdf:hover, .btn-view:hover {
+    transform: translateY(-2px);
+    color: white;
+  }
+
+  .btn-pdf:hover {
+    box-shadow: 0 8px 20px rgba(229, 62, 62, 0.4);
+  }
+
+  .btn-view:hover {
+    box-shadow: 0 8px 20px rgba(66, 153, 225, 0.4);
+  }
+
+  /* Estado vacío */
+  .empty-state {
+    text-align: center;
+    padding: 3rem;
+  }
+
+  .empty-state-icon {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem;
+    box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+  }
+
+  .empty-state-icon i {
+    font-size: 3rem;
+    color: white;
+  }
+
+  .empty-state h6 {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 0.5rem;
+  }
+
+  .empty-state p {
+    color: #718096;
+    margin-bottom: 1.5rem;
+  }
+
+  .btn-empty {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 0.8rem 2rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  }
+
+  .btn-empty:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+    color: white;
+  }
+
+  /* Modal */
+  .modal-content {
+    border-radius: 20px;
+    border: none;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+  }
+
+  .modal-header {
+    border-bottom: 2px solid #e2e8f0;
+    padding: 1.2rem 1.5rem;
+  }
+
+  .modal-header .modal-title {
+    font-weight: 600;
+    color: #2d3748;
+  }
+
+  .modal-body {
+    padding: 1.5rem;
+  }
+
+  .modal-footer {
+    border-top: 2px solid #e2e8f0;
+    padding: 1.2rem 1.5rem;
+  }
+
+  .nota-completa-content {
+    background: #f7fafc;
+    border-radius: 15px;
+    font-size: 1rem;
+    line-height: 1.8;
+    color: #2d3748;
+    white-space: pre-wrap;
+  }
+
+  /* Mensajes flash */
+  .flash-messages {
+    margin-bottom: 1.5rem;
+  }
+
+  .alert {
+    border-radius: 15px;
+    border: none;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .patient-info-content {
+      flex-direction: column;
+      text-align: center;
+    }
+
+    .patient-avatar {
+      margin-right: 0;
+      margin-bottom: 1rem;
+    }
+
+    .patient-meta {
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .nota-content {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .btn-ver-mas {
+      margin-top: 0.5rem;
+    }
+
+    .action-buttons {
+      flex-direction: column;
+    }
+  }
+</style>
+
+<script>
+  function verNotaCompleta(boton) {
+    const texto = boton.getAttribute('data-nota');
+    const modalBody = document.getElementById('notaCompletaBody');
+    modalBody.innerHTML = `<p>${texto}</p>`;
+
+    const modal = new bootstrap.Modal(document.getElementById('modalNotaCompleta'));
+    modal.show();
+  }
+</script>
+
 {% endblock %}

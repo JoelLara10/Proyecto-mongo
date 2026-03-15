@@ -2749,6 +2749,16 @@ def alta_usuarios():
 # ====================================================================================
 # ============================ INSERTAR USUARIO ===============================
 # ====================================================================================
+# ============================ MOSTRAR FORMULARIO DE INSERCIÓN ===============================
+@app.route('/configuracion/personal/insertar/form')
+def insertar_usuario_form():
+    db = get_db_connection()
+    roles = ['admin', 'medico', 'enfermero', 'administrativo']
+    return render_template(
+        'configuracion/personal/insertar_usuario.html',
+        roles=roles
+    )
+
 @app.route('/configuracion/personal/insertar', methods=['POST'])
 def insertar_usuario():
     db = get_db_connection()
@@ -2895,6 +2905,11 @@ def mostrar_usuario(user_id):
 
 
 # ============================ LISTAR DIAGNÓSTICOS ============================
+# ============================ MOSTRAR FORMULARIO DE INSERCIÓN ===============================
+@app.route('/configuracion/diagnostico/insertar/form')
+def insertar_diagnostico_form():
+    return render_template('configuracion/diagnostico/insertar_diagnostico.html')
+
 @app.route('/configuracion/diagnostico')
 def listar_diagnosticos():
     db = get_db_connection()
@@ -3071,7 +3086,7 @@ def editar_servicio(id):
             "serv_costo7": data.get('costo7', 0),
             "serv_costo8": data.get('costo8', 0),
             "serv_umed": data['med'],
-            "tipo": data['tipo'],
+            "tipo": int(data['tipo']),
             "proveedor": data['proveedor'],
             "grupo": data['grupo'],
             "codigo_sat": data['codigo_sat'],

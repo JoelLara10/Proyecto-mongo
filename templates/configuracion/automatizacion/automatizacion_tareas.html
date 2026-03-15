@@ -1,93 +1,606 @@
 {% extends 'configuracion/header_configuracion.html' %}
 {% block content %}
 
-<section class="content-header">
-  <h1>
-    <i class="fas fa-clock"></i> Automatización de Tareas
-  </h1>
-</section>
+<style>
+  * {
+    font-family: 'Inter', sans-serif;
+  }
 
-<section class="content">
+  /* Título principal */
+  .page-title {
+    color: white;
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+  }
 
+  .page-title i {
+    margin-right: 1rem;
+    font-size: 2.5rem;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 0.5rem;
+    border-radius: 15px;
+  }
+
+  /* Tarjeta principal */
+  .main-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: none;
+    border-radius: 25px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    margin-bottom: 2rem;
+    animation: fadeIn 0.5s ease;
+  }
+
+  .card-header-custom {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 1.2rem 1.5rem;
+    color: white;
+    border: none;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+  }
+
+  .card-header-custom i {
+    font-size: 1.5rem;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 0.5rem;
+    border-radius: 12px;
+  }
+
+  .card-header-custom h3 {
+    margin: 0;
+    font-weight: 700;
+    font-size: 1.3rem;
+  }
+
+  .card-body-custom {
+    padding: 2rem;
+    background: white;
+  }
+
+  .card-footer-custom {
+    padding: 1.2rem 1.5rem;
+    background: #f7fafc;
+    border-top: 1px solid #e2e8f0;
+    text-align: right;
+  }
+
+  /* Secciones del formulario */
+  .form-section {
+    background: #f7fafc;
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    border-left: 4px solid #667eea;
+    transition: all 0.3s ease;
+  }
+
+  .form-section:hover {
+    background: #ffffff;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+  }
+
+  .section-title {
+    color: #667eea;
+    font-weight: 700;
+    margin-bottom: 1.2rem;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .section-title i {
+    background: rgba(102, 126, 234, 0.1);
+    padding: 0.5rem;
+    border-radius: 10px;
+    color: #667eea;
+  }
+
+  /* Switch personalizado */
+  .switch-container {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 34px;
+  }
+
+  .switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #e2e8f0;
+    transition: .4s;
+    border-radius: 34px;
+  }
+
+  .slider:before {
+    position: absolute;
+    content: "";
+    height: 26px;
+    width: 26px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+  }
+
+  input:checked + .slider {
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+  }
+
+  input:checked + .slider:before {
+    transform: translateX(26px);
+  }
+
+  .switch-label {
+    font-weight: 600;
+    color: #2d3748;
+    font-size: 1rem;
+  }
+
+  /* Etiquetas */
+  .form-label-custom {
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .form-label-custom i {
+    color: #667eea;
+    font-size: 1rem;
+    width: 20px;
+  }
+
+  .form-label-custom .required {
+    color: #e53e3e;
+    margin-left: 0.2rem;
+  }
+
+  /* Campos de formulario */
+  .form-control-custom, .form-select-custom {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    background: white;
+    font-size: 0.95rem;
+  }
+
+  .form-control-custom:focus, .form-select-custom:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+    outline: none;
+  }
+
+  .form-control-custom[type="number"] {
+    -moz-appearance: textfield;
+  }
+
+  .form-control-custom[type="number"]::-webkit-inner-spin-button,
+  .form-control-custom[type="number"]::-webkit-outer-spin-button {
+    opacity: 1;
+    height: 24px;
+  }
+
+  /* Texto de ayuda */
+  .help-text {
+    font-size: 0.85rem;
+    color: #718096;
+    margin-top: 0.3rem;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  .help-text i {
+    color: #a0aec0;
+    font-size: 0.8rem;
+  }
+
+  /* Checkbox personalizado */
+  .checkbox-custom {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 1rem 0;
+  }
+
+  .checkbox-custom input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: #48bb78;
+  }
+
+  .checkbox-custom label {
+    font-weight: 600;
+    color: #2d3748;
+    cursor: pointer;
+  }
+
+  /* Botón de guardar */
+  .btn-save {
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 0.8rem 2rem;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(72, 187, 120, 0.3);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+  }
+
+  .btn-save:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(72, 187, 120, 0.4);
+    color: white;
+  }
+
+  /* Badge de estado */
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.3rem 1rem;
+    border-radius: 30px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-left: 1rem;
+  }
+
+  .status-active {
+    background: #d1fae5;
+    color: #065f46;
+    border: 1px solid #38a169;
+  }
+
+  .status-inactive {
+    background: #fed7d7;
+    color: #991b1b;
+    border: 1px solid #e53e3e;
+  }
+
+  /* Mensajes flash */
+  .flash-messages {
+    margin-bottom: 1.5rem;
+  }
+
+  .alert {
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    animation: slideIn 0.3s ease;
+  }
+
+  .alert-success {
+    background: #d1fae5;
+    color: #065f46;
+    border-left: 4px solid #38a169;
+  }
+
+  .alert-danger {
+    background: #fed7d7;
+    color: #991b1b;
+    border-left: 4px solid #e53e3e;
+  }
+
+  .alert-warning {
+    background: #fef3c7;
+    color: #92400e;
+    border-left: 4px solid #f59e0b;
+  }
+
+  .alert-info {
+    background: #dbeafe;
+    color: #1e40af;
+    border-left: 4px solid #3b82f6;
+  }
+
+  .alert i {
+    font-size: 1.2rem;
+  }
+
+  .alert .close {
+    color: inherit;
+    opacity: 0.7;
+    font-size: 1.5rem;
+  }
+
+  .alert .close:hover {
+    opacity: 1;
+  }
+
+  /* Animaciones */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateX(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .page-title {
+      font-size: 1.5rem;
+    }
+
+    .card-header-custom {
+      flex-direction: column;
+      text-align: center;
+    }
+
+    .card-body-custom {
+      padding: 1rem;
+    }
+
+    .form-section {
+      padding: 1rem;
+    }
+
+    .card-footer-custom {
+      text-align: center;
+    }
+
+    .btn-save {
+      width: 100%;
+      justify-content: center;
+    }
+
+    .switch-container {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }
+</style>
+
+<div class="container-fluid mt-4">
+  <!-- Título de la página -->
+  <div class="page-title text-primary">
+    <i class="fas fa-clock text-primary"></i>
+    Automatización de Tareas
+  </div>
+
+  <!-- MENSAJES FLASH -->
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
-      {% for category, message in messages %}
-        <div class="alert alert-{{ category }} alert-dismissible fade show">
-          <i class="fas fa-info-circle"></i> {{ message }}
-          <button type="button" class="close" data-dismiss="alert">&times;</button>
-        </div>
-      {% endfor %}
+      <div class="flash-messages">
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            <span>
+              <i class="fas {% if category == 'success' %}fa-check-circle{% elif category == 'danger' %}fa-exclamation-circle{% elif category == 'warning' %}fa-exclamation-triangle{% else %}fa-info-circle{% endif %} mr-2"></i>
+              {{ message }}
+            </span>
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+        {% endfor %}
+      </div>
     {% endif %}
   {% endwith %}
 
-  <div class="card card-primary">
-    <div class="card-header">
-      <h3 class="card-title">
-        <i class="fas fa-cog"></i> Configurar Backup Automático
-      </h3>
+  <!-- Tarjeta principal -->
+  <div class="main-card">
+    <div class="card-header-custom">
+      <i class="fas fa-cog"></i>
+      <h3>Configurar Backup Automático</h3>
+      <span class="status-badge {% if config.activo %}status-active{% else %}status-inactive{% endif %}">
+        <i class="fas {% if config.activo %}fa-check-circle{% else %}fa-times-circle{% endif %}"></i>
+        {% if config.activo %}Activo{% else %}Inactivo{% endif %}
+      </span>
     </div>
 
     <form method="POST">
-      <div class="card-body">
+      <div class="card-body-custom">
+        <!-- Sección: Estado -->
+        <div class="form-section">
+          <div class="section-title">
+            <i class="fas fa-power-off"></i>
+            Estado del servicio
+          </div>
 
-        <!-- ACTIVAR/DESACTIVAR -->
-        <div class="form-group">
-          <div class="form-check">
-            <input type="checkbox" class="form-check-input" name="activo" id="activo" {% if config.activo %}checked{% endif %}>
-            <label class="form-check-label" for="activo">
-              <strong>Activar backups automáticos</strong>
+          <div class="switch-container">
+            <label class="switch">
+              <input type="checkbox" name="activo" id="activo" {% if config.activo %}checked{% endif %}>
+              <span class="slider"></span>
             </label>
+            <span class="switch-label">
+              {% if config.activo %}
+                Backups automáticos activados
+              {% else %}
+                Backups automáticos desactivados
+              {% endif %}
+            </span>
+          </div>
+          <p class="help-text">
+            <i class="fas fa-info-circle"></i>
+            Active esta opción para que el sistema realice copias de seguridad automáticamente
+          </p>
+        </div>
+
+        <!-- Sección: Configuración del backup -->
+        <div class="form-section">
+          <div class="section-title">
+            <i class="fas fa-database"></i>
+            Configuración del backup
+          </div>
+
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-4">
+                <label class="form-label-custom">
+                  <i class="fas fa-tag"></i>
+                  Tipo de copia automática
+                </label>
+                <select name="tipo" class="form-select-custom">
+                  <option value="completa" {% if config.tipo == 'completa' %}selected{% endif %}>
+                    Completa (todas las colecciones)
+                  </option>
+                  <option value="diferencial" {% if config.tipo == 'diferencial' %}selected{% endif %}>
+                    Diferencial (cambios desde último completo)
+                  </option>
+                  <option value="incremental" {% if config.tipo == 'incremental' %}selected{% endif %}>
+                    Incremental (cambios desde último backup)
+                  </option>
+                </select>
+              </div>
+
+              <div class="mb-4">
+                <label class="form-label-custom">
+                  <i class="fas fa-file-alt"></i>
+                  Formato del respaldo
+                </label>
+                <select name="formato" class="form-select-custom">
+                  <option value="json" {% if config.formato == 'json' %}selected{% endif %}>
+                    JSON (estructura completa)
+                  </option>
+                  <option value="csv" {% if config.formato == 'csv' %}selected{% endif %}>
+                    CSV (archivo ZIP)
+                  </option>
+                  <option value="excel" {% if config.formato == 'excel' %}selected{% endif %}>
+                    Excel (XLSX)
+                  </option>
+                  <option value="pdf" {% if config.formato == 'pdf' %}selected{% endif %}>
+                    PDF (reporte)
+                  </option>
+                </select>
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <div class="mb-4">
+                <label class="form-label-custom">
+                  <i class="fas fa-hourglass-half"></i>
+                  Intervalo de tiempo <span class="required">*</span>
+                </label>
+                <div class="input-group">
+                  <input type="number" name="intervalo" class="form-control-custom"
+                         value="{{ config.intervalo or 60 }}" min="1" required>
+                  <span class="input-group-text bg-light border-0 rounded-end-12">minutos</span>
+                </div>
+                <p class="help-text">
+                  <i class="fas fa-clock"></i>
+                  Ejemplo: 60 = cada hora, 1440 = diario
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 
-        <!-- TIPO DE BACKUP -->
-        <div class="form-group">
-          <label>Tipo de copia automática</label>
-          <select name="tipo" class="form-control">
-            <option value="completa" {% if config.tipo == 'completa' %}selected{% endif %}>Completa (todas las colecciones)</option>
-            <option value="diferencial" {% if config.tipo == 'diferencial' %}selected{% endif %}>Diferencial (cambios desde último completo)</option>
-            <option value="incremental" {% if config.tipo == 'incremental' %}selected{% endif %}>Incremental (cambios desde último backup)</option>
-          </select>
-        </div>
+        <!-- Sección: Recuperación automática -->
+        <div class="form-section">
+          <div class="section-title">
+            <i class="fas fa-shield-alt"></i>
+            Recuperación automática
+          </div>
 
-        <!-- FORMATO -->
-        <div class="form-group">
-          <label>Formato del respaldo</label>
-          <select name="formato" class="form-control">
-            <option value="json" {% if config.formato == 'json' %}selected{% endif %}>JSON (estructura completa)</option>
-            <option value="csv" {% if config.formato == 'csv' %}selected{% endif %}>CSV (archivo ZIP)</option>
-            <option value="excel" {% if config.formato == 'excel' %}selected{% endif %}>Excel (XLSX)</option>
-            <option value="pdf" {% if config.formato == 'pdf' %}selected{% endif %}>PDF (reporte)</option>
-          </select>
-        </div>
-
-        <!-- INTERVALO -->
-        <div class="form-group">
-          <label>Intervalo de tiempo (en minutos)</label>
-          <input type="number" name="intervalo" class="form-control" value="{{ config.intervalo or 60 }}" min="1" required>
-          <p class="text-muted">Ejemplo: 60 para cada hora, 1440 para diario.</p>
-        </div>
-
-        <!-- AUTO-RESTORE -->
-        <div class="form-group">
-          <div class="form-check">
-            <input type="checkbox" class="form-check-input" name="auto_restore" id="auto_restore" {% if config.auto_restore %}checked{% endif %}>
-            <label class="form-check-label" for="auto_restore">
-              <strong>Restaurar automáticamente si se detecta error en BD</strong>
+          <div class="checkbox-custom">
+            <input type="checkbox" class="form-check-input" name="auto_restore"
+                   id="auto_restore" {% if config.auto_restore %}checked{% endif %}>
+            <label for="auto_restore">
+              Restaurar automáticamente si se detecta error en BD
             </label>
           </div>
-          <p class="text-muted">Esto verificará la conexión a la BD antes de cada backup. Si falla, restaurará el último backup exitoso.</p>
-        </div>
 
+          <div class="alert alert-info" style="background: #dbeafe; color: #1e40af; border-left-color: #3b82f6;">
+            <i class="fas fa-info-circle mr-2"></i>
+            <span>
+              Esta función verificará la conexión a la base de datos antes de cada backup.
+              Si falla, restaurará automáticamente el último backup exitoso para garantizar
+              la integridad de los datos.
+            </span>
+          </div>
+
+          {% if config.auto_restore %}
+          <div class="mt-3">
+            <span class="badge-custom" style="background: #48bb78; color: white; padding: 0.3rem 0.8rem; border-radius: 20px;">
+              <i class="fas fa-check-circle mr-1"></i> Recuperación automática activada
+            </span>
+          </div>
+          {% endif %}
+        </div>
       </div>
 
-      <div class="card-footer text-right">
-        <button class="btn btn-primary">
-          <i class="fas fa-save"></i> Guardar y Programar
+      <div class="card-footer-custom">
+        <button type="submit" class="btn-save">
+          <i class="fas fa-save"></i>
+          Guardar y Programar
         </button>
       </div>
     </form>
   </div>
+</div>
 
-</section>
+<!-- Script para actualizar el texto del switch -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const switchInput = document.getElementById('activo');
+  const switchLabel = document.querySelector('.switch-label');
+
+  if (switchInput && switchLabel) {
+    switchInput.addEventListener('change', function() {
+      if (this.checked) {
+        switchLabel.textContent = 'Backups automáticos activados';
+      } else {
+        switchLabel.textContent = 'Backups automáticos desactivados';
+      }
+    });
+  }
+});
+</script>
+
 {% endblock %}

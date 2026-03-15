@@ -2,130 +2,484 @@
 
 {% block content %}
 
-<div class="container-fluid">
+<style>
+  * {
+    font-family: 'Inter', sans-serif;
+  }
 
-    <!-- HEADER -->
-    <div class="card shadow p-3 mb-4">
-        <div class="row">
-            <div class="col-md-6">
-                <p><strong>Usuario:</strong> {{ usuario.username }}</p>
-                <p><strong>Rol:</strong> {{ usuario.role|capitalize }}</p>
-            </div>
-            <div class="col-md-6">
-                <p><strong>Nombre completo:</strong>
-                    {{ usuario.nombre }} {{ usuario.papell }} {{ usuario.sapell }}
-                </p>
-                <p><strong>Fecha de nacimiento:</strong> {{ usuario.fecnac }}</p>
-            </div>
-        </div>
+  /* Título principal */
+  .page-title {
+    color: white;
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+  }
+
+  .page-title i {
+    margin-right: 1rem;
+    font-size: 2.5rem;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 0.5rem;
+    border-radius: 15px;
+  }
+
+  /* Tarjeta principal */
+  .main-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: none;
+    border-radius: 25px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    margin-bottom: 2rem;
+  }
+
+  .card-header-custom {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 1.5rem 2rem;
+    color: white;
+  }
+
+  .card-header-custom h3 {
+    margin: 0;
+    font-weight: 600;
+    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .card-body-custom {
+    padding: 2rem;
+  }
+
+  /* Tarjeta de información del usuario */
+  .info-card {
+    background: #f7fafc;
+    border-radius: 20px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    border: 1px solid #e2e8f0;
+    transition: all 0.3s ease;
+  }
+
+  .info-card:hover {
+    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.1);
+  }
+
+  .info-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #e2e8f0;
+  }
+
+  .info-header i {
+    font-size: 1.5rem;
+    color: #667eea;
+    background: rgba(102, 126, 234, 0.1);
+    padding: 0.8rem;
+    border-radius: 12px;
+    margin-right: 1rem;
+  }
+
+  .info-header h5 {
+    margin: 0;
+    font-weight: 700;
+    color: #2d3748;
+    font-size: 1.2rem;
+  }
+
+  /* Grid de información */
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .info-item {
+    background: white;
+    border-radius: 15px;
+    padding: 1rem 1.2rem;
+    border: 1px solid #e2e8f0;
+    transition: all 0.3s ease;
+  }
+
+  .info-item:hover {
+    transform: translateY(-2px);
+    border-color: #667eea;
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.1);
+  }
+
+  .info-label {
+    font-size: 0.8rem;
+    color: #718096;
+    margin-bottom: 0.3rem;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  .info-label i {
+    color: #667eea;
+    font-size: 0.8rem;
+  }
+
+  .info-value {
+    font-weight: 700;
+    color: #2d3748;
+    font-size: 1rem;
+    word-break: break-word;
+  }
+
+  .info-value small {
+    font-weight: 400;
+    color: #a0aec0;
+    font-size: 0.85rem;
+  }
+
+  /* Tarjeta de archivos */
+  .files-card {
+    background: #f7fafc;
+    border-radius: 20px;
+    padding: 1.5rem;
+    border: 1px solid #e2e8f0;
+  }
+
+  .files-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 2rem;
+    margin-top: 1.5rem;
+  }
+
+  .file-item {
+    text-align: center;
+  }
+
+  .file-preview {
+    width: 100%;
+    max-width: 200px;
+    height: 150px;
+    margin: 0 auto 1rem;
+    border-radius: 15px;
+    overflow: hidden;
+    border: 2px solid #e2e8f0;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .file-preview:hover {
+    border-color: #667eea;
+    transform: scale(1.02);
+    box-shadow: 0 10px 25px rgba(102, 126, 234, 0.2);
+  }
+
+  .file-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .file-placeholder {
+    background: white;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .file-placeholder i {
+    font-size: 2.5rem;
+    color: #cbd5e0;
+    margin-bottom: 0.5rem;
+  }
+
+  .file-placeholder p {
+    color: #a0aec0;
+    font-size: 0.8rem;
+    margin: 0;
+  }
+
+  .file-label {
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+  }
+
+  /* Botón regresar */
+  .btn-back {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 0.8rem 2rem;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+  }
+
+  .btn-back:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+    color: white;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .card-body-custom {
+      padding: 1rem;
+    }
+
+    .info-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .files-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<div class="container-fluid mt-4">
+
+  <!-- TÍTULO DE LA PÁGINA -->
+  <div class="page-title">
+    <i class="fas fa-user-circle"></i>
+    DETALLE DEL USUARIO
+  </div>
+
+  <!-- TARJETA PRINCIPAL -->
+  <div class="main-card">
+    <div class="card-header-custom">
+      <h3>
+        <i class="fas fa-user-circle"></i>
+        Información del Usuario
+      </h3>
     </div>
 
-    <!-- DATOS PERSONALES -->
-    <div class="card shadow p-3 mb-3">
-        <h5 class="text-primary">
-            <i class="fas fa-id-card"></i> Datos personales
-        </h5>
+    <div class="card-body-custom">
 
-        <div class="row">
-            <div class="col-md-6">
-                <div class="form-group mb-3">
-                    <label><strong>CURP</strong></label>
-                    <p class="form-control-static">{{ usuario.curp_u }}</p>
-                </div>
-
-                <div class="form-group mb-3">
-                    <label><strong>Matrícula</strong></label>
-                    <p class="form-control-static">{{ usuario.matricula or 'No especificada' }}</p>
-                </div>
-
-                <div class="form-group mb-3">
-                    <label><strong>Cédula Profesional</strong></label>
-                    <p class="form-control-static">{{ usuario.cedula or 'No especificada' }}</p>
-                </div>
-            </div>
-
-            <div class="col-md-6">
-                <div class="form-group mb-3">
-                    <label><strong>Cargo</strong></label>
-                    <p class="form-control-static">{{ usuario.cargo }}</p>
-                </div>
-
-                <div class="form-group mb-3">
-                    <label><strong>Teléfono</strong></label>
-                    <p class="form-control-static">{{ usuario.telefono }}</p>
-                </div>
-
-                <div class="form-group mb-3">
-                    <label><strong>Email</strong></label>
-                    <p class="form-control-static">{{ usuario.email }}</p>
-                </div>
-            </div>
+      <!-- Tarjeta de resumen -->
+      <div class="info-card">
+        <div class="info-header">
+          <i class="fas fa-id-card"></i>
+          <h5>Resumen del Usuario</h5>
         </div>
-    </div>
 
-    <!-- DATOS DEL SISTEMA -->
-    <div class="card shadow p-3 mb-3">
-        <h5 class="text-primary">
-            <i class="fas fa-cogs"></i> Datos del sistema
-        </h5>
-
-        <div class="row">
-            <div class="col-md-6">
-                <div class="form-group mb-3">
-                    <label><strong>Usuario</strong></label>
-                    <p class="form-control-static">{{ usuario.username }}</p>
-                </div>
+        <div class="info-grid">
+          <div class="info-item">
+            <div class="info-label">
+              <i class="fas fa-user"></i> Usuario
             </div>
-            <div class="col-md-6">
-                <div class="form-group mb-3">
-                    <label><strong>Rol</strong></label>
-                    <p class="form-control-static">{{ usuario.role|capitalize }}</p>
-                </div>
+            <div class="info-value">{{ usuario.username }}</div>
+          </div>
+
+          <div class="info-item">
+            <div class="info-label">
+              <i class="fas fa-user-tag"></i> Rol
             </div>
-        </div>
-    </div>
+            <div class="info-value">
+              <span class="role-badge
+                {% if usuario.role == 'admin' %}role-admin
+                {% elif usuario.role == 'medico' %}role-medico
+                {% elif usuario.role == 'enfermero' %}role-enfermero
+                {% elif usuario.role == 'administrativo' %}role-administrativo
+                {% else %}role-default{% endif %}">
+                {{ usuario.role|capitalize }}
+              </span>
+            </div>
+          </div>
 
-    <!-- ARCHIVOS -->
-    <div class="card shadow p-3 mb-4">
-        <h5 class="text-primary">
-            <i class="fas fa-image"></i> Archivos
-        </h5>
+          <div class="info-item">
+            <div class="info-label">
+              <i class="fas fa-signature"></i> Nombre completo
+            </div>
+            <div class="info-value">
+              {{ usuario.nombre }} {{ usuario.papell }} {{ usuario.sapell }}
+            </div>
+          </div>
 
-        <div class="row text-center">
-            <div class="col-md-6">
-                <p><strong>Imagen de perfil</strong></p>
-                {% if usuario.img_perfil %}
-                    <img src="{{ url_for('static', filename='imagenes/' ~ usuario.img_perfil) }}"
-                         class="img-thumbnail" width="150">
+          <div class="info-item">
+            <div class="info-label">
+              <i class="fas fa-calendar-alt"></i> Fecha de nacimiento
+            </div>
+            <div class="info-value">
+              {% if usuario.fecnac %}
+                {% if usuario.fecnac is string %}
+                  {{ usuario.fecnac }}
                 {% else %}
-                    <div class="border p-3 bg-light">
-                        <i class="fas fa-user fa-3x text-muted"></i>
-                        <p class="text-muted mt-2">No disponible</p>
-                    </div>
+                  {{ usuario.fecnac.strftime('%d/%m/%Y') }}
                 {% endif %}
+              {% else %}
+                <small>No especificada</small>
+              {% endif %}
             </div>
-
-            <div class="col-md-6">
-                <p><strong>Firma</strong></p>
-                {% if usuario.firma %}
-                    <img src="{{ url_for('static', filename='imgfirma/' ~ usuario.firma) }}"
-                         class="img-thumbnail" width="200">
-                {% else %}
-                    <div class="border p-3 bg-light">
-                        <i class="fas fa-signature fa-3x text-muted"></i>
-                        <p class="text-muted mt-2">No disponible</p>
-                    </div>
-                {% endif %}
-            </div>
+          </div>
         </div>
-    </div>
+      </div>
 
-    <div class="text-center mb-4">
-        <a href="{{ url_for('alta_usuarios') }}" class="btn btn-danger">
-            <i class="fas fa-arrow-left"></i> Regresar
+      <!-- DATOS PERSONALES -->
+      <div class="info-card">
+        <div class="info-header">
+          <i class="fas fa-id-card"></i>
+          <h5>Datos Personales</h5>
+        </div>
+
+        <div class="info-grid">
+          <div class="info-item">
+            <div class="info-label">
+              <i class="fas fa-id-card"></i> CURP
+            </div>
+            <div class="info-value">{{ usuario.curp_u or 'No especificado' }}</div>
+          </div>
+
+          <div class="info-item">
+            <div class="info-label">
+              <i class="fas fa-graduation-cap"></i> Matrícula
+            </div>
+            <div class="info-value">{{ usuario.matricula or 'No especificada' }}</div>
+          </div>
+
+          <div class="info-item">
+            <div class="info-label">
+              <i class="fas fa-certificate"></i> Cédula Profesional
+            </div>
+            <div class="info-value">{{ usuario.cedula or 'No especificada' }}</div>
+          </div>
+
+          <div class="info-item">
+            <div class="info-label">
+              <i class="fas fa-briefcase"></i> Cargo
+            </div>
+            <div class="info-value">{{ usuario.cargo or 'No especificado' }}</div>
+          </div>
+
+          <div class="info-item">
+            <div class="info-label">
+              <i class="fas fa-phone"></i> Teléfono
+            </div>
+            <div class="info-value">{{ usuario.telefono or 'No especificado' }}</div>
+          </div>
+
+          <div class="info-item">
+            <div class="info-label">
+              <i class="fas fa-envelope"></i> Email
+            </div>
+            <div class="info-value">{{ usuario.email or 'No especificado' }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ARCHIVOS -->
+      <div class="files-card">
+        <div class="info-header">
+          <i class="fas fa-image"></i>
+          <h5>Archivos</h5>
+        </div>
+
+        <div class="files-grid">
+          <!-- Imagen de perfil -->
+          <div class="file-item">
+            <div class="file-label">
+              <i class="fas fa-user-circle me-1"></i>
+              Imagen de perfil
+            </div>
+            <div class="file-preview">
+              {% if usuario.img_perfil %}
+                <img src="{{ url_for('static', filename='imagenes/' ~ usuario.img_perfil) }}"
+                     alt="Imagen de perfil">
+              {% else %}
+                <div class="file-placeholder">
+                  <i class="fas fa-user"></i>
+                  <p>No disponible</p>
+                </div>
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- Firma -->
+          <div class="file-item">
+            <div class="file-label">
+              <i class="fas fa-signature me-1"></i>
+              Firma
+            </div>
+            <div class="file-preview">
+              {% if usuario.firma %}
+                <img src="{{ url_for('static', filename='imgfirma/' ~ usuario.firma) }}"
+                     alt="Firma">
+              {% else %}
+                <div class="file-placeholder">
+                  <i class="fas fa-signature"></i>
+                  <p>No disponible</p>
+                </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Botón regresar -->
+      <div class="text-center mt-4">
+        <a href="{{ url_for('alta_usuarios') }}" class="btn-back">
+          <i class="fas fa-arrow-left"></i>
+          Regresar a Lista de Personal
         </a>
+      </div>
+
     </div>
+  </div>
 
 </div>
+
+<style>
+  /* Badges de rol (para mantener consistencia) */
+  .role-badge {
+    padding: 0.3rem 1rem;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.8rem;
+    display: inline-block;
+  }
+
+  .role-admin {
+    background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+    color: white;
+  }
+
+  .role-medico {
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+    color: white;
+  }
+
+  .role-enfermero {
+    background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+    color: white;
+  }
+
+  .role-administrativo {
+    background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);
+    color: white;
+  }
+
+  .role-default {
+    background: #e2e8f0;
+    color: #4a5568;
+  }
+</style>
 
 {% endblock %}

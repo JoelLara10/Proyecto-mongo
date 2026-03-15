@@ -1,142 +1,473 @@
 {% extends 'medico/header_medico.html' %}
+
 {% block content %}
 
-<section class="content-header">
-  <h1 class="text-dark">
-    <i class="fas fa-notes-medical"></i> Nota Médica (SOAP)
-  </h1>
-</section>
-
-<section class="content">
-
-<!-- ================= ALERTAS ================= -->
+<!-- Mensajes Flash con diseño mejorado -->
 {% with messages = get_flashed_messages(with_categories=true) %}
   {% if messages %}
-    {% for category, message in messages %}
-      <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show">
-        {{ message }}
-        <button type="button" class="close" data-dismiss="alert">&times;</button>
-      </div>
-    {% endfor %}
+    <div class="flash-messages">
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm" role="alert">
+          <div class="d-flex align-items-center">
+            <i class="fas {% if category == 'success' %}fa-check-circle text-success{% else %}fa-exclamation-circle text-danger{% endif %} me-3 fa-2x"></i>
+            <div class="flex-grow-1">
+              <strong class="d-block">{% if category == 'success' %}Éxito{% else %}Error{% endif %}</strong>
+              <span>{{ message }}</span>
+            </div>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      {% endfor %}
+    </div>
   {% endif %}
 {% endwith %}
 
-<div class="card card-primary shadow">
-  <div class="card-header">
-    <h3 class="card-title">
-      <i class="fas fa-user"></i>
-      Paciente: {{ paciente.papell }} {{ paciente.sapell }} {{ paciente.nom_pac }}
-    </h3>
+<section class="content-header">
+  <div class="container-fluid">
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="page-header" style="background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border-radius: 15px; padding: 1.2rem;">
+          <h1 class="text-white mb-0">
+            <i class="fas fa-notes-medical me-3"></i>
+            Nota Médica (SOAP)
+          </h1>
+        </div>
+      </div>
+    </div>
   </div>
-
-  <form method="POST">
-    <div class="card-body">
-
-      <!-- ================= SUBJETIVO ================= -->
-      <div class="form-group">
-        <label>Subjetivo</label>
-
-        <div class="mb-2">
-          <button type="button" class="btn btn-success btn-sm"
-                  onclick="iniciarDictado('subjetivo')">
-            <i class="fas fa-microphone"></i>
-          </button>
-          <button type="button" class="btn btn-warning btn-sm"
-                  onclick="detenerDictado()">
-            <i class="fas fa-stop"></i>
-          </button>
-          <button type="button" class="btn btn-info btn-sm"
-                  onclick="leerCampo('subjetivo')">
-            <i class="fas fa-volume-up"></i>
-          </button>
-        </div>
-
-        <textarea id="subjetivo" name="subjetivo"
-                  class="form-control" rows="3" required></textarea>
-      </div>
-
-      <!-- ================= OBJETIVO ================= -->
-      <div class="form-group">
-        <label>Objetivo</label>
-
-        <div class="mb-2">
-          <button type="button" class="btn btn-success btn-sm"
-                  onclick="iniciarDictado('objetivo')">
-            <i class="fas fa-microphone"></i>
-          </button>
-          <button type="button" class="btn btn-warning btn-sm"
-                  onclick="detenerDictado()">
-            <i class="fas fa-stop"></i>
-          </button>
-          <button type="button" class="btn btn-info btn-sm"
-                  onclick="leerCampo('objetivo')">
-            <i class="fas fa-volume-up"></i>
-          </button>
-        </div>
-
-        <textarea id="objetivo" name="objetivo"
-                  class="form-control" rows="3"></textarea>
-      </div>
-
-      <!-- ================= ANÁLISIS ================= -->
-      <div class="form-group">
-        <label>Análisis</label>
-
-        <div class="mb-2">
-          <button type="button" class="btn btn-success btn-sm"
-                  onclick="iniciarDictado('analisis')">
-            <i class="fas fa-microphone"></i>
-          </button>
-          <button type="button" class="btn btn-warning btn-sm"
-                  onclick="detenerDictado()">
-            <i class="fas fa-stop"></i>
-          </button>
-          <button type="button" class="btn btn-info btn-sm"
-                  onclick="leerCampo('analisis')">
-            <i class="fas fa-volume-up"></i>
-          </button>
-        </div>
-
-        <textarea id="analisis" name="analisis"
-                  class="form-control" rows="3"></textarea>
-      </div>
-
-      <!-- ================= PLAN ================= -->
-      <div class="form-group">
-        <label>Plan</label>
-
-        <div class="mb-2">
-          <button type="button" class="btn btn-success btn-sm"
-                  onclick="iniciarDictado('plan')">
-            <i class="fas fa-microphone"></i>
-          </button>
-          <button type="button" class="btn btn-warning btn-sm"
-                  onclick="detenerDictado()">
-            <i class="fas fa-stop"></i>
-          </button>
-          <button type="button" class="btn btn-info btn-sm"
-                  onclick="leerCampo('plan')">
-            <i class="fas fa-volume-up"></i>
-          </button>
-        </div>
-
-        <textarea id="plan" name="plan"
-                  class="form-control" rows="3"></textarea>
-      </div>
-
-    </div>
-
-    <div class="card-footer text-center">
-      <button class="btn btn-primary btn-lg">
-        <i class="fas fa-save"></i> Guardar Nota
-      </button>
-    </div>
-  </form>
-</div>
-
 </section>
 
-<!-- ================= JS VOZ ================= -->
+<section class="content">
+  <div class="container-fluid">
+
+    <!-- Tarjeta de información del paciente -->
+    <div class="patient-info-card mb-4">
+      <div class="patient-info-content">
+        <div class="patient-avatar">
+          <i class="fas fa-user-circle"></i>
+        </div>
+        <div class="patient-details">
+          <h5 class="patient-name">{{ paciente.papell }} {{ paciente.sapell }} {{ paciente.nom_pac }}</h5>
+          <div class="patient-meta">
+            <span class="patient-meta-item">
+              <i class="fas fa-id-card"></i> Exp: {{ paciente.Id_exp }}
+            </span>
+            <span class="patient-meta-item">
+              <i class="fas fa-calendar-alt"></i> Edad: {{ paciente.edad }} años
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tarjeta principal de la nota SOAP -->
+    <div class="main-card">
+      <div class="card-header-custom">
+        <div class="d-flex align-items-center">
+          <i class="fas fa-notes-medical me-2"></i>
+          <h5 class="mb-0">Nota Médica SOAP</h5>
+        </div>
+      </div>
+
+      <form method="POST">
+        <div class="card-body-custom">
+
+          <!-- ================= SUBJETIVO ================= -->
+          <div class="soap-section">
+            <div class="section-header">
+              <span class="section-badge section-s">S</span>
+              <h6 class="section-title-soap">Subjetivo</h6>
+            </div>
+
+            <div class="voice-controls">
+              <button type="button" class="voice-btn voice-record" onclick="iniciarDictado('subjetivo')" title="Iniciar dictado">
+                <i class="fas fa-microphone"></i>
+              </button>
+              <button type="button" class="voice-btn voice-stop" onclick="detenerDictado()" title="Detener dictado">
+                <i class="fas fa-stop"></i>
+              </button>
+              <button type="button" class="voice-btn voice-play" onclick="leerCampo('subjetivo')" title="Leer texto">
+                <i class="fas fa-volume-up"></i>
+              </button>
+            </div>
+
+            <textarea id="subjetivo" name="subjetivo"
+                      class="form-control-soap" rows="3"
+                      placeholder="Describa los síntomas y percepciones del paciente..." required></textarea>
+          </div>
+
+          <!-- ================= OBJETIVO ================= -->
+          <div class="soap-section">
+            <div class="section-header">
+              <span class="section-badge section-o">O</span>
+              <h6 class="section-title-soap">Objetivo</h6>
+            </div>
+
+            <div class="voice-controls">
+              <button type="button" class="voice-btn voice-record" onclick="iniciarDictado('objetivo')" title="Iniciar dictado">
+                <i class="fas fa-microphone"></i>
+              </button>
+              <button type="button" class="voice-btn voice-stop" onclick="detenerDictado()" title="Detener dictado">
+                <i class="fas fa-stop"></i>
+              </button>
+              <button type="button" class="voice-btn voice-play" onclick="leerCampo('objetivo')" title="Leer texto">
+                <i class="fas fa-volume-up"></i>
+              </button>
+            </div>
+
+            <textarea id="objetivo" name="objetivo"
+                      class="form-control-soap" rows="3"
+                      placeholder="Describa los hallazgos físicos y resultados de exploración..."></textarea>
+          </div>
+
+          <!-- ================= ANÁLISIS ================= -->
+          <div class="soap-section">
+            <div class="section-header">
+              <span class="section-badge section-a">A</span>
+              <h6 class="section-title-soap">Análisis</h6>
+            </div>
+
+            <div class="voice-controls">
+              <button type="button" class="voice-btn voice-record" onclick="iniciarDictado('analisis')" title="Iniciar dictado">
+                <i class="fas fa-microphone"></i>
+              </button>
+              <button type="button" class="voice-btn voice-stop" onclick="detenerDictado()" title="Detener dictado">
+                <i class="fas fa-stop"></i>
+              </button>
+              <button type="button" class="voice-btn voice-play" onclick="leerCampo('analisis')" title="Leer texto">
+                <i class="fas fa-volume-up"></i>
+              </button>
+            </div>
+
+            <textarea id="analisis" name="analisis"
+                      class="form-control-soap" rows="3"
+                      placeholder="Diagnóstico diferencial y análisis de la información..."></textarea>
+          </div>
+
+          <!-- ================= PLAN ================= -->
+          <div class="soap-section">
+            <div class="section-header">
+              <span class="section-badge section-p">P</span>
+              <h6 class="section-title-soap">Plan</h6>
+            </div>
+
+            <div class="voice-controls">
+              <button type="button" class="voice-btn voice-record" onclick="iniciarDictado('plan')" title="Iniciar dictado">
+                <i class="fas fa-microphone"></i>
+              </button>
+              <button type="button" class="voice-btn voice-stop" onclick="detenerDictado()" title="Detener dictado">
+                <i class="fas fa-stop"></i>
+              </button>
+              <button type="button" class="voice-btn voice-play" onclick="leerCampo('plan')" title="Leer texto">
+                <i class="fas fa-volume-up"></i>
+              </button>
+            </div>
+
+            <textarea id="plan" name="plan"
+                      class="form-control-soap" rows="3"
+                      placeholder="Tratamiento, estudios, referencias y seguimiento..."></textarea>
+          </div>
+
+        </div>
+
+        <div class="card-footer-custom">
+          <div class="d-flex justify-content-center">
+            <button type="submit" class="btn-save-soap">
+              <i class="fas fa-save me-2"></i>
+              Guardar Nota
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+  </div>
+</section>
+
+<style>
+  /* Tarjeta de información del paciente */
+  .patient-info-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: none;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    border-left: 5px solid #4299e1;
+  }
+
+  .patient-info-content {
+    display: flex;
+    align-items: center;
+    padding: 1.2rem 1.5rem;
+  }
+
+  .patient-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 15px;
+    background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1.2rem;
+  }
+
+  .patient-avatar i {
+    font-size: 2.5rem;
+    color: white;
+  }
+
+  .patient-name {
+    font-weight: 700;
+    color: #2d3748;
+    margin-bottom: 0.3rem;
+    font-size: 1.2rem;
+  }
+
+  .patient-meta {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  .patient-meta-item {
+    font-size: 0.85rem;
+    color: #718096;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  .patient-meta-item i {
+    color: #4299e1;
+  }
+
+  /* Tarjeta principal */
+  .main-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: none;
+    border-radius: 25px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    margin-bottom: 2rem;
+  }
+
+  .card-header-custom {
+    background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+    padding: 1.2rem 1.5rem;
+    color: white;
+  }
+
+  .card-header-custom h5 {
+    margin: 0;
+    font-weight: 600;
+    font-size: 1.2rem;
+  }
+
+  .card-body-custom {
+    padding: 2rem;
+  }
+
+  .card-footer-custom {
+    background: #f7fafc;
+    border-top: 2px solid #e2e8f0;
+    padding: 1.5rem;
+  }
+
+  /* Secciones SOAP */
+  .soap-section {
+    margin-bottom: 2rem;
+    padding: 1rem;
+    background: #f7fafc;
+    border-radius: 15px;
+    transition: all 0.3s ease;
+  }
+
+  .soap-section:hover {
+    background: #ffffff;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+
+  .section-badge {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.3rem;
+    color: white;
+    margin-right: 1rem;
+  }
+
+  .section-s {
+    background: linear-gradient(135deg, #4299e1, #3182ce);
+  }
+
+  .section-o {
+    background: linear-gradient(135deg, #48bb78, #38a169);
+  }
+
+  .section-a {
+    background: linear-gradient(135deg, #ed8936, #dd6b20);
+  }
+
+  .section-p {
+    background: linear-gradient(135deg, #9f7aea, #805ad5);
+  }
+
+  .section-title-soap {
+    font-weight: 700;
+    color: #2d3748;
+    margin: 0;
+    font-size: 1.1rem;
+  }
+
+  /* Controles de voz */
+  .voice-controls {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .voice-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    border: none;
+    color: white;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .voice-record {
+    background: linear-gradient(135deg, #48bb78, #38a169);
+    box-shadow: 0 4px 10px rgba(72, 187, 120, 0.3);
+  }
+
+  .voice-stop {
+    background: linear-gradient(135deg, #f56565, #e53e3e);
+    box-shadow: 0 4px 10px rgba(229, 62, 62, 0.3);
+  }
+
+  .voice-play {
+    background: linear-gradient(135deg, #4299e1, #3182ce);
+    box-shadow: 0 4px 10px rgba(66, 153, 225, 0.3);
+  }
+
+  .voice-btn:hover {
+    transform: translateY(-2px);
+  }
+
+  .voice-record:hover {
+    box-shadow: 0 8px 20px rgba(72, 187, 120, 0.4);
+  }
+
+  .voice-stop:hover {
+    box-shadow: 0 8px 20px rgba(229, 62, 62, 0.4);
+  }
+
+  .voice-play:hover {
+    box-shadow: 0 8px 20px rgba(66, 153, 225, 0.4);
+  }
+
+  /* Campos de texto */
+  .form-control-soap {
+    width: 100%;
+    padding: 1rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    background: white;
+    font-size: 0.95rem;
+    resize: vertical;
+  }
+
+  .form-control-soap:focus {
+    border-color: #4299e1;
+    box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.2);
+    outline: none;
+  }
+
+  .form-control-soap::placeholder {
+    color: #a0aec0;
+    font-size: 0.9rem;
+  }
+
+  /* Botón guardar */
+  .btn-save-soap {
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 1rem 3rem;
+    font-weight: 600;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(72, 187, 120, 0.3);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+
+  .btn-save-soap:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(72, 187, 120, 0.4);
+  }
+
+  /* Mensajes flash */
+  .flash-messages {
+    margin-bottom: 1.5rem;
+  }
+
+  .alert {
+    border-radius: 15px;
+    border: none;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .patient-info-content {
+      flex-direction: column;
+      text-align: center;
+    }
+
+    .patient-avatar {
+      margin-right: 0;
+      margin-bottom: 1rem;
+    }
+
+    .patient-meta {
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .card-body-custom {
+      padding: 1rem;
+    }
+
+    .voice-controls {
+      justify-content: center;
+    }
+  }
+</style>
+
+<!-- Script de voz (sin cambios, solo el original) -->
 <script>
 let recognition = null;
 let campoActivo = null;

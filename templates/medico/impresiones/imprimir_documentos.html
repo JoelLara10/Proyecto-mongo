@@ -1,71 +1,457 @@
 {% extends 'medico/header_medico.html' %}
+
 {% block content %}
 
+<!-- Encabezado de la sección -->
 <section class="content-header">
-  <h1>
-    <i class="fas fa-print"></i> Imprimir documentos
-  </h1>
+  <div class="container-fluid">
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="page-header" style="background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border-radius: 15px; padding: 1.2rem;">
+          <h1 class="text-white mb-0">
+            <i class="fas fa-print me-3"></i>
+            Imprimir Documentos
+          </h1>
+        </div>
+      </div>
+    </div>
+  </div>
 </section>
 
 <section class="content">
+  <div class="container-fluid">
 
-<div class="card shadow">
-  <div class="card-header">
-    <h3 class="card-title">
-      Paciente: {{ paciente.papell }} {{ paciente.sapell }} {{ paciente.nom_pac }}
-    </h3>
-  </div>
-
-  <div class="card-body">
-
-    <div class="row">
-
-      <div class="col-md-4 mb-3">
-        <a href="{{ url_for('imprimir_signos_vitales', id_atencion=id_atencion) }}"
-           class="btn btn-outline-danger btn-block">
-          <i class="fas fa-heartbeat"></i> Signos vitales
-        </a>
+    <!-- Tarjeta principal con información del paciente -->
+    <div class="main-card">
+      <div class="card-header-custom">
+        <div class="d-flex align-items-center justify-content-between">
+          <div class="d-flex align-items-center">
+            <div class="patient-avatar">
+              <i class="fas fa-user"></i>
+            </div>
+            <div>
+              <h5 class="mb-0 text-white">Paciente: {{ paciente.papell }} {{ paciente.sapell }} {{ paciente.nom_pac }}</h5>
+              <small class="text-white-50">
+                <i class="fas fa-id-card me-1"></i> Expediente: {{ paciente.Id_exp }} |
+                <i class="fas fa-calendar-alt me-1"></i> Atención: {{ id_atencion }}
+              </small>
+            </div>
+          </div>
+          <span class="badge bg-white text-primary">
+            <i class="fas fa-file-pdf me-1"></i> Documentos médicos
+          </span>
+        </div>
       </div>
 
-      <div class="col-md-4 mb-3">
-        <a href="{{ url_for('imprimir_notas_medicas', id_atencion=id_atencion) }}"
-           class="btn btn-outline-primary btn-block">
-          <i class="fas fa-notes-medical"></i> Nota médica (SOAP)
-        </a>
-      </div>
+      <div class="card-body-custom">
 
-      <div class="col-md-4 mb-3">
-        <a href="{{ url_for('imprimir_diagnostico', id_atencion=id_atencion) }}"
-           class="btn btn-outline-info btn-block">
-          <i class="fas fa-stethoscope"></i> Diagnóstico
-        </a>
-      </div>
+        <!-- Subtítulo -->
+        <div class="section-title">
+          <i class="fas fa-file-alt"></i>
+          Selecciona el documento a imprimir
+        </div>
 
-      <div class="col-md-4 mb-3">
-        <a href="{{ url_for('imprimir_recetas', id_atencion=id_atencion) }}"
-           class="btn btn-outline-success btn-block">
-          <i class="fas fa-prescription-bottle-alt"></i> Receta médica
-        </a>
-      </div>
+        <!-- Grid de opciones de impresión -->
+        <div class="print-grid">
 
-      <div class="col-md-4 mb-3">
-        <a href="{{ url_for('imprimir_laboratorio', id_atencion=id_atencion) }}"
-           class="btn btn-outline-warning btn-block">
-          <i class="fas fa-vials"></i> Exámenes de laboratorio
-        </a>
-      </div>
+          <!-- Signos Vitales -->
+          <div class="print-item">
+            <a href="{{ url_for('imprimir_signos_vitales', id_atencion=id_atencion) }}"
+               class="print-card signos"
+               >
+              <div class="print-icon">
+                <i class="fas fa-heartbeat"></i>
+              </div>
+              <div class="print-content">
+                <h6>Signos Vitales</h6>
+                <p>Presión arterial, frecuencia cardíaca, temperatura</p>
+              </div>
+              <div class="print-action">
+                <i class="fas fa-print"></i>
+                <span>Imprimir</span>
+              </div>
+            </a>
+          </div>
 
-      <div class="col-md-4 mb-3">
-        <a href="{{ url_for('imprimir_gabinete', id_atencion=id_atencion) }}"
-           class="btn btn-outline-secondary btn-block">
-          <i class="fas fa-x-ray"></i> Exámenes de gabinete
-        </a>
-      </div>
+          <!-- Nota Médica (SOAP) -->
+          <div class="print-item">
+            <a href="{{ url_for('imprimir_notas_medicas', id_atencion=id_atencion) }}"
+               class="print-card notas"
+               >
+              <div class="print-icon">
+                <i class="fas fa-notes-medical"></i>
+              </div>
+              <div class="print-content">
+                <h6>Nota Médica (SOAP)</h6>
+                <p>Subjetivo, Objetivo, Evaluación, Plan</p>
+              </div>
+              <div class="print-action">
+                <i class="fas fa-print"></i>
+                <span>Imprimir</span>
+              </div>
+            </a>
+          </div>
 
+          <!-- Diagnóstico -->
+          <div class="print-item">
+            <a href="{{ url_for('imprimir_diagnostico', id_atencion=id_atencion) }}"
+               class="print-card diagnostico"
+               >
+              <div class="print-icon">
+                <i class="fas fa-stethoscope"></i>
+              </div>
+              <div class="print-content">
+                <h6>Diagnóstico</h6>
+                <p>CIE-10 y descripción del diagnóstico</p>
+              </div>
+              <div class="print-action">
+                <i class="fas fa-print"></i>
+                <span>Imprimir</span>
+              </div>
+            </a>
+          </div>
+
+          <!-- Receta Médica -->
+          <div class="print-item">
+            <a href="{{ url_for('imprimir_recetas', id_atencion=id_atencion) }}"
+               class="print-card receta"
+               >
+              <div class="print-icon">
+                <i class="fas fa-prescription-bottle-alt"></i>
+              </div>
+              <div class="print-content">
+                <h6>Receta Médica</h6>
+                <p>Medicamentos, dosis y frecuencia</p>
+              </div>
+              <div class="print-action">
+                <i class="fas fa-print"></i>
+                <span>Imprimir</span>
+              </div>
+            </a>
+          </div>
+
+          <!-- Exámenes de Laboratorio -->
+          <div class="print-item">
+            <a href="{{ url_for('imprimir_laboratorio', id_atencion=id_atencion) }}"
+               class="print-card laboratorio"
+               >
+              <div class="print-icon">
+                <i class="fas fa-vials"></i>
+              </div>
+              <div class="print-content">
+                <h6>Exámenes de Laboratorio</h6>
+                <p>Análisis clínicos y resultados</p>
+              </div>
+              <div class="print-action">
+                <i class="fas fa-print"></i>
+                <span>Imprimir</span>
+              </div>
+            </a>
+          </div>
+
+          <!-- Exámenes de Gabinete -->
+          <div class="print-item">
+            <a href="{{ url_for('imprimir_gabinete', id_atencion=id_atencion) }}"
+               class="print-card gabinete"
+               >
+              <div class="print-icon">
+                <i class="fas fa-x-ray"></i>
+              </div>
+              <div class="print-content">
+                <h6>Exámenes de Gabinete</h6>
+                <p>Rayos X, ultrasonidos, tomografías</p>
+              </div>
+              <div class="print-action">
+                <i class="fas fa-print"></i>
+                <span>Imprimir</span>
+              </div>
+            </a>
+          </div>
+
+          <!-- Botón para imprimir todo (opcional) -->
+          <div class="print-item print-all">
+            <a href="#" class="print-card todo" onclick="alert('Función de impresión múltiple próximamente')">
+              <div class="print-icon">
+                <i class="fas fa-file-pdf"></i>
+              </div>
+              <div class="print-content">
+                <h6>Imprimir Todo</h6>
+                <p>Todos los documentos en un solo PDF</p>
+              </div>
+              <div class="print-action">
+                <i class="fas fa-print"></i>
+                <span>Próximamente</span>
+              </div>
+            </a>
+          </div>
+
+        </div>
+
+        <!-- Nota informativa -->
+        <div class="info-note mt-4">
+          <i class="fas fa-info-circle me-2"></i>
+          <small>Los documentos se abrirán en una nueva pestaña en formato PDF listo para imprimir.</small>
+        </div>
+
+      </div>
     </div>
 
   </div>
-</div>
-
 </section>
+
+<style>
+  /* Tarjeta principal */
+  .main-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: none;
+    border-radius: 25px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    margin-bottom: 2rem;
+  }
+
+  .card-header-custom {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 1.2rem 1.5rem;
+    color: white;
+  }
+
+  .patient-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 15px;
+    background: rgba(255,255,255,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1rem;
+    font-size: 1.5rem;
+    color: white;
+  }
+
+  .card-body-custom {
+    padding: 2rem;
+  }
+
+  .section-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #667eea;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid;
+    border-image: linear-gradient(90deg, #667eea, #764ba2);
+    border-image-slice: 1;
+    display: flex;
+    align-items: center;
+  }
+
+  .section-title i {
+    margin-right: 0.8rem;
+    font-size: 1.4rem;
+  }
+
+  /* Grid de impresión */
+  .print-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.2rem;
+  }
+
+  .print-item {
+    transition: all 0.3s ease;
+  }
+
+  .print-card {
+    display: flex;
+    align-items: center;
+    padding: 1.2rem;
+    background: #f8fafc;
+    border: 2px solid #e2e8f0;
+    border-radius: 15px;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .print-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    transition: all 0.3s ease;
+  }
+
+  .print-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    border-color: transparent;
+  }
+
+  /* Colores por tipo */
+  .print-card.signos::before {
+    background: linear-gradient(135deg, #f56565, #ed8936);
+  }
+  .print-card.signos:hover {
+    background: linear-gradient(135deg, #f56565, #ed8936);
+    color: white;
+  }
+
+  .print-card.notas::before {
+    background: linear-gradient(135deg, #4299e1, #3182ce);
+  }
+  .print-card.notas:hover {
+    background: linear-gradient(135deg, #4299e1, #3182ce);
+    color: white;
+  }
+
+  .print-card.diagnostico::before {
+    background: linear-gradient(135deg, #9f7aea, #805ad5);
+  }
+  .print-card.diagnostico:hover {
+    background: linear-gradient(135deg, #9f7aea, #805ad5);
+    color: white;
+  }
+
+  .print-card.receta::before {
+    background: linear-gradient(135deg, #48bb78, #38a169);
+  }
+  .print-card.receta:hover {
+    background: linear-gradient(135deg, #48bb78, #38a169);
+    color: white;
+  }
+
+  .print-card.laboratorio::before {
+    background: linear-gradient(135deg, #ed8936, #dd6b20);
+  }
+  .print-card.laboratorio:hover {
+    background: linear-gradient(135deg, #ed8936, #dd6b20);
+    color: white;
+  }
+
+  .print-card.gabinete::before {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+  }
+  .print-card.gabinete:hover {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+  }
+
+  .print-card.todo::before {
+    background: linear-gradient(135deg, #4fd1c5, #38b2ac);
+  }
+  .print-card.todo:hover {
+    background: linear-gradient(135deg, #4fd1c5, #38b2ac);
+    color: white;
+  }
+
+  .print-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1rem;
+    font-size: 1.5rem;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+  }
+
+  .print-card:hover .print-icon {
+    background: rgba(255,255,255,0.2);
+    color: white;
+    transform: scale(1.1);
+  }
+
+  .print-content {
+    flex: 1;
+  }
+
+  .print-content h6 {
+    margin: 0 0 0.3rem 0;
+    font-weight: 600;
+    font-size: 1rem;
+  }
+
+  .print-content p {
+    margin: 0;
+    font-size: 0.75rem;
+    color: #718096;
+  }
+
+  .print-card:hover .print-content p {
+    color: rgba(255,255,255,0.8);
+  }
+
+  .print-action {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.3rem 0.5rem;
+    border-radius: 10px;
+    background: white;
+    font-size: 0.7rem;
+    color: #2d3748;
+    min-width: 60px;
+  }
+
+  .print-action i {
+    font-size: 1rem;
+    margin-bottom: 2px;
+  }
+
+  .print-card:hover .print-action {
+    background: rgba(255,255,255,0.2);
+    color: white;
+  }
+
+  .info-note {
+    background: #dbeafe;
+    color: #1e40af;
+    padding: 0.8rem 1rem;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    font-size: 0.85rem;
+  }
+
+  .badge {
+    padding: 0.5rem 1rem;
+    border-radius: 25px;
+    font-weight: 500;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .card-body-custom {
+      padding: 1rem;
+    }
+
+    .print-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .print-card {
+      padding: 1rem;
+    }
+
+    .print-icon {
+      width: 40px;
+      height: 40px;
+      font-size: 1.2rem;
+    }
+
+    .print-action {
+      min-width: 50px;
+    }
+  }
+</style>
+
 {% endblock %}

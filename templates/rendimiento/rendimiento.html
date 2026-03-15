@@ -2,192 +2,69 @@
 
 {% block content %}
 
-<section class="content-header">
-  <div class="container-fluid">
-    <div class="row mb-3">
-      <div class="col-12">
-        <h1 class="text-primary">
-          <i class="fas fa-tachometer-alt me-2"></i>
-          Rendimiento del Sistema
-        </h1>
-        <p class="text-muted">Monitoreo en tiempo real de los recursos del sistema</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section class="content">
-  <div class="container-fluid">
-
-    <!-- Mensajes Flash -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        {% for category, message in messages %}
-          <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm" role="alert">
-            <i class="fas fa-info-circle me-2"></i> {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-          </div>
-        {% endfor %}
-      {% endif %}
-    {% endwith %}
-
-    <!-- ====== MÉTRICAS DEL SISTEMA ====== -->
-    <div class="row g-4 mb-5">
-      <div class="col-md-4">
-        <div class="metric-card">
-          <div class="metric-header">
-            <h5><i class="fas fa-microchip me-2"></i> CPU</h5>
-          </div>
-          <div class="metric-body">
-            <div class="metric-value">{{ cpu }}<small>%</small></div>
-            <canvas id="cpuChart" height="150"></canvas>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-md-4">
-        <div class="metric-card">
-          <div class="metric-header">
-            <h5><i class="fas fa-memory me-2"></i> Memoria RAM</h5>
-          </div>
-          <div class="metric-body">
-            <div class="metric-value">{{ ram }}<small>%</small></div>
-            <canvas id="ramChart" height="150"></canvas>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-md-4">
-        <div class="metric-card">
-          <div class="metric-header">
-            <h5><i class="fas fa-hdd me-2"></i> Disco</h5>
-          </div>
-          <div class="metric-body">
-            <div class="metric-value">{{ disco }}<small>%</small></div>
-            <canvas id="diskChart" height="150"></canvas>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ====== USUARIOS REGISTRADOS ====== -->
-    <div class="info-card">
-      <div class="info-header">
-        <h5>
-          <i class="fas fa-users me-2"></i>
-          Usuarios Registrados
-          <span class="badge bg-white text-primary float-end">{{ usuarios|length }}</span>
-        </h5>
-      </div>
-      <div class="info-body">
-        <div class="list-group">
-          {% for user in usuarios %}
-          <div class="list-group-item d-flex align-items-center">
-            <div class="user-avatar">
-              <i class="fas fa-user"></i>
-            </div>
-            <div class="flex-grow-1">
-              <strong>{{ user.username }}</strong>
-              <br>
-              <small class="text-muted">ID: {{ user.id }} • Registrado:
-                {% if user.created_at %}
-                  {% if user.created_at is string %}
-                    {{ user.created_at }}
-                  {% else %}
-                    {{ user.created_at.strftime('%d/%m/%Y %H:%M') }}
-                  {% endif %}
-                {% else %}
-                  No disponible
-                {% endif %}
-              </small>
-            </div>
-            <span class="badge-role
-              {% if user.role == 'admin' %}badge-admin
-              {% elif user.role == 'medico' %}badge-medico
-              {% elif user.role == 'enfermero' %}badge-enfermero
-              {% else %}badge-otro{% endif %}">
-              {{ user.role|capitalize }}
-            </span>
-          </div>
-          {% else %}
-          <div class="text-center py-4">
-            <i class="fas fa-users-slash text-muted" style="font-size: 3rem;"></i>
-            <p class="text-muted mt-3">No hay usuarios registrados</p>
-          </div>
-          {% endfor %}
-        </div>
-      </div>
-    </div>
-
-    <!-- ====== ACCIONES RECIENTES ====== -->
-    <div class="info-card">
-      <div class="info-header">
-        <h5>
-          <i class="fas fa-history me-2"></i>
-          Acciones Recientes
-        </h5>
-      </div>
-      <div class="info-body">
-        <div class="list-group" id="lista-logs">
-          {% for log in logs %}
-          <div class="list-group-item d-flex align-items-center">
-            <div class="log-time">
-              <i class="far fa-clock me-1"></i>
-              {% if log.fecha %}
-                {% if log.fecha is string %}
-                  {{ log.fecha }}
-                {% else %}
-                  {{ log.fecha.strftime('%d/%m/%Y %H:%M') }}
-                {% endif %}
-              {% else %}
-                Fecha no disponible
-              {% endif %}
-            </div>
-            <div class="flex-grow-1">
-              <strong>{{ log.usuario }}</strong>
-              <span class="text-muted mx-2">-</span>
-              <span>{{ log.accion }}</span>
-            </div>
-            <i class="fas fa-check-circle text-success"></i>
-          </div>
-          {% else %}
-          <div class="text-center py-4">
-            <i class="fas fa-history text-muted" style="font-size: 3rem;"></i>
-            <p class="text-muted mt-3">No hay acciones recientes</p>
-          </div>
-          {% endfor %}
-        </div>
-      </div>
-    </div>
-
-  </div>
-</section>
-
-<!-- Chart.js -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
 <style>
+  * {
+    font-family: 'Inter', sans-serif;
+  }
+
+  /* Título principal */
+  .page-title {
+    color: white;
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+  }
+
+  .page-title i {
+    margin-right: 1rem;
+    font-size: 2.5rem;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 0.5rem;
+    border-radius: 15px;
+  }
+
+  .page-subtitle {
+    color: #a0aec0;
+    margin-top: -1rem;
+    margin-bottom: 2rem;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .page-subtitle i {
+    color: #667eea;
+  }
+
   /* Tarjetas de métricas */
   .metric-card {
-    background: white;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
     border: none;
-    border-radius: 20px;
+    border-radius: 25px;
     overflow: hidden;
     transition: all 0.3s ease;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
     height: 100%;
+    animation: fadeIn 0.5s ease;
   }
 
   .metric-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 20px 60px rgba(102, 126, 234, 0.25);
+    transform: translateY(-10px);
+    box-shadow: 0 30px 80px rgba(102, 126, 234, 0.3);
   }
 
   .metric-header {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    padding: 1rem;
+    padding: 1rem 1.5rem;
     color: white;
-    text-align: center;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
   }
 
   .metric-header h5 {
@@ -196,57 +73,100 @@
     font-size: 1.1rem;
   }
 
+  .metric-header i {
+    font-size: 1.2rem;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 0.3rem;
+    border-radius: 8px;
+  }
+
   .metric-body {
     padding: 1.5rem;
     text-align: center;
+    background: white;
   }
 
   .metric-value {
-    font-size: 2.5rem;
+    font-size: 3rem;
     font-weight: 700;
     color: #2d3748;
     margin-bottom: 1rem;
+    line-height: 1;
   }
 
   .metric-value small {
     font-size: 1rem;
     color: #718096;
+    margin-left: 0.2rem;
   }
 
   /* Tarjetas de información */
   .info-card {
-    background: white;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
     border: none;
-    border-radius: 20px;
+    border-radius: 25px;
     overflow: hidden;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
     margin-bottom: 2rem;
+    animation: fadeIn 0.5s ease;
   }
 
   .info-header {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     padding: 1rem 1.5rem;
     color: white;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
   }
 
   .info-header h5 {
     margin: 0;
     font-weight: 600;
     font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .info-header i {
+    font-size: 1.2rem;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 0.3rem;
+    border-radius: 8px;
+  }
+
+  .info-header .badge-counter {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 0.2rem 0.8rem;
+    border-radius: 30px;
+    font-size: 0.9rem;
+    font-weight: 600;
   }
 
   .info-body {
     padding: 1.5rem;
+    background: white;
   }
 
   /* Listas */
+  .list-group {
+    border-radius: 15px;
+    overflow: hidden;
+  }
+
   .list-group-item {
     border: none;
     border-bottom: 1px solid #e2e8f0;
-    padding: 0.8rem 1rem;
+    padding: 1rem 1rem;
     background: transparent;
     color: #2d3748;
     transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
   }
 
   .list-group-item:hover {
@@ -259,29 +179,43 @@
   }
 
   .user-avatar {
-    width: 35px;
-    height: 35px;
-    border-radius: 10px;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    display: inline-flex;
+    display: flex;
     align-items: center;
     justify-content: center;
     color: white;
-    margin-right: 1rem;
+    font-size: 1.2rem;
+    box-shadow: 0 4px 10px rgba(102, 126, 234, 0.3);
   }
 
   .log-time {
     color: #718096;
     font-size: 0.85rem;
-    margin-right: 1rem;
+    min-width: 140px;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    background: #f7fafc;
+    padding: 0.3rem 0.8rem;
+    border-radius: 30px;
+  }
+
+  .log-time i {
+    color: #667eea;
   }
 
   /* Badges */
   .badge-role {
-    padding: 0.3rem 0.8rem;
-    border-radius: 20px;
+    padding: 0.3rem 1rem;
+    border-radius: 30px;
     font-size: 0.75rem;
     font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   }
 
   .badge-admin {
@@ -303,9 +237,313 @@
     background: linear-gradient(135deg, #a0aec0 0%, #718096 100%);
     color: white;
   }
+
+  .badge-success-icon {
+    color: #48bb78;
+    font-size: 1.1rem;
+  }
+
+  /* Mensajes flash */
+  .flash-messages {
+    margin-bottom: 1.5rem;
+  }
+
+  .alert {
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    animation: slideIn 0.3s ease;
+  }
+
+  .alert-success {
+    background: #d1fae5;
+    color: #065f46;
+    border-left: 4px solid #38a169;
+  }
+
+  .alert-danger {
+    background: #fed7d7;
+    color: #991b1b;
+    border-left: 4px solid #e53e3e;
+  }
+
+  .alert-warning {
+    background: #fef3c7;
+    color: #92400e;
+    border-left: 4px solid #f59e0b;
+  }
+
+  .alert-info {
+    background: #dbeafe;
+    color: #1e40af;
+    border-left: 4px solid #3b82f6;
+  }
+
+  .alert i {
+    font-size: 1.2rem;
+  }
+
+  .alert .close {
+    color: inherit;
+    opacity: 0.7;
+    font-size: 1.5rem;
+  }
+
+  .alert .close:hover {
+    opacity: 1;
+  }
+
+  /* Estado vacío */
+  .empty-state {
+    text-align: center;
+    padding: 3rem;
+  }
+
+  .empty-state i {
+    font-size: 3rem;
+    color: #cbd5e0;
+    margin-bottom: 1rem;
+  }
+
+  .empty-state p {
+    color: #718096;
+    margin: 0;
+  }
+
+  /* Animaciones */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateX(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .page-title {
+      font-size: 1.5rem;
+    }
+
+    .metric-value {
+      font-size: 2rem;
+    }
+
+    .list-group-item {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .log-time {
+      min-width: 100%;
+      margin-bottom: 0.5rem;
+    }
+
+    .badge-role {
+      align-self: flex-start;
+    }
+
+    .user-avatar {
+      width: 35px;
+      height: 35px;
+      font-size: 1rem;
+    }
+  }
 </style>
 
+<div class="container-fluid mt-4">
+  <!-- Título de la página -->
+  <div class="page-title text-primary">
+    <i class="fas fa-tachometer-alt text-primary"></i>
+    Rendimiento del Sistema
+  </div>
+
+  <div class="page-subtitle">
+    <i class="fas fa-chart-line"></i>
+    Monitoreo en tiempo real de los recursos del sistema
+  </div>
+
+  <!-- Mensajes Flash -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flash-messages">
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            <span>
+              <i class="fas {% if category == 'success' %}fa-check-circle{% elif category == 'danger' %}fa-exclamation-circle{% elif category == 'warning' %}fa-exclamation-triangle{% else %}fa-info-circle{% endif %} mr-2"></i>
+              {{ message }}
+            </span>
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <!-- ====== MÉTRICAS DEL SISTEMA ====== -->
+  <div class="row g-4 mb-5">
+    <div class="col-md-4">
+      <div class="metric-card">
+        <div class="metric-header">
+          <i class="fas fa-microchip"></i>
+          <h5>CPU</h5>
+        </div>
+        <div class="metric-body">
+          <div class="metric-value">{{ cpu }}<small>%</small></div>
+          <canvas id="cpuChart" height="150"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="metric-card">
+        <div class="metric-header">
+          <i class="fas fa-memory"></i>
+          <h5>Memoria RAM</h5>
+        </div>
+        <div class="metric-body">
+          <div class="metric-value">{{ ram }}<small>%</small></div>
+          <canvas id="ramChart" height="150"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="metric-card">
+        <div class="metric-header">
+          <i class="fas fa-hdd"></i>
+          <h5>Disco</h5>
+        </div>
+        <div class="metric-body">
+          <div class="metric-value">{{ disco }}<small>%</small></div>
+          <canvas id="diskChart" height="150"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== USUARIOS REGISTRADOS ====== -->
+  <div class="info-card">
+    <div class="info-header">
+      <h5>
+        <i class="fas fa-users"></i>
+        Usuarios Registrados
+      </h5>
+      <span class="badge-counter">{{ usuarios|length }}</span>
+    </div>
+    <div class="info-body">
+      <div class="list-group">
+        {% for user in usuarios %}
+        <div class="list-group-item">
+          <div class="user-avatar">
+            <i class="fas fa-user"></i>
+          </div>
+          <div class="flex-grow-1">
+            <strong>{{ user.username }}</strong>
+            <div class="small text-muted mt-1">
+              <i class="fas fa-id-card mr-1"></i> ID: {{ user.id }} •
+              <i class="far fa-calendar-alt mr-1"></i> Registrado:
+              {% if user.created_at %}
+                {% if user.created_at is string %}
+                  {{ user.created_at }}
+                {% else %}
+                  {{ user.created_at.strftime('%d/%m/%Y %H:%M') }}
+                {% endif %}
+              {% else %}
+                No disponible
+              {% endif %}
+            </div>
+          </div>
+          <span class="badge-role
+            {% if user.role == 'admin' %}badge-admin
+            {% elif user.role == 'medico' %}badge-medico
+            {% elif user.role == 'enfermero' %}badge-enfermero
+            {% else %}badge-otro{% endif %}">
+            {{ user.role|capitalize }}
+          </span>
+        </div>
+        {% else %}
+        <div class="empty-state">
+          <i class="fas fa-users-slash"></i>
+          <p>No hay usuarios registrados</p>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== ACCIONES RECIENTES ====== -->
+  <div class="info-card">
+    <div class="info-header">
+      <h5>
+        <i class="fas fa-history"></i>
+        Acciones Recientes
+      </h5>
+    </div>
+    <div class="info-body">
+      <div class="list-group" id="lista-logs">
+        {% for log in logs %}
+        <div class="list-group-item">
+          <div class="log-time">
+            <i class="far fa-clock"></i>
+            {% if log.fecha %}
+              {% if log.fecha is string %}
+                {{ log.fecha }}
+              {% else %}
+                {{ log.fecha.strftime('%d/%m/%Y %H:%M') }}
+              {% endif %}
+            {% else %}
+              Fecha no disponible
+            {% endif %}
+          </div>
+          <div class="flex-grow-1">
+            <strong>{{ log.usuario }}</strong>
+            <span class="text-muted mx-2">-</span>
+            <span>{{ log.accion }}</span>
+          </div>
+          <i class="fas fa-check-circle badge-success-icon"></i>
+        </div>
+        {% else %}
+        <div class="empty-state">
+          <i class="fas fa-history"></i>
+          <p>No hay acciones recientes</p>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <script>
+  // ====== INICIALIZACIÓN ======
+  document.addEventListener('DOMContentLoaded', function() {
+    console.log('Página de rendimiento cargada');
+  });
+
   // ====== GRÁFICAS ======
   const cpuCtx = document.getElementById('cpuChart').getContext('2d');
   new Chart(cpuCtx, {
@@ -314,8 +552,9 @@
       labels: ['Usado', 'Libre'],
       datasets: [{
         data: [{{ cpu }}, 100-{{ cpu }}],
-        backgroundColor: ['#FF6384', '#36A2EB'],
-        borderWidth: 0
+        backgroundColor: ['#FF6384', '#E2E8F0'],
+        borderWidth: 0,
+        hoverOffset: 8
       }]
     },
     options: {
@@ -323,6 +562,10 @@
       plugins: {
         legend: { display: false },
         tooltip: { enabled: false }
+      },
+      animation: {
+        animateScale: true,
+        animateRotate: true
       }
     }
   });
@@ -334,8 +577,9 @@
       labels: ['Usada', 'Libre'],
       datasets: [{
         data: [{{ ram }}, 100-{{ ram }}],
-        backgroundColor: ['#FFCE56', '#4BC0C0'],
-        borderWidth: 0
+        backgroundColor: ['#FFCE56', '#E2E8F0'],
+        borderWidth: 0,
+        hoverOffset: 8
       }]
     },
     options: {
@@ -343,6 +587,10 @@
       plugins: {
         legend: { display: false },
         tooltip: { enabled: false }
+      },
+      animation: {
+        animateScale: true,
+        animateRotate: true
       }
     }
   });
@@ -354,8 +602,9 @@
       labels: ['Usado', 'Libre'],
       datasets: [{
         data: [{{ disco }}, 100-{{ disco }}],
-        backgroundColor: ['#9966FF', '#FF9F40'],
-        borderWidth: 0
+        backgroundColor: ['#9966FF', '#E2E8F0'],
+        borderWidth: 0,
+        hoverOffset: 8
       }]
     },
     options: {
@@ -363,6 +612,10 @@
       plugins: {
         legend: { display: false },
         tooltip: { enabled: false }
+      },
+      animation: {
+        animateScale: true,
+        animateRotate: true
       }
     }
   });
@@ -376,9 +629,20 @@
         if (!lista) return;
 
         lista.innerHTML = '';
+
+        if (data.length === 0) {
+          lista.innerHTML = `
+            <div class="empty-state">
+              <i class="fas fa-history"></i>
+              <p>No hay acciones recientes</p>
+            </div>
+          `;
+          return;
+        }
+
         data.forEach(log => {
           const div = document.createElement('div');
-          div.className = 'list-group-item d-flex align-items-center';
+          div.className = 'list-group-item';
 
           let fechaStr = log.fecha;
           if (log.fecha && typeof log.fecha === 'string') {
@@ -393,7 +657,7 @@
 
           div.innerHTML = `
             <div class="log-time">
-              <i class="far fa-clock me-1"></i>
+              <i class="far fa-clock"></i>
               ${fechaStr}
             </div>
             <div class="flex-grow-1">
@@ -401,16 +665,19 @@
               <span class="text-muted mx-2">-</span>
               <span>${log.accion || 'Acción sin descripción'}</span>
             </div>
-            <i class="fas fa-check-circle text-success"></i>
+            <i class="fas fa-check-circle badge-success-icon"></i>
           `;
           lista.appendChild(div);
         });
       })
-      .catch(error => console.error('Error:', error));
+      .catch(error => console.error('Error al actualizar logs:', error));
   }
 
   // Actualizar cada 30 segundos
   setInterval(actualizarLogs, 30000);
+
+  // También actualizar al cargar la página (después de 2 segundos)
+  setTimeout(actualizarLogs, 2000);
 </script>
 
 {% endblock %}

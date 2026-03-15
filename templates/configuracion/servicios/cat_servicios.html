@@ -2,208 +2,661 @@
 
 {% block content %}
 
+<style>
+  * {
+    font-family: 'Inter', sans-serif;
+  }
+
+  /* Título principal */
+  .page-title {
+    color: white;
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+  }
+
+  .page-title i {
+    margin-right: 1rem;
+    font-size: 2.5rem;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 0.5rem;
+    border-radius: 15px;
+  }
+
+  /* Botón nuevo */
+  .btn-new {
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 0.8rem 1.5rem;
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(72, 187, 120, 0.3);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+    cursor: pointer;
+    border: none;
+  }
+
+  .btn-new:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(72, 187, 120, 0.4);
+    color: white;
+  }
+
+  /* Buscador */
+  .search-container {
+    margin-bottom: 1.5rem;
+  }
+
+  .search-input {
+    border: 2px solid #e2e8f0;
+    border-radius: 15px;
+    padding: 0.8rem 1.5rem;
+    transition: all 0.3s ease;
+    background: white;
+    width: 100%;
+  }
+
+  .search-input:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+    outline: none;
+  }
+
+  /* Tarjeta de la tabla */
+  .main-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: none;
+    border-radius: 25px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    margin-bottom: 2rem;
+  }
+
+  .card-body-custom {
+    padding: 1.5rem;
+  }
+
+  /* Tabla */
+  .table-responsive {
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  }
+
+  .table {
+    margin-bottom: 0;
+  }
+
+  .table thead th {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 1rem;
+    border: none;
+    white-space: nowrap;
+  }
+
+  .table tbody tr {
+    transition: all 0.3s ease;
+    background: white;
+  }
+
+  .table tbody tr:hover {
+    background: rgba(102, 126, 234, 0.1);
+  }
+
+  .table td {
+    padding: 1rem;
+    vertical-align: middle;
+    color: #2d3748;
+    font-size: 0.95rem;
+  }
+
+  /* Badges */
+  .badge-custom {
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    display: inline-block;
+  }
+
+  .badge-success {
+    background: #d1fae5;
+    color: #065f46;
+    border: 1px solid #38a169;
+  }
+
+  .badge-danger {
+    background: #fed7d7;
+    color: #991b1b;
+    border: 1px solid #e53e3e;
+  }
+
+  .badge-info {
+    background: #dbeafe;
+    color: #1e40af;
+    border: 1px solid #3b82f6;
+  }
+
+  .badge-primary {
+    background: #e9d8fd;
+    color: #553c9a;
+    border: 1px solid #9f7aea;
+  }
+
+  .precio-badge {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    display: inline-block;
+  }
+
+  /* Botones de acción */
+  .action-buttons {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+  }
+
+  .btn-edit {
+    background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    width: 35px;
+    height: 35px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 10px rgba(237, 137, 54, 0.3);
+    text-decoration: none;
+  }
+
+  .btn-edit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(237, 137, 54, 0.4);
+    color: white;
+  }
+
+  /* Estado vacío */
+  .empty-state {
+    text-align: center;
+    padding: 3rem;
+  }
+
+  .empty-state i {
+    font-size: 3rem;
+    color: #cbd5e0;
+    margin-bottom: 1rem;
+  }
+
+  .empty-state p {
+    color: #718096;
+    margin: 0;
+  }
+
+  /* Mensajes flash */
+  .flash-messages {
+    margin-bottom: 1.5rem;
+  }
+
+  .alert {
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .alert-success {
+    background: #d1fae5;
+    color: #065f46;
+    border-left: 4px solid #38a169;
+  }
+
+  .alert-danger {
+    background: #fed7d7;
+    color: #991b1b;
+    border-left: 4px solid #e53e3e;
+  }
+
+  .alert i {
+    font-size: 1.2rem;
+  }
+
+  .alert .close {
+    color: inherit;
+    opacity: 0.7;
+  }
+
+  .alert .close:hover {
+    opacity: 1;
+  }
+
+  /* Modal de nuevo servicio */
+  .modal-content-custom {
+    border: none;
+    border-radius: 25px;
+    overflow: hidden;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+  }
+
+  .modal-header-custom {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 1.2rem 1.5rem;
+    border: none;
+  }
+
+  .modal-header-custom .modal-title {
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .modal-header-custom .btn-close {
+    color: white;
+    opacity: 0.8;
+  }
+
+  .modal-header-custom .btn-close:hover {
+    opacity: 1;
+  }
+
+  .modal-body-custom {
+    padding: 1.5rem;
+    background: #f7fafc;
+  }
+
+  .modal-footer-custom {
+    padding: 1rem 1.5rem;
+    background: #f7fafc;
+    border-top: 1px solid #e2e8f0;
+  }
+
+  .form-label-custom {
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 0.3rem;
+    font-size: 0.9rem;
+  }
+
+  .form-label-custom span {
+    color: #e53e3e;
+  }
+
+  .form-control-custom, .form-select-custom {
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 0.6rem 1rem;
+    width: 100%;
+    transition: all 0.3s ease;
+    background: white;
+  }
+
+  .form-control-custom:focus, .form-select-custom:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+    outline: none;
+  }
+
+  .section-subtitle {
+    color: #667eea;
+    font-weight: 700;
+    margin: 1.2rem 0 1rem;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 0.5rem;
+  }
+
+  .section-subtitle i {
+    background: rgba(102, 126, 234, 0.1);
+    padding: 0.4rem;
+    border-radius: 8px;
+  }
+
+  /* Botones del modal */
+  .btn-cancel {
+    background: white;
+    color: #718096;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 0.6rem 1.5rem;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+  }
+
+  .btn-cancel:hover {
+    background: #f7fafc;
+    color: #4a5568;
+    border-color: #cbd5e0;
+  }
+
+  .btn-save {
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 0.6rem 1.5rem;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(72, 187, 120, 0.3);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .btn-save:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(72, 187, 120, 0.4);
+    color: white;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .page-title {
+      font-size: 1.5rem;
+    }
+
+    .d-flex {
+      flex-direction: column;
+      gap: 1rem;
+      align-items: flex-start !important;
+    }
+
+    .btn-new {
+      width: 100%;
+      justify-content: center;
+    }
+
+    .table td {
+      font-size: 0.8rem;
+      padding: 0.5rem;
+    }
+
+    .action-buttons {
+      flex-direction: column;
+    }
+
+    .btn-edit {
+      width: 30px;
+      height: 30px;
+    }
+
+    .modal-dialog {
+      margin: 0.5rem;
+    }
+  }
+</style>
+
 <div class="container-fluid mt-4">
 
-    <!-- ENCABEZADO -->
-    <div class="card mb-4 shadow">
-        <div class="card-body text-center bg-primary text-white rounded">
-            <h3><i class="fas fa-cogs"></i> CATÁLOGO DE SERVICIOS</h3>
-        </div>
+  <!-- HEADER CON TÍTULO Y BOTÓN -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="page-title text-primary">
+      <i class="fas fa-cogs text-primary"></i>
+      Catálogo de Servicios
     </div>
 
-    <!-- BOTÓN NUEVO -->
     {% if session.get('role') == 'admin' %}
-    <div class="mb-3 text-end">
-        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalServicio">
-            <i class="fas fa-plus"></i> Nuevo Servicio
-        </button>
-        <!-- Botón de emergencia para pruebas -->
-        <button class="btn btn-success ms-2" onclick="abrirModalManual()">
-            <i class="fas fa-external-link-alt"></i> Abrir Modal (Prueba)
-        </button>
-    </div>
+    <button class="btn-new" data-bs-toggle="modal" data-bs-target="#modalServicio">
+      <i class="fas fa-plus"></i> Nuevo Servicio
+    </button>
     {% endif %}
+  </div>
 
-    <!-- BUSCADOR -->
-    <div class="mb-3">
-        <input type="text" id="search" class="form-control" placeholder="🔍 Buscar servicio...">
-    </div>
+  <!-- MENSAJES FLASH -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flash-messages">
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            <span>
+              <i class="fas {% if category == 'success' %}fa-check-circle text-success{% else %}fa-exclamation-circle text-danger{% endif %} mr-2"></i>
+              {{ message }}
+            </span>
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
 
-    <!-- TABLA -->
-    <div class="card shadow">
-        <div class="card-body table-responsive">
-            <table class="table table-bordered table-hover" id="tabla">
-                <thead class="table-dark">
-                    <tr>
-                        <th>ID</th>
-                        <th>Clave</th>
-                        <th>Descripción</th>
-                        <th>Precio</th>
-                        <th>U.M.</th>
-                        <th>Tipo</th>
-                        <th>Estado</th>
-                        {% if session.get('role') == 'admin' %}
-                        <th>Acciones</th>
-                        {% endif %}
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for s in servicios %}
-                    <tr>
-                        <td>{{ s.id_serv }}</td>
-                        <td>{{ s.serv_cve }}</td>
-                        <td>{{ s.serv_desc }}</td>
-                        <td>
-                            <span class="badge bg-info text-white">
-                                ${{ "%.2f"|format(s.serv_costo|float) }}
-                            </span>
-                        </td>
-                        <td>{{ s.serv_umed }}</td>
-                        <td>{{ s.tip_insumo or s.tipo }}</td>
-                        <td>
-                            {% if s.serv_activo == 'NO' %}
-                                <span class="badge bg-danger">Inactivo</span>
-                            {% else %}
-                                <span class="badge bg-success">Activo</span>
-                            {% endif %}
-                        </td>
-                        {% if session.get('role') == 'admin' %}
-                        <td>
-                            <a href="{{ url_for('editar_servicio', id=s.id_serv) }}"
-                               class="btn btn-warning btn-sm">
-                                <i class="fas fa-edit"></i>
-                            </a>
-                        </td>
-                        {% endif %}
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="8" class="text-center text-muted">
-                            No hay servicios registrados
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+  <!-- BUSCADOR -->
+  <div class="search-container">
+    <input type="text"
+           class="search-input"
+           id="search"
+           placeholder="🔍 Buscar servicio por clave, descripción o tipo...">
+  </div>
+
+  <!-- TARJETA DE LA TABLA -->
+  <div class="main-card">
+    <div class="card-body-custom">
+      <div class="table-responsive">
+        <table class="table table-hover" id="tablaServicios">
+          <thead>
+            <tr>
+              <th class="text-center">ID</th>
+              <th>Clave</th>
+              <th>Descripción</th>
+              <th class="text-center">Precio</th>
+              <th class="text-center">U.M.</th>
+              <th class="text-center">Tipo</th>
+              <th class="text-center">Estado</th>
+              {% if session.get('role') == 'admin' %}
+              <th class="text-center">Acciones</th>
+              {% endif %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in servicios %}
+            <tr>
+              <td class="text-center">{{ s.id_serv }}</td>
+              <td><strong>{{ s.serv_cve }}</strong></td>
+              <td>{{ s.serv_desc }}</td>
+              <td class="text-center">
+                <span class="precio-badge">
+                  ${{ "%.2f"|format(s.serv_costo|float) }}
+                </span>
+              </td>
+              <td class="text-center">
+                <span class="badge-custom badge-primary">{{ s.serv_umed }}</span>
+              </td>
+              <td class="text-center">
+                <span class="badge-custom badge-info">{{ s.tip_insumo or s.tipo }}</span>
+              </td>
+              <td class="text-center">
+                {% if s.serv_activo == 'NO' %}
+                  <span class="badge-custom badge-danger">Inactivo</span>
+                {% else %}
+                  <span class="badge-custom badge-success">Activo</span>
+                {% endif %}
+              </td>
+              {% if session.get('role') == 'admin' %}
+              <td class="text-center">
+                <div class="action-buttons">
+                  <a href="{{ url_for('editar_servicio', id=s.id_serv) }}"
+                     class="btn-edit" title="Editar servicio">
+                    <i class="fas fa-edit"></i>
+                  </a>
+                </div>
+              </td>
+              {% endif %}
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="{% if session.get('role') == 'admin' %}8{% else %}7{% endif %}" class="empty-state">
+                <i class="fas fa-cogs"></i>
+                <p>No hay servicios registrados</p>
+                {% if session.get('role') == 'admin' %}
+                <button class="btn-new mt-3" data-bs-toggle="modal" data-bs-target="#modalServicio">
+                  <i class="fas fa-plus me-2"></i>Crear primer servicio
+                </button>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
     </div>
+  </div>
 
 </div>
 
 <!-- MODAL NUEVO SERVICIO (Bootstrap 5) -->
 <div class="modal fade" id="modalServicio" tabindex="-1" aria-labelledby="modalServicioLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title" id="modalServicioLabel">
-                    <i class="fas fa-plus-circle"></i> Nuevo Servicio
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content modal-content-custom">
+      <div class="modal-header modal-header-custom">
+        <h5 class="modal-title" id="modalServicioLabel">
+          <i class="fas fa-plus-circle"></i> Nuevo Servicio
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+
+      <form action="{{ url_for('insertar_servicio') }}" method="POST">
+        <div class="modal-body modal-body-custom">
+          <div class="row">
+            <!-- Columna 1 -->
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label-custom">Clave <span>*</span></label>
+                <input type="text" name="serv_cve" class="form-control-custom" required placeholder="Ej. SERV-001">
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label-custom">Descripción <span>*</span></label>
+                <input type="text" name="serv_desc" class="form-control-custom" required placeholder="Nombre del servicio">
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label-custom">Costo Principal <span>*</span></label>
+                <input type="number" step="0.01" name="serv_costo" class="form-control-custom" required placeholder="0.00">
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label-custom">Unidad de Medida <span>*</span></label>
+                <select name="serv_umed" class="form-select-custom" required>
+                  <option value="">Seleccionar</option>
+                  <option value="CONSULTA">CONSULTA</option>
+                  <option value="EQUIPO">EQUIPO</option>
+                  <option value="ESTUDIO">ESTUDIO</option>
+                  <option value="HORA">HORA</option>
+                  <option value="SERVICIO">SERVICIO</option>
+                </select>
+              </div>
             </div>
 
-            <form action="{{ url_for('insertar_servicio') }}" method="POST">
-                <div class="modal-body">
-                    <div class="row">
-                        <!-- Columna 1 -->
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">Clave <span class="text-danger">*</span></label>
-                                <input type="text" name="serv_cve" class="form-control" required>
-                            </div>
+            <!-- Columna 2 -->
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label-custom">Tipo <span>*</span></label>
+                <select name="serv_tipo" class="form-select-custom" required>
+                  <option value="">Seleccionar</option>
+                  {% for t in tipos %}
+                    <option value="{{ t.ser_type_id }}">{{ t.ser_type_desc }}</option>
+                  {% endfor %}
+                </select>
+              </div>
 
-                            <div class="mb-3">
-                                <label class="form-label">Descripción <span class="text-danger">*</span></label>
-                                <input type="text" name="serv_desc" class="form-control" required>
-                            </div>
+              <div class="mb-3">
+                <label class="form-label-custom">Proveedor</label>
+                <select name="proveedor" class="form-select-custom">
+                  <option value="">Seleccionar</option>
+                  {% for p in proveedores %}
+                    <option value="{{ p.id_prov }}">{{ p.nom_prov }}</option>
+                  {% endfor %}
+                </select>
+              </div>
 
-                            <div class="mb-3">
-                                <label class="form-label">Costo Principal <span class="text-danger">*</span></label>
-                                <input type="number" step="0.01" name="serv_costo" class="form-control" required>
-                            </div>
+              <div class="mb-3">
+                <label class="form-label-custom">Grupo</label>
+                <select name="grupo" class="form-select-custom">
+                  <option value="SERVICIOS HOSPITALARIOS">SERVICIOS HOSPITALARIOS</option>
+                  <option value="IMAGENOLOGIA">IMAGENOLOGIA</option>
+                </select>
+              </div>
 
-                            <div class="mb-3">
-                                <label class="form-label">Unidad de Medida <span class="text-danger">*</span></label>
-                                <select name="serv_umed" class="form-control" required>
-                                    <option value="">Seleccionar</option>
-                                    <option value="CONSULTA">CONSULTA</option>
-                                    <option value="EQUIPO">EQUIPO</option>
-                                    <option value="ESTUDIO">ESTUDIO</option>
-                                    <option value="HORA">HORA</option>
-                                    <option value="SERVICIO">SERVICIO</option>
-                                </select>
-                            </div>
-                        </div>
+              <div class="mb-3">
+                <label class="form-label-custom">Código SAT</label>
+                <input type="text" name="codigo_sat" class="form-control-custom" placeholder="Ej. 85101500">
+              </div>
+            </div>
+          </div>
 
-                        <!-- Columna 2 -->
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">Tipo <span class="text-danger">*</span></label>
-                                <select name="serv_tipo" class="form-control" required>
-                                    <option value="">Seleccionar</option>
-                                    {% for t in tipos %}
-                                        <option value="{{ t.ser_type_id }}">{{ t.ser_type_desc }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
+          <!-- Segunda fila -->
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label-custom">Clave Unidad SAT</label>
+                <input type="text" name="c_cveuni" class="form-control-custom" placeholder="Ej. E48">
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label-custom">IVA (%)</label>
+                <input type="number" step="0.01" name="iva" class="form-control-custom" value="16">
+              </div>
+            </div>
+          </div>
 
-                            <div class="mb-3">
-                                <label class="form-label">Proveedor</label>
-                                <select name="proveedor" class="form-control">
-                                    <option value="">Seleccionar</option>
-                                    {% for p in proveedores %}
-                                        <option value="{{ p.id_prov }}">{{ p.nom_prov }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Grupo</label>
-                                <select name="grupo" class="form-control">
-                                    <option value="SERVICIOS HOSPITALARIOS">SERVICIOS HOSPITALARIOS</option>
-                                    <option value="IMAGENOLOGIA">IMAGENOLOGIA</option>
-                                </select>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Código SAT</label>
-                                <input type="text" name="codigo_sat" class="form-control">
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Clave Unidad SAT</label>
-                                <input type="text" name="c_cveuni" class="form-control">
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">IVA (%)</label>
-                                <input type="number" step="0.01" name="iva" class="form-control" value="16">
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Costos adicionales -->
-                    <h6 class="text-primary mt-3">Costos adicionales (opcional)</h6>
-                    <div class="row">
-                        {% for i in range(2, 9) %}
-                        <div class="col-md-3 mb-2">
-                            <input type="number" step="0.01" name="serv_costo{{ i }}"
-                                   class="form-control" placeholder="Costo {{ i }}">
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        Cancelar
-                    </button>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save"></i> Guardar Servicio
-                    </button>
-                </div>
-            </form>
+          <!-- Costos adicionales -->
+          <div class="section-subtitle">
+            <i class="fas fa-dollar-sign"></i>
+            Costos adicionales (opcional)
+          </div>
+          <div class="row">
+            {% for i in range(2, 9) %}
+            <div class="col-md-3 mb-2">
+              <input type="number" step="0.01" name="serv_costo{{ i }}"
+                     class="form-control-custom" placeholder="Costo {{ i }}">
+            </div>
+            {% endfor %}
+          </div>
         </div>
+
+        <div class="modal-footer modal-footer-custom">
+          <button type="button" class="btn-cancel" data-bs-dismiss="modal">
+            <i class="fas fa-times me-2"></i>Cancelar
+          </button>
+          <button type="submit" class="btn-save">
+            <i class="fas fa-save me-2"></i>Guardar Servicio
+          </button>
+        </div>
+      </form>
     </div>
+  </div>
 </div>
 
 <!-- Scripts -->
@@ -211,64 +664,40 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-// Script de inicialización
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('=== SERVICIOS: Página cargada ===');
-
-    if (typeof bootstrap !== 'undefined') {
-        console.log('✓ Bootstrap 5 disponible');
-
-        // Verificar elementos
-        const modal = document.getElementById('modalServicio');
-        const btn = document.querySelector('[data-bs-target="#modalServicio"]');
-
-        if (modal) console.log('✓ Modal encontrado');
-        else console.error('✗ Modal NO encontrado');
-
-        if (btn) console.log('✓ Botón encontrado');
-        else console.error('✗ Botón NO encontrado');
-
-        // Agregar evento al botón
-        if (btn) {
-            btn.addEventListener('click', function(e) {
-                console.log('Botón clickeado');
-                try {
-                    const modalInstance = new bootstrap.Modal(modal);
-                    modalInstance.show();
-                } catch(error) {
-                    console.error('Error al mostrar modal:', error);
-                }
-            });
-        }
-    } else {
-        console.error('✗ Bootstrap NO disponible');
-    }
-});
-
-// Función para abrir modal manualmente
-function abrirModalManual() {
-    if (typeof bootstrap !== 'undefined') {
-        try {
-            const modal = new bootstrap.Modal(document.getElementById('modalServicio'));
-            modal.show();
-            console.log('Modal abierto manualmente');
-        } catch(e) {
-            console.error('Error:', e);
-            alert('Error al abrir modal. Revisa la consola (F12)');
-        }
-    } else {
-        alert('Bootstrap no está cargado');
-    }
-}
-
 // Script de búsqueda
-document.getElementById('search').addEventListener('keyup', function() {
-    let value = this.value.toLowerCase();
-    let rows = document.querySelectorAll('#tabla tbody tr');
-    rows.forEach(row => {
-        row.style.display = row.textContent.toLowerCase().includes(value) ? '' : 'none';
+document.addEventListener('DOMContentLoaded', function() {
+  const searchInput = document.getElementById('search');
+  if (searchInput) {
+    searchInput.addEventListener('keyup', function() {
+      let value = this.value.toLowerCase();
+      let rows = document.querySelectorAll('#tablaServicios tbody tr');
+
+      rows.forEach(row => {
+        // Solo procesar filas que no sean empty-state
+        if (!row.querySelector('.empty-state')) {
+          let text = row.textContent.toLowerCase();
+          row.style.display = text.includes(value) ? '' : 'none';
+        }
+      });
     });
+  }
 });
+
+// Función para abrir modal manualmente (prueba)
+function abrirModalManual() {
+  if (typeof bootstrap !== 'undefined') {
+    try {
+      const modal = new bootstrap.Modal(document.getElementById('modalServicio'));
+      modal.show();
+      console.log('Modal abierto manualmente');
+    } catch(e) {
+      console.error('Error:', e);
+      alert('Error al abrir modal. Revisa la consola (F12)');
+    }
+  } else {
+    alert('Bootstrap no está cargado');
+  }
+}
 </script>
 
 {% endblock %}

@@ -2,229 +2,813 @@
 
 {% block content %}
 
+<style>
+  * {
+    font-family: 'Inter', sans-serif;
+  }
+
+  /* Título principal */
+  .page-title {
+    color: white;
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+  }
+
+  .page-title i {
+    margin-right: 1rem;
+    font-size: 2.5rem;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 0.5rem;
+    border-radius: 15px;
+  }
+
+  /* Botón nuevo */
+  .btn-new {
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 0.8rem 1.5rem;
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(72, 187, 120, 0.3);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+    cursor: pointer;
+    border: none;
+  }
+
+  .btn-new:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(72, 187, 120, 0.4);
+    color: white;
+  }
+
+  /* Buscador */
+  .search-container {
+    margin-bottom: 1.5rem;
+  }
+
+  .search-input {
+    border: 2px solid #e2e8f0;
+    border-radius: 15px;
+    padding: 0.8rem 1.5rem;
+    transition: all 0.3s ease;
+    background: white;
+    width: 100%;
+  }
+
+  .search-input:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+    outline: none;
+  }
+
+  /* Tarjeta de la tabla */
+  .main-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: none;
+    border-radius: 25px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    margin-bottom: 2rem;
+  }
+
+  .card-body-custom {
+    padding: 1.5rem;
+  }
+
+  /* Tabla */
+  .table-responsive {
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  }
+
+  .table {
+    margin-bottom: 0;
+  }
+
+  .table thead th {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 1rem;
+    border: none;
+    white-space: nowrap;
+  }
+
+  .table tbody tr {
+    transition: all 0.3s ease;
+    background: white;
+  }
+
+  .table tbody tr:hover {
+    background: rgba(102, 126, 234, 0.1);
+  }
+
+  .table td {
+    padding: 1rem;
+    vertical-align: middle;
+    color: #2d3748;
+    font-size: 0.95rem;
+  }
+
+  /* Badge de rol */
+  .role-badge {
+    padding: 0.3rem 1rem;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.8rem;
+    display: inline-block;
+    text-align: center;
+    min-width: 100px;
+  }
+
+  .role-admin {
+    background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+    color: white;
+    box-shadow: 0 2px 8px rgba(229, 62, 62, 0.3);
+  }
+
+  .role-medico {
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+    color: white;
+    box-shadow: 0 2px 8px rgba(72, 187, 120, 0.3);
+  }
+
+  .role-enfermero {
+    background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+    color: white;
+    box-shadow: 0 2px 8px rgba(66, 153, 225, 0.3);
+  }
+
+  .role-administrativo {
+    background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);
+    color: white;
+    box-shadow: 0 2px 8px rgba(237, 137, 54, 0.3);
+  }
+
+  .role-default {
+    background: #e2e8f0;
+    color: #4a5568;
+  }
+
+  /* Botones de acción */
+  .action-buttons {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+  }
+
+  .btn-view {
+    background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    width: 35px;
+    height: 35px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 10px rgba(66, 153, 225, 0.3);
+    text-decoration: none;
+  }
+
+  .btn-edit {
+    background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    width: 35px;
+    height: 35px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 10px rgba(237, 137, 54, 0.3);
+    text-decoration: none;
+  }
+
+  .btn-view:hover, .btn-edit:hover {
+    transform: translateY(-2px);
+    color: white;
+  }
+
+  .btn-view:hover {
+    box-shadow: 0 8px 20px rgba(66, 153, 225, 0.4);
+  }
+
+  .btn-edit:hover {
+    box-shadow: 0 8px 20px rgba(237, 137, 54, 0.4);
+  }
+
+  /* Estado vacío */
+  .empty-state {
+    text-align: center;
+    padding: 3rem;
+  }
+
+  .empty-state i {
+    font-size: 3rem;
+    color: #cbd5e0;
+    margin-bottom: 1rem;
+  }
+
+  .empty-state p {
+    color: #718096;
+    margin: 0;
+  }
+
+  /* Mensajes flash */
+  .flash-messages {
+    margin-bottom: 1.5rem;
+  }
+
+  .alert {
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .alert-success {
+    background: #d1fae5;
+    color: #065f46;
+    border-left: 4px solid #38a169;
+  }
+
+  .alert-danger {
+    background: #fed7d7;
+    color: #991b1b;
+    border-left: 4px solid #e53e3e;
+  }
+
+  .alert i {
+    font-size: 1.2rem;
+  }
+
+  .alert .close {
+    color: inherit;
+    opacity: 0.7;
+  }
+
+  .alert .close:hover {
+    opacity: 1;
+  }
+
+  /* Modal */
+  .modal-content {
+    border-radius: 20px;
+    border: none;
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.3);
+    background: white;
+  }
+
+  .modal-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 20px 20px 0 0;
+    padding: 1.2rem 1.5rem;
+    color: white;
+    border: none;
+  }
+
+  .modal-header .modal-title {
+    font-weight: 600;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .modal-header .btn-close {
+    filter: brightness(0) invert(1);
+    opacity: 0.8;
+  }
+
+  .modal-header .btn-close:hover {
+    opacity: 1;
+  }
+
+  .modal-body {
+    padding: 1.5rem;
+    max-height: 70vh;
+    overflow-y: auto;
+  }
+
+  .modal-footer {
+    border-top: 2px solid #e2e8f0;
+    padding: 1.2rem 1.5rem;
+    background: #f7fafc;
+    border-radius: 0 0 20px 20px;
+  }
+
+  /* Formulario del modal */
+  .form-section-title {
+    color: #667eea;
+    font-weight: 700;
+    margin: 1rem 0 1rem;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 0.5rem;
+  }
+
+  .form-section-title:first-of-type {
+    margin-top: 0;
+  }
+
+  .form-section-title i {
+    font-size: 1.1rem;
+    background: rgba(102, 126, 234, 0.1);
+    padding: 0.4rem;
+    border-radius: 8px;
+  }
+
+  .form-label {
+    font-weight: 600;
+    color: #4a5568;
+    margin-bottom: 0.3rem;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  .form-label i {
+    color: #667eea;
+    font-size: 0.8rem;
+  }
+
+  .form-control, .form-select {
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 0.6rem 1rem;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+  }
+
+  .form-control:focus, .form-select:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+    outline: none;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 10px;
+    padding: 0.6rem 1.5rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    color: white;
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+  }
+
+  .btn-secondary {
+    background: white;
+    color: #718096;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 0.6rem 1.5rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+  }
+
+  .btn-secondary:hover {
+    background: #f7fafc;
+    color: #4a5568;
+    transform: translateY(-2px);
+  }
+
+  /* Badge para ID */
+  .id-badge {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 0.2rem 0.8rem;
+    border-radius: 30px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    display: inline-block;
+  }
+
+  /* Curp */
+  .curp-text {
+    font-family: monospace;
+    font-weight: 600;
+    color: #2d3748;
+    background: #f7fafc;
+    padding: 0.2rem 0.5rem;
+    border-radius: 6px;
+  }
+
+  /* Asegurar que el modal esté por encima */
+  .modal {
+    z-index: 1060;
+  }
+
+  .modal-backdrop {
+    z-index: 1050;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .page-title {
+      font-size: 1.5rem;
+    }
+
+    .d-flex {
+      flex-direction: column;
+      gap: 1rem;
+      align-items: flex-start !important;
+    }
+
+    .btn-new {
+      width: 100%;
+      justify-content: center;
+    }
+
+    .table td {
+      font-size: 0.8rem;
+      padding: 0.5rem;
+    }
+
+    .action-buttons {
+      flex-direction: column;
+    }
+
+    .btn-view, .btn-edit {
+      width: 30px;
+      height: 30px;
+    }
+
+    .role-badge {
+      min-width: 80px;
+      font-size: 0.7rem;
+      padding: 0.2rem 0.5rem;
+    }
+
+    .modal-dialog {
+      margin: 0.5rem;
+    }
+  }
+</style>
+
 <div class="container-fluid mt-4">
 
-    <h4 class="mb-4 text-center">LISTA DE PERSONAL</h4>
-
-    <!-- BOTÓN NUEVO -->
-    <div class="mb-3 text-end">
-        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalUsuario">
-            <i class="fas fa-plus"></i> Nuevo Usuario
-        </button>
+  <!-- HEADER CON TÍTULO Y BOTÓN -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="page-title text-primary">
+      <i class="fas fa-users text-primary"></i>
+      Lista de Personal
     </div>
 
-    <!-- ===== TABLA ===== -->
-    <div class="card shadow">
-        <div class="card-body table-responsive">
-            <table class="table table-bordered table-striped align-middle">
-                <thead class="table-dark">
-                    <tr>
-                        <th>ID</th>
-                        <th>Usuario</th>
-                        <th>Nombre</th>
-                        <th>CURP</th>
-                        <th>Rol</th>
-                        <th class="text-center">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for p in personal %}
-                    <tr>
-                        <td>{{ p.id }}</td>
-                        <td>{{ p.username }}</td>
-                        <td>{{ p.nombre }} {{ p.papell }} {{ p.sapell }}</td>
-                        <td>{{ p.curp_u }}</td>
-                        <td>{{ p.role|capitalize }}</td>
-                        <td class="text-center">
-                            <a href="{{ url_for('mostrar_usuario', user_id=p.id) }}"
-                               class="btn btn-sm btn-info">
-                                <i class="fas fa-eye"></i>
-                            </a>
+    <a href="{{ url_for('insertar_usuario_form') }}" class="btn-new">
+      <i class="fas fa-plus"></i> Nuevo Usuario
+    </a>
+  </div>
 
-                            <a href="{{ url_for('editar_usuario', user_id=p.id) }}"
-                               class="btn btn-sm btn-warning">
-                                <i class="fas fa-edit"></i>
-                            </a>
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="6" class="text-center">
-                            No hay personal registrado
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+  <!-- MENSAJES FLASH -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flash-messages">
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            <span>
+              <i class="fas {% if category == 'success' %}fa-check-circle text-success{% else %}fa-exclamation-circle text-danger{% endif %} mr-2"></i>
+              {{ message }}
+            </span>
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <!-- BUSCADOR -->
+  <div class="search-container">
+    <input type="text"
+           class="search-input"
+           id="search"
+           placeholder="🔍 Buscar por nombre, usuario, CURP o rol...">
+  </div>
+
+  <!-- TARJETA DE LA TABLA -->
+  <div class="main-card">
+    <div class="card-body-custom">
+      <div class="table-responsive">
+        <table class="table table-hover" id="tablaPersonal">
+          <thead>
+            <tr>
+              <th class="text-center">ID</th>
+              <th>Usuario</th>
+              <th>Nombre Completo</th>
+              <th>CURP</th>
+              <th class="text-center">Rol</th>
+              <th class="text-center">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in personal %}
+            <tr>
+              <td class="text-center">
+                <span class="id-badge">{{ p.id }}</span>
+              </td>
+              <td>
+                <strong>{{ p.username }}</strong>
+              </td>
+              <td>{{ p.nombre }} {{ p.papell }} {{ p.sapell }}</td>
+              <td>
+                <span class="curp-text">{{ p.curp_u }}</span>
+              </td>
+              <td class="text-center">
+                {% set role_class = 'role-admin' if p.role == 'admin' else
+                                   'role-medico' if p.role == 'medico' else
+                                   'role-enfermero' if p.role == 'enfermero' else
+                                   'role-administrativo' if p.role == 'administrativo' else
+                                   'role-default' %}
+                <span class="role-badge {{ role_class }}">{{ p.role|capitalize }}</span>
+              </td>
+              <td class="text-center">
+                <div class="action-buttons">
+                  <a href="{{ url_for('mostrar_usuario', user_id=p.id) }}"
+                     class="btn-view" title="Ver detalles">
+                    <i class="fas fa-eye"></i>
+                  </a>
+                  <a href="{{ url_for('editar_usuario', user_id=p.id) }}"
+                     class="btn-edit" title="Editar">
+                    <i class="fas fa-edit"></i>
+                  </a>
+                </div>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="6" class="empty-state">
+                <i class="fas fa-users"></i>
+                <p>No hay personal registrado</p>
+                <button class="btn-new mt-3" type="button" data-bs-toggle="modal" data-bs-target="#modalUsuario">
+                  <i class="fas fa-plus me-2"></i>Registrar primer usuario
+                </button>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
     </div>
+  </div>
 
 </div>
 
-<!-- ===== MODAL ===== -->
-<div class="modal fade" id="modalUsuario" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
+<!-- MODAL NUEVO USUARIO -->
+<div class="modal fade" id="modalUsuario" tabindex="-1" aria-labelledby="modalUsuarioLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
 
-            <form action="{{ url_for('insertar_usuario') }}" method="POST">
+      <form action="{{ url_for('insertar_usuario') }}" method="POST">
 
-                <div class="modal-header">
-                    <h5 class="modal-title">
-                        <i class="fas fa-user-plus"></i> Nuevo Usuario
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-
-                <div class="modal-body">
-                    <div class="row">
-
-                        <!-- DATOS PERSONALES -->
-                        <div class="col-md-6">
-                            <h6 class="text-primary">Datos Personales</h6>
-                            <hr>
-
-                            <div class="mb-3">
-                                <label class="form-label">CURP</label>
-                                <input type="text" name="curp_u" class="form-control" required>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Nombre(s)</label>
-                                <input type="text" name="nombre" class="form-control" required>
-                            </div>
-
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">Primer Apellido</label>
-                                    <input type="text" name="papell" class="form-control" required>
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">Segundo Apellido</label>
-                                    <input type="text" name="sapell" class="form-control" required>
-                                </div>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Fecha de nacimiento</label>
-                                <input type="date" name="fecnac" class="form-control" required>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Matrícula</label>
-                                <input type="text" name="matricula" class="form-control">
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Cédula Profesional</label>
-                                <input type="text" name="cedula" class="form-control">
-                            </div>
-                        </div>
-
-                        <!-- DATOS DEL SISTEMA -->
-                        <div class="col-md-6">
-                            <h6 class="text-primary">Datos del Sistema</h6>
-                            <hr>
-
-                            <div class="mb-3">
-                                <label class="form-label">Cargo</label>
-                                <input type="text" name="cargo" class="form-control" required>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Teléfono</label>
-                                <input type="text" name="telefono" class="form-control" required>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Correo</label>
-                                <input type="email" name="email" class="form-control" required>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Pregunta de seguridad</label>
-                                <input type="text" name="pregunta_seguridad" class="form-control" required>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Usuario</label>
-                                <input type="text" name="username" class="form-control" required>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Contraseña</label>
-                                <input type="password" name="password" class="form-control" required>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Rol</label>
-                                <select name="role" class="form-select" required>
-                                    <option value="">Seleccionar</option>
-                                    {% for rol in roles %}
-                                        <option value="{{ rol }}">{{ rol|capitalize }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-
-                <div class="modal-footer">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save"></i> Guardar
-                    </button>
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        Cancelar
-                    </button>
-                </div>
-
-            </form>
-
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalUsuarioLabel">
+            <i class="fas fa-user-plus me-2"></i>
+            Nuevo Usuario
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
         </div>
+
+        <div class="modal-body">
+          <!-- DATOS PERSONALES -->
+          <div class="form-section-title">
+            <i class="fas fa-id-card"></i>
+            Datos Personales
+          </div>
+
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label">
+                  <i class="fas fa-id-card"></i> CURP
+                </label>
+                <input type="text" name="curp_u" class="form-control" required placeholder="AAAA000101HDFXXX">
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">
+                  <i class="fas fa-user"></i> Nombre(s)
+                </label>
+                <input type="text" name="nombre" class="form-control" required placeholder="Juan Carlos">
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">
+                  <i class="fas fa-user-tag"></i> Primer Apellido
+                </label>
+                <input type="text" name="papell" class="form-control" required placeholder="Pérez">
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">
+                  <i class="fas fa-user-tag"></i> Segundo Apellido
+                </label>
+                <input type="text" name="sapell" class="form-control" required placeholder="García">
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label">
+                  <i class="fas fa-calendar-alt"></i> Fecha de nacimiento
+                </label>
+                <input type="date" name="fecnac" class="form-control" required>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">
+                  <i class="fas fa-id-badge"></i> Matrícula
+                </label>
+                <input type="text" name="matricula" class="form-control" placeholder="MAT-2024-001">
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">
+                  <i class="fas fa-graduation-cap"></i> Cédula Profesional
+                </label>
+                <input type="text" name="cedula" class="form-control" placeholder="12345678">
+              </div>
+            </div>
+          </div>
+
+          <!-- DATOS DEL SISTEMA -->
+          <div class="form-section-title">
+            <i class="fas fa-cogs"></i>
+            Datos del Sistema
+          </div>
+
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label">
+                  <i class="fas fa-briefcase"></i> Cargo
+                </label>
+                <input type="text" name="cargo" class="form-control" required placeholder="Médico General">
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">
+                  <i class="fas fa-phone"></i> Teléfono
+                </label>
+                <input type="text" name="telefono" class="form-control" required placeholder="55 1234 5678">
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">
+                  <i class="fas fa-envelope"></i> Correo
+                </label>
+                <input type="email" name="email" class="form-control" required placeholder="correo@ejemplo.com">
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label">
+                  <i class="fas fa-question-circle"></i> Pregunta de seguridad
+                </label>
+                <input type="text" name="pregunta_seguridad" class="form-control" required placeholder="¿Nombre de tu mascota?">
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">
+                  <i class="fas fa-user-circle"></i> Usuario
+                </label>
+                <input type="text" name="username" class="form-control" required placeholder="jperez">
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">
+                  <i class="fas fa-lock"></i> Contraseña
+                </label>
+                <input type="password" name="password" class="form-control" required placeholder="••••••••">
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">
+                  <i class="fas fa-tag"></i> Rol
+                </label>
+                <select name="role" class="form-select" required>
+                  <option value="">Seleccionar un rol</option>
+                  {% for rol in roles %}
+                    <option value="{{ rol }}">{{ rol|capitalize }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            <i class="fas fa-times me-2"></i>Cancelar
+          </button>
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save me-2"></i>Guardar
+          </button>
+        </div>
+
+      </form>
+
     </div>
+  </div>
 </div>
 
-<!-- Primero carga Bootstrap -->
+<!-- Scripts -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
-<!-- Luego tu script de debug -->
 <script>
+// Script de búsqueda
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Página cargada');
+  console.log('Página cargada');
 
-    // Verificar que Bootstrap esté disponible
-    if (typeof bootstrap !== 'undefined') {
-        console.log('✓ Bootstrap cargado correctamente');
+  // Verificar que Bootstrap esté disponible
+  if (typeof bootstrap !== 'undefined') {
+    console.log('✓ Bootstrap cargado correctamente');
 
-        // Verificar el botón
-        const btnNuevo = document.querySelector('[data-bs-toggle="modal"][data-bs-target="#modalUsuario"]');
-        if (btnNuevo) {
-            console.log('✓ Botón Nuevo Usuario encontrado');
-        } else {
-            console.error('✗ Botón Nuevo Usuario NO encontrado');
-        }
-
-        // Verificar el modal
-        const modal = document.getElementById('modalUsuario');
-        if (modal) {
-            console.log('✓ Modal encontrado');
-        } else {
-            console.error('✗ Modal NO encontrado');
-        }
+    // Verificar el botón
+    const btnNuevo = document.querySelector('[data-bs-toggle="modal"][data-bs-target="#modalUsuario"]');
+    if (btnNuevo) {
+      console.log('✓ Botón Nuevo Usuario encontrado');
     } else {
-        console.error('✗ Bootstrap NO está cargado - revisa la URL');
+      console.error('✗ Botón Nuevo Usuario NO encontrado');
     }
+
+    // Verificar el modal
+    const modal = document.getElementById('modalUsuario');
+    if (modal) {
+      console.log('✓ Modal encontrado');
+    } else {
+      console.error('✗ Modal NO encontrado');
+    }
+  }
+
+  // Búsqueda en tiempo real
+  const searchInput = document.getElementById('search');
+  if (searchInput) {
+    searchInput.addEventListener('keyup', function() {
+      let value = this.value.toLowerCase();
+      let rows = document.querySelectorAll('#tablaPersonal tbody tr');
+
+      rows.forEach(row => {
+        // Solo procesar filas que no sean empty-state
+        if (!row.querySelector('.empty-state')) {
+          let text = row.textContent.toLowerCase();
+          row.style.display = text.includes(value) ? '' : 'none';
+        }
+      });
+    });
+  }
 });
 
 // Función para abrir modal manualmente (para pruebas)
 function abrirModal() {
-    if (typeof bootstrap !== 'undefined') {
-        const modal = new bootstrap.Modal(document.getElementById('modalUsuario'));
-        modal.show();
-        console.log('Modal abierto manualmente');
-    } else {
-        console.error('Bootstrap no está disponible');
+  if (typeof bootstrap !== 'undefined') {
+    try {
+      const modal = new bootstrap.Modal(document.getElementById('modalUsuario'));
+      modal.show();
+      console.log('Modal abierto manualmente');
+    } catch (error) {
+      console.error('Error al abrir modal:', error);
     }
+  } else {
+    console.error('Bootstrap no está disponible');
+  }
 }
 </script>
+
 {% endblock %}

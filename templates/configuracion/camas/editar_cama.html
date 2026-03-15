@@ -1,83 +1,359 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<title>Editar Cama</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+{% extends "configuracion/header_configuracion.html" %}
 
-<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
-<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.0/css/all.css">
+{% block content %}
 
 <style>
-body {background:#f8f9fa; font-family:'Segoe UI',Tahoma;}
-.form-container{background:white;border-radius:15px;box-shadow:0 4px 20px rgba(43,45,127,.1);margin:40px auto;max-width:800px;overflow:hidden;animation:fadeIn .5s;}
-.form-header{background:linear-gradient(135deg,#2b2d7f,#3b3f8f);color:white;padding:25px;text-align:center;}
-.form-header h3{margin:0;font-weight:600;display:flex;align-items:center;justify-content:center;gap:10px;}
-.form-body{padding:40px;background:white;}
-.form-label-modern{color:#2b2d7f;font-weight:600;margin-bottom:10px;display:flex;align-items:center;font-size:16px;}
-.form-label-modern i{margin-right:10px;}
-.form-control-modern{border:2px solid #e9ecef;border-radius:10px;padding:15px 20px;font-size:16px;width:100%;height:50px;margin-bottom:15px;}
-.select-modern{border:2px solid #e9ecef;border-radius:10px;padding:15px 20px;font-size:16px;width:100%;height:50px;cursor:pointer;font-weight:600;margin-bottom:15px;}
-.btn-actions{text-align:center;padding:30px 0;margin-top:20px;}
-.btn-save-modern{background:linear-gradient(135deg,#28a745,#20c997);color:white;padding:15px 30px;border-radius:10px;font-weight:600;margin-right:15px;}
-.btn-cancel-modern{background:linear-gradient(135deg,#dc3545,#c82333);color:white;padding:15px 30px;border-radius:10px;font-weight:600;}
-@keyframes fadeIn{from{opacity:0;transform:translateY(20px);} to{opacity:1;transform:none;}}
+  * {
+    font-family: 'Inter', sans-serif;
+  }
+
+  body {
+    background: transparent;
+  }
+
+  /* Tarjeta principal */
+  .main-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: none;
+    border-radius: 25px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    max-width: 700px;
+    margin: 20px auto;
+    animation: fadeIn 0.5s ease;
+  }
+
+  .card-header-custom {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 1.5rem 2rem;
+    color: white;
+    text-align: center;
+  }
+
+  .card-header-custom h3 {
+    margin: 0;
+    font-weight: 600;
+    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+  }
+
+  .card-header-custom i {
+    font-size: 1.8rem;
+  }
+
+  .card-body-custom {
+    padding: 2rem;
+  }
+
+  /* Campos del formulario */
+  .form-group {
+    margin-bottom: 1.5rem;
+  }
+
+  .form-label-custom {
+    color: #667eea;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.95rem;
+  }
+
+  .form-label-custom i {
+    font-size: 1rem;
+    background: rgba(102, 126, 234, 0.1);
+    padding: 0.5rem;
+    border-radius: 8px;
+    color: #667eea;
+  }
+
+  .form-control-custom, .form-select-custom {
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 0.8rem 1rem;
+    font-size: 0.95rem;
+    width: 100%;
+    transition: all 0.3s ease;
+    background: white;
+  }
+
+  .form-control-custom:focus, .form-select-custom:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+    outline: none;
+  }
+
+  .form-control-custom[type="number"] {
+    -moz-appearance: textfield;
+  }
+
+  .form-control-custom[type="number"]::-webkit-outer-spin-button,
+  .form-control-custom[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  /* Select personalizado */
+  .form-select-custom {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23667eea' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    background-size: 16px;
+  }
+
+  /* Botones de acción */
+  .btn-actions {
+    text-align: center;
+    background: #f7fafc;
+    padding: 1.5rem;
+    border-radius: 16px;
+    margin-top: 1.5rem;
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+  }
+
+  .btn-save {
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 0.8rem 2rem;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(72, 187, 120, 0.3);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    text-decoration: none;
+  }
+
+  .btn-cancel {
+    background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 0.8rem 2rem;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(229, 62, 62, 0.3);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    text-decoration: none;
+  }
+
+  .btn-save:hover, .btn-cancel:hover {
+    transform: translateY(-2px);
+    color: white;
+  }
+
+  .btn-save:hover {
+    box-shadow: 0 8px 25px rgba(72, 187, 120, 0.4);
+  }
+
+  .btn-cancel:hover {
+    box-shadow: 0 8px 25px rgba(229, 62, 62, 0.4);
+  }
+
+  /* Mensajes flash */
+  .flash-messages {
+    margin-bottom: 1.5rem;
+  }
+
+  .alert {
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .alert-success {
+    background: #d1fae5;
+    color: #065f46;
+    border-left: 4px solid #38a169;
+  }
+
+  .alert-danger {
+    background: #fed7d7;
+    color: #991b1b;
+    border-left: 4px solid #e53e3e;
+  }
+
+  .alert i {
+    font-size: 1.2rem;
+  }
+
+  /* Animaciones */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .card-body-custom {
+      padding: 1rem;
+    }
+    
+    .btn-actions {
+      flex-direction: column;
+    }
+    
+    .btn-save, .btn-cancel {
+      width: 100%;
+      justify-content: center;
+    }
+  }
 </style>
-</head>
 
-<body>
-<div class="form-container">
-  <div class="form-header">
-    <h3><i class="fas fa-edit"></i> EDITAR CAMA</h3>
+<section class="content">
+  <div class="container-fluid">
+
+    <!-- Tarjeta principal -->
+    <div class="main-card">
+      <div class="card-header-custom">
+        <h3>
+          <i class="fas fa-edit"></i>
+          EDITAR CAMA
+        </h3>
+      </div>
+
+      <div class="card-body-custom">
+
+        <!-- Mensajes flash -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="flash-messages">
+              {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">
+                  <i class="fas {% if category == 'success' %}fa-check-circle{% else %}fa-exclamation-circle{% endif %}"></i>
+                  {{ message }}
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        <form method="POST">
+          <!-- Número de Cama -->
+          <div class="form-group">
+            <label class="form-label-custom">
+              <i class="fas fa-hashtag"></i>
+              Número de Cama
+            </label>
+            <input type="text" 
+                   name="numero" 
+                   class="form-control-custom" 
+                   value="{{ cama.numero }}" 
+                   placeholder="Ej. H-101"
+                   required>
+          </div>
+
+          <!-- Área -->
+          <div class="form-group">
+            <label class="form-label-custom">
+              <i class="fas fa-building"></i>
+              Área
+            </label>
+            <input type="text" 
+                   name="area" 
+                   class="form-control-custom" 
+                   value="{{ cama.area }}" 
+                   placeholder="Hospitalizado / Urgencias"
+                   required>
+          </div>
+
+          <!-- Tipo de Habitación -->
+          <div class="form-group">
+            <label class="form-label-custom">
+              <i class="fas fa-door-open"></i>
+              Tipo de Habitación
+            </label>
+            <input type="text" 
+                   name="tipo_habitacion" 
+                   class="form-control-custom" 
+                   value="{{ cama.tipo_habitacion }}" 
+                   placeholder="Ej. Individual, Compartida"
+                   required>
+          </div>
+
+          <!-- Piso -->
+          <div class="form-group">
+            <label class="form-label-custom">
+              <i class="fas fa-layer-group"></i>
+              Piso
+            </label>
+            <input type="number" 
+                   name="piso" 
+                   class="form-control-custom" 
+                   value="{{ cama.piso }}" 
+                   placeholder="Ej. 1, 2, 3"
+                   required>
+          </div>
+
+          <!-- Sección -->
+          <div class="form-group">
+            <label class="form-label-custom">
+              <i class="fas fa-th-large"></i>
+              Sección
+            </label>
+            <input name="seccion" 
+                   class="form-control-custom" 
+                   value="{{ cama.seccion }}" 
+                   placeholder="Ej. A, B, C"
+                   required>
+          </div>
+
+          <!-- Ocupada -->
+          <div class="form-group">
+            <label class="form-label-custom">
+              <i class="fas fa-bed"></i>
+              Ocupada
+            </label>
+            <select name="ocupada" class="form-select-custom">
+              <option value="0" {% if not cama.ocupada %}selected{% endif %}>No</option>
+              <option value="1" {% if cama.ocupada %}selected{% endif %}>Sí</option>
+            </select>
+          </div>
+
+          <!-- Botones de acción -->
+          <div class="btn-actions">
+            <button type="submit" class="btn-save">
+              <i class="fas fa-save"></i>
+              Guardar
+            </button>
+            <a href="{{ url_for('menu_camas') }}" class="btn-cancel">
+              <i class="fas fa-times"></i>
+              Cancelar
+            </a>
+          </div>
+        </form>
+
+      </div>
+    </div>
+
   </div>
-  <div class="form-body">
+</section>
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% for category, message in messages %}
-        <div class="alert alert-{{ category }}">{{ message }}</div>
-      {% endfor %}
-    {% endwith %}
-
-    <form method="POST">
-      <div class="form-group">
-        <label class="form-label-modern"><i class="fas fa-hashtag"></i> Número de Cama</label>
-        <input type="text" name="numero" class="form-control-modern" value="{{ cama.numero }}" required>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label-modern"><i class="fas fa-hospital"></i> Área</label>
-        <input type="text" name="area" class="form-control-modern" value="{{ cama.area }}" required>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label-modern"><i class="fas fa-door-open"></i> Tipo de Habitación</label>
-        <input type="text" name="tipo_habitacion" class="form-control-modern" value="{{ cama.tipo_habitacion }}" required>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label-modern"><i class="fas fa-layer-group"></i> Piso</label>
-        <input type="number" name="piso" class="form-control-modern" value="{{ cama.piso }}" required>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label-modern"><i class="fas fa-th-large"></i> Sección</label>
-        <input name="seccion" class="form-control-modern" value="{{ cama.seccion }}" required>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label-modern"><i class="fas fa-bed"></i> Ocupada</label>
-        <select name="ocupada" class="select-modern">
-          <option value="0" {% if not cama.ocupada %}selected{% endif %}>No</option>
-          <option value="1" {% if cama.ocupada %}selected{% endif %}>Sí</option>
-        </select>
-      </div>
-
-      <div class="btn-actions">
-        <button type="submit" class="btn-save-modern"><i class="fas fa-save"></i> Guardar</button>
-        <a href="{{ url_for('menu_camas') }}" class="btn-cancel-modern"><i class="fas fa-times"></i> Cancelar</a>
-      </div>
-    </form>
-  </div>
-</div>
-</body>
-</html>
+{% endblock %}
