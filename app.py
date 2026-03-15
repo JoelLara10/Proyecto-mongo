@@ -1212,7 +1212,7 @@ def medico():
     }
 
     # =============================
-    # CONSULTA EXTERNA
+    # CONSULTA EXTERNA (sin cambios)
     # =============================
     beds_consulta = list(db['atencion'].aggregate([
         {"$match": {"area": "Ambulatorio", "status": "ABIERTA"}},
@@ -1237,14 +1237,19 @@ def medico():
     ]))
 
     # =============================
-    # URGENCIAS
+    # URGENCIAS - CORREGIDO
     # =============================
     beds_preparacion = list(db['camas'].aggregate([
         {"$match": {"area": "Urgencias"}},
         {"$lookup": {
             "from": "atencion",
-            "localField": "id_cama",
-            "foreignField": "id_cama",
+            "let": {"id_cama": "$id_cama"},
+            "pipeline": [
+                {"$match": {
+                    "$expr": {"$eq": ["$id_cama", "$$id_cama"]},
+                    "status": "ABIERTA"  # <-- SOLO ATENCIONES ABIERTAS
+                }}
+            ],
             "as": "atencion"
         }},
         {"$unwind": {"path": "$atencion", "preserveNullAndEmptyArrays": True}},
@@ -1260,27 +1265,46 @@ def medico():
             "id_atencion": {"$ifNull": ["$atencion.id_atencion", None]},
             "num_cama": "$numero",
             "estatus": {
-                "$cond": [{"$ifNull": ["$atencion", False]}, "OCUPADA", "LIBRE"]
+                "$cond": [
+                    {"$and": [
+                        {"$ifNull": ["$atencion", False]},
+                        {"$eq": ["$atencion.status", "ABIERTA"]}
+                    ]},
+                    "OCUPADA",
+                    "LIBRE"
+                ]
             },
             "nom_pac": "$paciente.nom_pac",
             "papell": "$paciente.papell",
             "sapell": "$paciente.sapell",
             "Id_exp": "$paciente.Id_exp",
             "tiene_atencion": {
-                "$cond": [{"$ifNull": ["$atencion.id_atencion", False]}, True, False]
+                "$cond": [
+                    {"$and": [
+                        {"$ifNull": ["$atencion.id_atencion", False]},
+                        {"$eq": ["$atencion.status", "ABIERTA"]}
+                    ]},
+                    True,
+                    False
+                ]
             }
         }}
     ]))
 
     # =============================
-    # HOSPITALIZADO
+    # HOSPITALIZADO - CORREGIDO
     # =============================
     beds_recuperacion = list(db['camas'].aggregate([
         {"$match": {"area": "Hospitalizado"}},
         {"$lookup": {
             "from": "atencion",
-            "localField": "id_cama",
-            "foreignField": "id_cama",
+            "let": {"id_cama": "$id_cama"},
+            "pipeline": [
+                {"$match": {
+                    "$expr": {"$eq": ["$id_cama", "$$id_cama"]},
+                    "status": "ABIERTA"  # <-- SOLO ATENCIONES ABIERTAS
+                }}
+            ],
             "as": "atencion"
         }},
         {"$unwind": {"path": "$atencion", "preserveNullAndEmptyArrays": True}},
@@ -1296,14 +1320,28 @@ def medico():
             "id_atencion": {"$ifNull": ["$atencion.id_atencion", None]},
             "num_cama": "$numero",
             "estatus": {
-                "$cond": [{"$ifNull": ["$atencion", False]}, "OCUPADA", "LIBRE"]
+                "$cond": [
+                    {"$and": [
+                        {"$ifNull": ["$atencion", False]},
+                        {"$eq": ["$atencion.status", "ABIERTA"]}
+                    ]},
+                    "OCUPADA",
+                    "LIBRE"
+                ]
             },
             "nom_pac": "$paciente.nom_pac",
             "papell": "$paciente.papell",
             "sapell": "$paciente.sapell",
             "Id_exp": "$paciente.Id_exp",
             "tiene_atencion": {
-                "$cond": [{"$ifNull": ["$atencion.id_atencion", False]}, True, False]
+                "$cond": [
+                    {"$and": [
+                        {"$ifNull": ["$atencion.id_atencion", False]},
+                        {"$eq": ["$atencion.status", "ABIERTA"]}
+                    ]},
+                    True,
+                    False
+                ]
             }
         }}
     ]))
@@ -1485,22 +1523,30 @@ def examenes_gabinete(id_atencion):
         paciente=paciente,
         examenes=examenes
     )
+
+
 @app.route('/medico/examenes-gabinete/guardar', methods=['POST'])
 def guardar_examenes_gabinete():
     if 'user_id' not in session:
         flash('Sesión no válida.', 'error')
         return redirect(url_for('dashboard'))
+
     id_atencion = int(request.form.get('id_atencion'))
+    Id_exp = int(request.form.get('Id_exp'))
     observaciones = request.form.get('otros')
     examenes_ids = request.form.getlist('examenes[]')
     examenes_ids = [int(e) for e in examenes_ids]
+
     if not examenes_ids:
         flash('Debe seleccionar al menos un examen.', 'warning')
         return redirect(url_for('examenes_gabinete', id_atencion=id_atencion))
+
     db = get_db_connection()
+
     # 1️⃣ Insertar encabezado (usando colección unificada 'examenes')
     examenes_coll = db['examenes']
     id_examen = get_next_sequence('examenes_id_examen')
+
     examenes_coll.insert_one({
         "id_examen": id_examen,
         "id_atencion": id_atencion,
@@ -1508,24 +1554,60 @@ def guardar_examenes_gabinete():
         "observaciones": observaciones,
         "fecha": datetime.now()
     })
-    # 2️⃣ Insertar detalle (usando colección unificada 'examenes_det', con id_catalogo)
+
+    # 2️⃣ Insertar detalle (usando colección unificada 'examenes_det') y cargos a cuenta del paciente
     examenes_det_coll = db['examenes_det']
+    cuenta_coll = db['cuenta_paciente']
     catalogo_coll = db['catalogo_examenes']
+
+    subtotal_total = 0
+
     for id_catalogo in examenes_ids:
-        examen = catalogo_coll.find_one({"id_catalogo": id_catalogo}, {"nombre": 1})
-        examenes_det_coll.insert_one({
-            "id_examen": id_examen,
-            "id_catalogo": id_catalogo,
-            "nombre_examen": examen.get('nombre', ''),  # Denormalizar nombre para simplicidad
-            "estado": "PENDIENTE"
-        })
-    flash('Exámenes de gabinete guardados correctamente.', 'success')
-    return redirect(
-        url_for(
-            'examenes_gabinete',
-            id_atencion=id_atencion
-        )
+        # Obtener información completa del examen del catálogo
+        examen = catalogo_coll.find_one({"id_catalogo": id_catalogo})
+
+        if examen:
+            nombre = examen.get('nombre', '')
+            precio = examen.get('precio', 0)
+            cantidad = 1  # Por defecto 1, podrías hacerlo configurable si es necesario
+
+            subtotal = precio * cantidad
+            subtotal_total += subtotal
+
+            # Insertar detalle del examen
+            examenes_det_coll.insert_one({
+                "id_examen": id_examen,
+                "id_catalogo": id_catalogo,
+                "nombre_examen": nombre,
+                "precio": precio,
+                "cantidad": cantidad,
+                "subtotal": subtotal,
+                "estado": "PENDIENTE",
+                "fecha": datetime.now()
+            })
+
+            # Insertar en cuenta del paciente
+            cuenta_coll.insert_one({
+                "id_atencion": id_atencion,
+                "Id_exp": Id_exp,
+                "fecha": datetime.now(),
+                "descripcion": f"Examen de gabinete: {nombre}",
+                "cantidad": cantidad,
+                "precio": precio,
+                "subtotal": subtotal,
+                "id_examen": id_examen,
+                "tipo": "GABINETE",
+                "estado": "PENDIENTE"
+            })
+
+    # Actualizar el encabezado con el subtotal total (opcional)
+    examenes_coll.update_one(
+        {"id_examen": id_examen},
+        {"$set": {"subtotal_total": subtotal_total}}
     )
+
+    flash('Exámenes de gabinete guardados correctamente y cargados a la cuenta del paciente.', 'success')
+    return redirect(url_for('examenes_gabinete', id_atencion=id_atencion))
 
 @app.route('/medico/examenes-laboratorio/<int:id_atencion>', methods=['GET'])
 def examenes_laboratorio(id_atencion):
@@ -1556,23 +1638,29 @@ def examenes_laboratorio(id_atencion):
         examenes=examenes
     )
 
+
 @app.route('/medico/examenes-laboratorio/guardar', methods=['POST'])
 def guardar_examenes_laboratorio():
     if 'user_id' not in session:
         flash('Sesión no válida.', 'error')
         return redirect(url_for('dashboard'))
+
     id_atencion = int(request.form.get('id_atencion'))
     Id_exp = int(request.form.get('Id_exp'))
     observaciones = request.form.get('otros')
     examenes = request.form.getlist('examenes[]')
     examenes = [int(e) for e in examenes]
+
     if not examenes:
         flash('Debe seleccionar al menos un examen.', 'warning')
         return redirect(url_for('examenes_laboratorio', id_atencion=id_atencion))
+
     db = get_db_connection()
+
     # Encabezado (usando colección unificada 'examenes')
     examenes_coll = db['examenes']
     id_examen = get_next_sequence('examenes_id_examen')
+
     examenes_coll.insert_one({
         "id_examen": id_examen,
         "id_atencion": id_atencion,
@@ -1580,24 +1668,60 @@ def guardar_examenes_laboratorio():
         "observaciones": observaciones,
         "fecha": datetime.now()
     })
-    # Detalle (usando colección unificada 'examenes_det', con id_catalogo)
+
+    # Detalle (usando colección unificada 'examenes_det') y cargos a cuenta del paciente
     examenes_det_coll = db['examenes_det']
+    cuenta_coll = db['cuenta_paciente']
     catalogo_coll = db['catalogo_examenes']
+
+    subtotal_total = 0
+
     for id_catalogo in examenes:
-        examen = catalogo_coll.find_one({"id_catalogo": id_catalogo}, {"nombre": 1})
-        examenes_det_coll.insert_one({
-            "id_examen": id_examen,
-            "id_catalogo": id_catalogo,
-            "nombre_examen": examen.get('nombre', ''),  # Denormalizar nombre para simplicidad
-            "estado": "PENDIENTE"
-        })
-    flash('Exámenes de laboratorio enviados correctamente.', 'success')
-    return redirect(
-        url_for(
-            'examenes_laboratorio',
-            id_atencion=id_atencion
-        )
+        # Obtener información completa del examen del catálogo
+        examen = catalogo_coll.find_one({"id_catalogo": id_catalogo})
+
+        if examen:
+            nombre = examen.get('nombre', '')
+            precio = examen.get('precio', 0)
+            cantidad = 1  # Por defecto 1
+
+            subtotal = precio * cantidad
+            subtotal_total += subtotal
+
+            # Insertar detalle del examen con información de precio
+            examenes_det_coll.insert_one({
+                "id_examen": id_examen,
+                "id_catalogo": id_catalogo,
+                "nombre_examen": nombre,
+                "precio": precio,
+                "cantidad": cantidad,
+                "subtotal": subtotal,
+                "estado": "PENDIENTE",
+                "fecha": datetime.now()
+            })
+
+            # Insertar en cuenta del paciente
+            cuenta_coll.insert_one({
+                "id_atencion": id_atencion,
+                "Id_exp": Id_exp,
+                "fecha": datetime.now(),
+                "descripcion": f"Examen de laboratorio: {nombre}",
+                "cantidad": cantidad,
+                "precio": precio,
+                "subtotal": subtotal,
+                "id_examen": id_examen,
+                "tipo": "LABORATORIO",
+                "estado": "PENDIENTE"
+            })
+
+    # Actualizar el encabezado con el subtotal total
+    examenes_coll.update_one(
+        {"id_examen": id_examen},
+        {"$set": {"subtotal_total": subtotal_total}}
     )
+
+    flash('Exámenes de laboratorio enviados correctamente y cargados a la cuenta del paciente.', 'success')
+    return redirect(url_for('examenes_laboratorio', id_atencion=id_atencion))
 
 
 @app.route('/medico/resultados-estudios/<int:id_atencion>')
