@@ -553,6 +553,7 @@
                                    'role-medico' if p.role == 'medico' else
                                    'role-enfermero' if p.role == 'enfermero' else
                                    'role-administrativo' if p.role == 'administrativo' else
+                                   'role-estudios' if p.role == 'estudios' else
                                    'role-default' %}
                 <span class="role-badge {{ role_class }}">{{ p.role|capitalize }}</span>
               </td>

@@ -299,6 +299,7 @@
                 {% elif usuario.role == 'medico' %}role-medico
                 {% elif usuario.role == 'enfermero' %}role-enfermero
                 {% elif usuario.role == 'administrativo' %}role-administrativo
+                {% elif usuario.role == 'estudios' %}role-estudios
                 {% else %}role-default{% endif %}">
                 {{ usuario.role|capitalize }}
               </span>

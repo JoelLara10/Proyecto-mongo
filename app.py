@@ -2862,7 +2862,7 @@ def alta_usuarios():
         "sapell": 1,
         "curp_u": 1
     }).sort("id", 1))
-    roles = ['admin', 'medico', 'enfermero', 'administrativo']
+    roles = ['admin', 'medico', 'enfermero', 'administrativo', 'estudios']
     return render_template(
         'configuracion/personal/alta_usuario.html',
         personal=personal,
@@ -2877,7 +2877,7 @@ def alta_usuarios():
 @app.route('/configuracion/personal/insertar/form')
 def insertar_usuario_form():
     db = get_db_connection()
-    roles = ['admin', 'medico', 'enfermero', 'administrativo']
+    roles = ['admin', 'medico', 'enfermero', 'administrativo', 'estudios']
     return render_template(
         'configuracion/personal/insertar_usuario.html',
         roles=roles
@@ -2991,7 +2991,7 @@ def editar_usuario(user_id):
         flash('Usuario no encontrado', 'danger')
         return redirect(url_for('alta_usuarios'))
 
-    roles = ['admin', 'medico', 'enfermero', 'administrativo']
+    roles = ['admin', 'medico', 'enfermero', 'administrativo', 'estudios']
     return render_template(
         'configuracion/personal/editar_usuario.html',
         usuario=usuario,
