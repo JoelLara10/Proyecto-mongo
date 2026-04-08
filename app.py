@@ -220,6 +220,108 @@ def calcular_edad(fecnac):
         return 0
 
 
+@app.route('/admin/analytics')
+def analytics_admin():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    from ml_algorithms.regresion_analytics_modelos_dash import ejecutar_modelos
+    from ml_algorithms.nuevos_modelos import (
+        modelo_arbol,
+        modelo_random_forest,
+        modelo_knn,
+        modelo_logistico
+    )
+    from processing.regresion_analytics_graficos_dash import (
+        grafica_dispersion,
+        grafica_distribucion,
+        grafica_precio_vs_ingreso,
+        grafica_modelos
+    )
+
+    import pandas as pd
+    from bd import get_db_connection
+
+    db = get_db_connection()
+
+    # 🔥 PIPELINE REAL (TU SISTEMA)
+    pipeline = [
+        {"$match": {"status": "ABIERTA"}},
+
+        {"$lookup": {
+            "from": "cuenta_paciente",
+            "localField": "id_atencion",
+            "foreignField": "id_atencion",
+            "as": "items"
+        }},
+
+        {"$addFields": {
+            "cantidad": {"$size": "$items"},
+            "precio": {
+                "$cond": [
+                    {"$gt": [{"$size": "$items"}, 0]},
+                    {"$avg": "$items.precio"},
+                    0
+                ]
+            },
+            "ingreso": {"$sum": "$items.subtotal"},
+            "producto": "Servicios"
+        }},
+
+        {"$project": {
+            "_id": 0,
+            "cantidad": 1,
+            "precio": 1,
+            "ingreso": 1,
+            "producto": 1
+        }}
+    ]
+
+    data = list(db['atencion'].aggregate(pipeline))
+
+    # 🧠 VALIDACIÓN
+    if not data:
+        return "No hay datos para analytics (pacientes abiertos o sin cuenta)"
+
+    df = pd.DataFrame(data)
+
+    # ⚠️ ASEGURAR TIPOS
+    df['cantidad'] = df['cantidad'].astype(float)
+    df['precio'] = df['precio'].astype(float)
+    df['ingreso'] = df['ingreso'].astype(float)
+
+    # ==========================
+    # 🔬 MODELOS
+    # ==========================
+    resultados = {}
+
+    # 🔹 modelos de regresión (los que ya tenías)
+    res_regresion, _ = ejecutar_modelos(df)
+    resultados.update(res_regresion)
+
+    # 🔹 nuevos modelos (clasificación)
+    resultados["Decision Tree"] = modelo_arbol(df)
+    resultados["Random Forest"] = modelo_random_forest(df)
+    resultados["KNN"] = modelo_knn(df)
+    resultados["Logístico"] = modelo_logistico(df)
+
+    # ==========================
+    # 📊 GRÁFICAS
+    # ==========================
+    fig1 = grafica_dispersion(df).to_html(full_html=False)
+    fig2 = grafica_precio_vs_ingreso(df).to_html(full_html=False)
+    fig3 = grafica_distribucion(df).to_html(full_html=False)
+    fig4 = grafica_modelos(resultados).to_html(full_html=False)
+
+    return render_template(
+        'administrativo/analytics.html',
+        fig1=fig1,
+        fig2=fig2,
+        fig3=fig3,
+        fig4=fig4,
+        resultados=resultados
+    )
+    
 @app.template_filter('formato_fecha')
 def formato_fecha(valor, formato='%d/%m/%Y'):
     """Filtro para formatear fechas desde cualquier tipo"""

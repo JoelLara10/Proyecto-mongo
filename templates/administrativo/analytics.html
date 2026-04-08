@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html>
 <head>
   <meta charset="UTF-8">
   <title>Dashboard Administrativo - INEO</title>
@@ -268,28 +268,30 @@
       text-decoration: none;
     }
 
-    .btn-analytics-floating {
-    position: fixed;
-    bottom: 30px;
-    right: 30px;
-    z-index: 999;
-
-    background: linear-gradient(135deg, #667eea, #764ba2);
-    color: white;
-    border: none;
-    border-radius: 50px;
-
-    padding: 12px 20px;
-    font-weight: 600;
-
-    box-shadow: 0 10px 25px rgba(102,126,234,0.4);
-    transition: all 0.3s ease;
+    .section-card {
+    background: rgba(255,255,255,0.95);
+    border-radius: 20px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
 }
 
-.btn-analytics-floating:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 15px 35px rgba(102,126,234,0.6);
+.section-header {
+    display: flex;
+    align-items: center;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 1rem;
+}
+
+.section-header i {
+    margin-right: 10px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
     color: white;
+    padding: 8px;
+    border-radius: 10px;
+    font-size: 1rem;
 }
   </style>
 </head>
@@ -299,8 +301,8 @@
 <!-- NAVBAR MEJORADO -->
 <nav class="navbar navbar-expand-lg">
   <div class="container-fluid px-4">
-    <a href="{{ url_for('dashboard') }}" class="btn btn-outline-light me-3">
-      <i class="bi bi-arrow-left me-2"></i>Dashboard
+    <a href="{{ url_for('administrativo') }}" class="btn btn-outline-light me-3">
+      <i class="bi bi-arrow-left me-2"></i>Administrativo
     </a>
 
     <span class="navbar-brand fw-semibold fs-4">
@@ -324,174 +326,91 @@
   </div>
 </nav>
 
-<!-- CONTENIDO PRINCIPAL -->
 <div class="container mt-5">
-
-  <!-- Título de sección -->
-  <div class="section-title">
+<div class="section-title">
     <i class="fas fa-th-large"></i>
-    Módulos Administrativos
+    Dashboard de Analytics
   </div>
 
-  <a href="/admin/analytics" class="btn btn-analytics-floating">
-    <i class="fas fa-chart-line me-2"></i>
-    Ver Analytics
-</a>
-
-
-  <div class="row g-4">
-    <!-- GESTIÓN DE PACIENTES -->
-    <div class="col-md-4">
-      <a href="{{ url_for('gestion_pacientes') }}">
-        <div class="dashboard-card">
-          <span class="access-badge">Principal</span>
-          <div class="card-body">
-            <div class="icon-circle" style="background: linear-gradient(135deg, #4299e1 0%, #2b6cb0 100%);">
-              <i class="fas fa-wheelchair"></i>
-            </div>
-            <h5 class="card-title">Gestión de Pacientes</h5>
-            <p class="card-description">Registro, expedientes y control de pacientes</p>
-          </div>
-        </div>
-      </a>
+<div class="section-card">
+    <div class="section-header">
+        <i class="fas fa-braille"></i>
+        Dispersión
     </div>
-
-    <!-- GESTIÓN DE CUENTAS -->
-    <div class="col-md-4">
-      <a href="#" data-bs-toggle="modal" data-bs-target="#modalGestionCuentas">
-        <div class="dashboard-card">
-          <span class="access-badge" style="background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);">Financiero</span>
-          <div class="card-body">
-            <div class="icon-circle" style="background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);">
-              <i class="fas fa-wallet"></i>
-            </div>
-            <h5 class="card-title">Gestión de Cuentas</h5>
-            <p class="card-description">Facturación, presupuestos y cortes de caja</p>
-          </div>
-        </div>
-      </a>
-    </div>
-
-    <!-- CENSO -->
-    <div class="col-md-4">
-      <a href="{{ url_for('censo') }}">
-        <div class="dashboard-card">
-          <span class="access-badge" style="background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);">Estadístico</span>
-          <div class="card-body">
-            <div class="icon-circle" style="background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);">
-              <i class="fas fa-clipboard-list"></i>
-            </div>
-            <h5 class="card-title">Censo</h5>
-            <p class="card-description">Censo hospitalario y ocupación de camas</p>
-          </div>
-        </div>
-      </a>
-    </div>
-  </div>
-
-  <!-- MODAL GESTIÓN DE CUENTAS MEJORADO -->
-  <div class="modal fade" id="modalGestionCuentas" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-xl modal-dialog-centered">
-      <div class="modal-content">
-
-        <!-- HEADER -->
-        <div class="modal-header">
-          <h5 class="modal-title">
-            <i class="fas fa-wallet me-2"></i>
-            Gestión de Cuentas
-          </h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-        </div>
-
-        <!-- BODY -->
-        <div class="modal-body p-4">
-          <div class="row g-4">
-
-            <!-- CUENTA DE PACIENTES -->
-            <div class="col-md-4">
-              <a href="{{ url_for('cuenta_pacientes') }}" class="text-decoration-none">
-                <div class="modal-card card p-4 text-center">
-                  <div class="icon-circle small mx-auto" style="background: linear-gradient(135deg, #4299e1 0%, #2b6cb0 100%);">
-                    <i class="fas fa-file-invoice"></i>
-                  </div>
-                  <h6 class="fw-bold text-primary mb-2">CUENTA DE PACIENTES</h6>
-                  <p class="small text-muted mb-0">Gestión de cuentas por paciente</p>
-                </div>
-              </a>
-            </div>
-
-            <!-- PRESUPUESTOS -->
-            <div class="col-md-4">
-              <a href="{{ url_for('presupuestos') }}" class="text-decoration-none">
-                <div class="modal-card card p-4 text-center">
-                  <div class="icon-circle small mx-auto" style="background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);">
-                    <i class="fas fa-calculator"></i>
-                  </div>
-                  <h6 class="fw-bold text-warning mb-2">PRESUPUESTOS</h6>
-                  <p class="small text-muted mb-0">Elaboración de presupuestos</p>
-                </div>
-              </a>
-            </div>
-
-            <!-- CORTE DE CAJA -->
-            <div class="col-md-4">
-              <a href="{{ url_for('corte_caja') }}" class="text-decoration-none">
-                <div class="modal-card card p-4 text-center">
-                  <div class="icon-circle small mx-auto" style="background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);">
-                    <i class="fas fa-cash-register"></i>
-                  </div>
-                  <h6 class="fw-bold text-success mb-2">CORTE DE CAJA</h6>
-                  <p class="small text-muted mb-0">Cierres y reportes de caja</p>
-                </div>
-              </a>
-            </div>
-
-          </div>
-        </div>
-
-        <!-- FOOTER -->
-        <div class="modal-footer">
-          <button class="btn btn-secondary" data-bs-dismiss="modal">
-            <i class="bi bi-x-circle me-2"></i>Cerrar
-          </button>
-        </div>
-
-      </div>
-    </div>
-  </div>
-
-  <!-- Footer informativo -->
-  <div class="row mt-5">
-    <div class="col-12">
-      <div class="text-center text-white-50 py-4">
-        <small>
-          <i class="fas fa-shield-alt me-2"></i>
-          INEO v2.0 - Panel Administrativo
-        </small>
-      </div>
-    </div>
-  </div>
-
+    {{ fig1|safe }}
 </div>
 
-<!-- Bootstrap JS -->
-<script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
 
-<!-- Script adicional para efectos -->
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    // Efecto de hover adicional
-    const cards = document.querySelectorAll('.dashboard-card, .modal-card');
-    cards.forEach(card => {
-      card.addEventListener('mouseenter', function() {
-        this.style.transform = 'translateY(-5px)';
-      });
-      card.addEventListener('mouseleave', function() {
-        this.style.transform = 'translateY(0)';
-      });
-    });
-  });
-</script>
+<div class="section-card">
+    <div class="section-header">
+        <i class="fas fa-coins"></i>
+        Precio vs Ingreso
+    </div>
+    {{ fig2|safe }}
+</div>
+
+<div class="section-card">
+    <div class="section-header">
+        <i class="fas fa-chart-area"></i>
+        Distribución
+    </div>
+    {{ fig3|safe }}
+</div>
+
+<div class="section-card">
+    <div class="section-header">
+        <i class="fas fa-brain"></i>
+        Modelos de Machine Learning
+    </div>
+    {{ fig4|safe }}
+</div>
+
+ <div class="section-card">
+    <div class="section-header">
+        <h5><i class="bi bi-diagram-3"></i> Árbol de Decisión</h5>
+    </div>
+    <div class="card-body-custom">
+
+        <pre style="
+    background: #1e293b;
+    color: #22c55e;
+    padding: 1rem;
+    border-radius: 10px;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    font-size: 14px;
+">
+{{ reglas_arbol | safe }}
+</pre>
+
+    </div>
+</div>
+
+<div class="section-card">
+    <div class="section-header">
+        <i class="fas fa-table"></i>
+        Resultados
+    </div>
+    
+
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Modelo</th>
+                <th>R²</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for k,v in resultados.items() %}
+            <tr>
+                <td>{{ k }}</td>
+                <td>{{ v }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+</div>
 
 </body>
 </html>
