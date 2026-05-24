@@ -1,0 +1,43 @@
+{
+    "ingresos_por_tipo": [
+        {
+            "tipo": "LABORATORIO",
+            "total_transacciones": 27,
+            "ingreso_total": 2810.0,
+            "ticket_promedio": 104.07407407407408,
+            "max_ingreso": 150.0,
+            "min_ingreso": 50.0
+        },
+        {
+            "tipo": "GABINETE",
+            "total_transacciones": 24,
+            "ingreso_total": 6220.0,
+            "ticket_promedio": 259.1666666666667,
+            "max_ingreso": 450.0,
+            "min_ingreso": 150.0
+        }
+    ],
+    "ingresos_por_estado": [
+        {
+            "estado": "PENDIENTE",
+            "ingreso_total": 9030.0,
+            "cantidad": 51
+        }
+    ],
+    "top_servicios": [
+        {
+            "tipo": "GABINETE",
+            "total": 6220.0
+        },
+        {
+            "tipo": "LABORATORIO",
+            "total": 2810.0
+        }
+    ],
+    "estadisticas_generales": {
+        "ingreso_promedio": 177.05882352941177,
+        "desviacion_ingreso": 103.03968396005604,
+        "ingreso_total": 9030.0,
+        "total_transacciones": 51
+    }
+}

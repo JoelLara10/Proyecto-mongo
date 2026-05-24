@@ -6,6 +6,9 @@ from bd import get_db_connection
 from bson.objectid import ObjectId
 from bson.decimal128 import Decimal128
 from pymongo.errors import PyMongoError
+# En tu archivo de Flask (app.py o routes.py)
+import json
+from pathlib import Path
 import re
 import psutil
 import time
@@ -17,6 +20,8 @@ from flask import (
 from apscheduler.schedulers.background import BackgroundScheduler
 import bcrypt
 from fpdf import FPDF
+from flask import render_template, session, redirect, url_for
+from processing.analytics_spark import generar_analytics
 
 # Blueprints
 from estudios import estudios_bp
@@ -92,6 +97,29 @@ scheduler = BackgroundScheduler()
 
 # Guardar scheduler en la app (MUY IMPORTANTE)
 app.config['SCHEDULER'] = scheduler
+
+# ===============================
+# Configuración de Rutas
+# ===============================
+BASE_DIR = Path(__file__).resolve().parent
+PROCESSING_DIR = BASE_DIR / "processing"
+RESULTS_DIR = PROCESSING_DIR / "results"          # ← CORREGIDO
+VIZ_DIR = RESULTS_DIR / "visualizaciones"
+
+# Crear carpetas si no existen
+RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+VIZ_DIR.mkdir(parents=True, exist_ok=True)
+
+print(f"📁 RESULTS_DIR configurado en: {RESULTS_DIR}")
+
+
+# Configuración para servir imágenes de resultados
+@app.route('/results/visualizaciones/<path:filename>')
+def serve_visualization(filename):
+    """Sirve las imágenes de visualización generadas por Spark"""
+    from pathlib import Path
+    results_dir = Path(__file__).resolve().parent / "results" / "visualizaciones"
+    return send_from_directory(results_dir, filename)
 
 # ===============================
 # Programar backup automático (solo una vez)
@@ -219,109 +247,301 @@ def calcular_edad(fecnac):
         traceback.print_exc()
         return 0
 
-
 @app.route('/admin/analytics')
-def analytics_admin():
-    if 'user_id' not in session:
+def analytics():
+    """Dashboard de analytics"""
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    
+    # Leer resultados guardados
+    if os.path.exists("analytics_cache.json"):
+        with open("analytics_cache.json", "r", encoding="utf-8") as f:
+            analytics_data = json.load(f)
+        
+        return render_template('administrativo/analytics.html',
+                             fig1=analytics_data.get('fig1', ''),
+                             fig2=analytics_data.get('fig2', ''),
+                             fig3=analytics_data.get('fig3', ''),
+                             fig4=analytics_data.get('fig4', ''),
+                             resultados=analytics_data.get('resultados_modelos', {}),
+                             total_registros=analytics_data.get('total_registros', 0),
+                             total_laboratorio=analytics_data.get('total_laboratorio', 0),
+                             total_gabinete=analytics_data.get('total_gabinete', 0),
+                             ingreso_total=f"${analytics_data.get('ingreso_total', 0):,.2f}",
+                             ticket_promedio=f"${analytics_data.get('ticket_promedio', 0):.2f}",
+                             fecha_actualizacion=analytics_data.get('fecha_generacion', 'No disponible'))
+    else:
+        return render_template('administrativo/analytics.html',
+                             fig1='', fig2='', fig3='', fig4='',
+                             resultados={},
+                             total_registros=0,
+                             total_laboratorio=0,
+                             total_gabinete=0,
+                             ingreso_total='$0',
+                             ticket_promedio='$0',
+                             fecha_actualizacion='No disponible')
+
+@app.route('/admin/actualizar_analytics')
+def actualizar_analytics():
+    """Actualiza los datos ejecutando Spark"""
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    
+    try:
+        # Importar y ejecutar la función de Spark
+        from main_mongo import generar_y_guardar_analytics
+        generar_y_guardar_analytics()
+        
+        # Redirigir con mensaje de éxito
+        return redirect(url_for('analytics'))
+    except Exception as e:
+        print(f"Error al actualizar: {e}")
+        return redirect(url_for('analytics'))
+    """Actualiza los datos ejecutando Spark nuevamente"""
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    
+    # Importar la función de main_mongo
+    from main_mongo import generar_y_guardar_analytics
+    
+    # Ejecutar Spark (puede tomar unos segundos)
+    generar_y_guardar_analytics()
+    
+    return redirect(url_for('analytics'))
+    """Dashboard de analytics con Spark y ML"""
+
+    if 'username' not in session:
         return redirect(url_for('login'))
 
-    from ml_algorithms.regresion_analytics_modelos_dash import ejecutar_modelos
-    from ml_algorithms.nuevos_modelos import (
-        modelo_arbol,
-        modelo_random_forest,
-        modelo_knn,
-        modelo_logistico
-    )
-    from processing.regresion_analytics_graficos_dash import (
-        grafica_dispersion,
-        grafica_distribucion,
-        grafica_precio_vs_ingreso,
-        grafica_modelos
-    )
+    try:
+        from ml_algorithms.regresion_analytics_modelos_dash import ejecutar_modelos
+        from ml_algorithms.nuevos_modelos import (
+            modelo_arbol,
+            modelo_random_forest,
+            modelo_knn,
+            modelo_logistico
+        )
+        from processing.analytics_spark import (
+            grafica_dispersion,
+            grafica_distribucion,
+            grafica_precio_vs_ingreso,
+            grafica_modelos
+        )
 
-    import pandas as pd
-    from bd import get_db_connection
+        import pandas as pd
+        from bd import get_db_connection
 
-    db = get_db_connection()
+        db = get_db_connection()
 
-    # 🔥 PIPELINE REAL (TU SISTEMA)
-    pipeline = [
-        {"$match": {"status": "ABIERTA"}},
+        # 🔥 PIPELINE MONGO
+        pipeline = [
+            {"$match": {"status": "ABIERTA"}},
 
-        {"$lookup": {
-            "from": "cuenta_paciente",
-            "localField": "id_atencion",
-            "foreignField": "id_atencion",
-            "as": "items"
-        }},
+            {"$lookup": {
+                "from": "cuenta_paciente",
+                "localField": "id_atencion",
+                "foreignField": "id_atencion",
+                "as": "items"
+            }},
 
-        {"$addFields": {
-            "cantidad": {"$size": "$items"},
-            "precio": {
-                "$cond": [
-                    {"$gt": [{"$size": "$items"}, 0]},
-                    {"$avg": "$items.precio"},
-                    0
-                ]
-            },
-            "ingreso": {"$sum": "$items.subtotal"},
-            "producto": "Servicios"
-        }},
+            {"$addFields": {
+                "cantidad": {"$size": "$items"},
+                "precio": {
+                    "$cond": [
+                        {"$gt": [{"$size": "$items"}, 0]},
+                        {"$avg": "$items.precio"},
+                        0
+                    ]
+                },
+                "ingreso": {"$sum": "$items.subtotal"},
+                "producto": "Servicios"
+            }},
 
-        {"$project": {
-            "_id": 0,
-            "cantidad": 1,
-            "precio": 1,
-            "ingreso": 1,
-            "producto": 1
-        }}
-    ]
+            {"$project": {
+                "_id": 0,
+                "cantidad": 1,
+                "precio": 1,
+                "ingreso": 1,
+                "producto": 1
+            }}
+        ]
 
-    data = list(db['atencion'].aggregate(pipeline))
+        data = list(db['atencion'].aggregate(pipeline))
 
-    # 🧠 VALIDACIÓN
-    if not data:
-        return "No hay datos para analytics (pacientes abiertos o sin cuenta)"
+        if not data:
+            return render_template(
+                'administrativo/analytics.html',
+                error="No hay datos disponibles para analytics"
+            )
 
-    df = pd.DataFrame(data)
+        df = pd.DataFrame(data)
 
-    # ⚠️ ASEGURAR TIPOS
-    df['cantidad'] = df['cantidad'].astype(float)
-    df['precio'] = df['precio'].astype(float)
-    df['ingreso'] = df['ingreso'].astype(float)
+        # ⚠️ Asegurar tipos
+        df['cantidad'] = df['cantidad'].astype(float)
+        df['precio'] = df['precio'].astype(float)
+        df['ingreso'] = df['ingreso'].astype(float)
 
-    # ==========================
-    # 🔬 MODELOS
-    # ==========================
-    resultados = {}
+        # ==========================
+        # 🧠 MODELOS
+        # ==========================
+        resultados = {}
 
-    # 🔹 modelos de regresión (los que ya tenías)
-    res_regresion, _ = ejecutar_modelos(df)
-    resultados.update(res_regresion)
+        res_regresion, _ = ejecutar_modelos(df)
+        resultados.update(res_regresion)
 
-    # 🔹 nuevos modelos (clasificación)
-    resultados["Decision Tree"] = modelo_arbol(df)
-    resultados["Random Forest"] = modelo_random_forest(df)
-    resultados["KNN"] = modelo_knn(df)
-    resultados["Logístico"] = modelo_logistico(df)
+        resultados["Decision Tree"] = modelo_arbol(df)
+        resultados["Random Forest"] = modelo_random_forest(df)
+        resultados["KNN"] = modelo_knn(df)
+        resultados["Logístico"] = modelo_logistico(df)
 
-    # ==========================
-    # 📊 GRÁFICAS
-    # ==========================
-    fig1 = grafica_dispersion(df).to_html(full_html=False)
-    fig2 = grafica_precio_vs_ingreso(df).to_html(full_html=False)
-    fig3 = grafica_distribucion(df).to_html(full_html=False)
-    fig4 = grafica_modelos(resultados).to_html(full_html=False)
+        # ==========================
+        # 📊 GRÁFICAS
+        # ==========================
+        fig1 = grafica_dispersion(df).to_html(full_html=False)
+        fig2 = grafica_precio_vs_ingreso(df).to_html(full_html=False)
+        fig3 = grafica_distribucion(df).to_html(full_html=False)
+        fig4 = grafica_modelos(resultados).to_html(full_html=False)
 
-    return render_template(
-        'administrativo/analytics.html',
-        fig1=fig1,
-        fig2=fig2,
-        fig3=fig3,
-        fig4=fig4,
-        resultados=resultados
-    )
+        return render_template(
+            'administrativo/analytics.html',
+            fig1=fig1,
+            fig2=fig2,
+            fig3=fig3,
+            fig4=fig4,
+            resultados=resultados
+        )
+
+    except Exception as e:
+        print(f"Error en analytics: {e}")
+        return render_template(
+            'administrativo/analytics.html',
+            fig1="",
+            fig2="",
+            fig3="",
+            fig4="",
+            resultados={},
+            error=str(e)
+        )
     
+@app.route('/admin/analytics-met')
+def analytics_met():
+    """Dashboard de analytics con resultados de Spark"""
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    
+    analytics_data = {
+        'resumen': {},
+        'descriptive': {},
+        'predictive': {},
+        'segmentation': {},
+        'diagnostic': {},
+        'kdd_patterns': {},
+        'visualizations': {},
+        'error': None
+    }
+    
+    if not RESULTS_DIR.exists():
+        analytics_data['error'] = f"No existe la carpeta: {RESULTS_DIR}"
+        return render_template('administrativo/analytics_dashboard.html', **analytics_data)
+    
+    # Cargar Resumen Ejecutivo
+    resumen_path = RESULTS_DIR / "00_resumen_ejecutivo.json"
+    if resumen_path.exists():
+        with open(resumen_path, 'r', encoding='utf-8') as f:
+            analytics_data['resumen'] = json.load(f)
+    
+    # Cargar CRISP-DM
+    crisp_path = RESULTS_DIR / "10_complete_crisp_dm_results.json"
+    if crisp_path.exists():
+        with open(crisp_path, 'r', encoding='utf-8') as f:
+            crisp = json.load(f)
+            analytics_data['descriptive'] = crisp.get('descriptive_analytics', {})
+            analytics_data['predictive'] = crisp.get('predictive_modeling', {})
+            analytics_data['segmentation'] = crisp.get('segmentation_analysis', {})
+            analytics_data['diagnostic'] = crisp.get('diagnostic_analytics', {})
+    
+    # Cargar visualizaciones
+    if VIZ_DIR.exists():
+        for img in VIZ_DIR.glob("*.png"):
+            analytics_data['visualizations'][img.stem] = url_for('serve_viz', filename=img.name)
+    
+    return render_template('administrativo/analytics_dashboard.html', **analytics_data)
+
+@app.route('/admin/analytics/refresh')
+def refresh_analytics():
+    """Ejecuta el análisis de Spark nuevamente"""
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    
+    try:
+        import subprocess
+        import sys
+        
+        # Ejecutar main_analytics.py que está en la raíz
+        result = subprocess.run(
+            [sys.executable, "main_analytics.py"],
+            capture_output=True,
+            text=True,
+            cwd=BASE_DIR  # Usar BASE_DIR en lugar de Path(__file__).resolve().parent
+        )
+        
+        print(f"📊 Salida del análisis: {result.stdout}")
+        if result.stderr:
+            print(f"⚠️ Errores: {result.stderr}")
+        
+        if result.returncode == 0:
+            return redirect(url_for('analytics_met', success='true'))
+        else:
+            return redirect(url_for('analytics_met', error=result.stderr[:500]))
+    except Exception as e:
+        print(f"❌ Error al ejecutar análisis: {str(e)}")
+        return redirect(url_for('analytics_met', error=str(e)))
+
+@app.route('/viz/<filename>')
+def serve_viz(filename):
+    """Sirve las imágenes de visualización desde processing/results/visualizaciones/"""
+    viz_dir = RESULTS_DIR / "visualizaciones"
+    if viz_dir.exists():
+        return send_from_directory(str(viz_dir), filename)
+    return "Visualización no encontrada", 404
+
+# También puedes agregar una ruta para verificar qué archivos existen
+@app.route('/admin/analytics/check-files')
+def check_analytics_files():
+    """Verifica qué archivos existen en processing/results/"""
+    if 'username' not in session:
+        return jsonify({'error': 'No autorizado'}), 401
+    
+    files_info = {
+        'base_dir': str(BASE_DIR),
+        'processing_dir': str(PROCESSING_DIR),
+        'results_dir': str(RESULTS_DIR),
+        'results_exists': RESULTS_DIR.exists(),
+        'files': [],
+        'visualizations': []
+    }
+    
+    if RESULTS_DIR.exists():
+        for file in RESULTS_DIR.iterdir():
+            if file.is_file():
+                files_info['files'].append({
+                    'name': file.name, 
+                    'size_kb': round(file.stat().st_size / 1024, 2),
+                    'path': str(file)
+                })
+        
+        viz_dir = RESULTS_DIR / "visualizaciones"
+        if viz_dir.exists():
+            for img in viz_dir.glob("*.png"):
+                files_info['visualizations'].append({
+                    'name': img.name,
+                    'size_kb': round(img.stat().st_size / 1024, 2),
+                    'path': str(img)
+                })
+    
+    return jsonify(files_info)
+
+
 @app.template_filter('formato_fecha')
 def formato_fecha(valor, formato='%d/%m/%Y'):
     """Filtro para formatear fechas desde cualquier tipo"""

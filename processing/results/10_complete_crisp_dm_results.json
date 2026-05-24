@@ -1,0 +1,224 @@
+{
+    "timestamp": "2026-05-23T20:45:44.483833",
+    "business_understanding": {
+        "objective_1": "Analizar ingresos por tipo de servicio y especialidad",
+        "objective_2": "Segmentar pacientes por comportamiento de consumo",
+        "objective_3": "Predecir ingresos basado en cantidad y precio",
+        "objective_4": "Identificar servicios más rentables",
+        "objective_5": "Optimizar asignación de recursos hospitalarios"
+    },
+    "data_understanding": {
+        "cuenta_paciente": {
+            "total_registros": 68,
+            "tipos_servicio": [
+                "LABORATORIO",
+                "GABINETE"
+            ],
+            "rango_precios": {
+                "min": 50,
+                "max": 450
+            },
+            "ingreso_total": 29595.0
+        },
+        "pacientes": {
+            "total_pacientes": 14,
+            "total_expedientes": 14
+        },
+        "atenciones": {
+            "total_atenciones": 14,
+            "areas": [
+                "Hospitalizado",
+                "Ambulatorio",
+                "Urgencias",
+                "Hospitalización",
+                "UCI"
+            ],
+            "especialidades": 6
+        }
+    },
+    "descriptive_analytics": {
+        "ingresos_por_tipo": [
+            {
+                "tipo": "LABORATORIO",
+                "total_transacciones": 27,
+                "ingreso_total": 2810.0,
+                "ticket_promedio": 104.07407407407408,
+                "max_ingreso": 150.0,
+                "min_ingreso": 50.0
+            },
+            {
+                "tipo": "GABINETE",
+                "total_transacciones": 24,
+                "ingreso_total": 6220.0,
+                "ticket_promedio": 259.1666666666667,
+                "max_ingreso": 450.0,
+                "min_ingreso": 150.0
+            }
+        ],
+        "ingresos_por_estado": [
+            {
+                "estado": "PENDIENTE",
+                "ingreso_total": 9030.0,
+                "cantidad": 51
+            }
+        ],
+        "top_servicios": [
+            {
+                "tipo": "GABINETE",
+                "total": 6220.0
+            },
+            {
+                "tipo": "LABORATORIO",
+                "total": 2810.0
+            }
+        ],
+        "estadisticas_generales": {
+            "ingreso_promedio": 177.05882352941177,
+            "desviacion_ingreso": 103.03968396005604,
+            "ingreso_total": 9030.0,
+            "total_transacciones": 51
+        }
+    },
+    "diagnostic_analytics": {
+        "correlacion_cantidad_subtotal": null,
+        "analisis_por_especialidad": [
+            {
+                "especialidad": "Medicina general",
+                "ingreso_total": 4820.0,
+                "transacciones": 28,
+                "promedio": 172.14285714285714
+            },
+            {
+                "especialidad": "Cardiología",
+                "ingreso_total": 2910.0,
+                "transacciones": 15,
+                "promedio": 194.0
+            },
+            {
+                "especialidad": "Pediatría",
+                "ingreso_total": 1300.0,
+                "transacciones": 8,
+                "promedio": 162.5
+            }
+        ],
+        "analisis_por_area": [
+            {
+                "area": "Hospitalizado",
+                "ingreso_total": 4710.0,
+                "transacciones": 27
+            },
+            {
+                "area": "Urgencias",
+                "ingreso_total": 2910.0,
+                "transacciones": 15
+            },
+            {
+                "area": "Ambulatorio",
+                "ingreso_total": 1410.0,
+                "transacciones": 9
+            }
+        ],
+        "distribucion_montos": {
+            "menos_100": 10,
+            "entre_100_500": 41,
+            "entre_500_1000": 0,
+            "mas_1000": 0
+        }
+    },
+    "predictive_modeling": {
+        "linear_regression_r2": 1.0,
+        "random_forest_r2": 0.4964,
+        "gbt_r2": 0.9909,
+        "feature_importance": {
+            "cantidad": 0.0,
+            "precio": 1.0
+        }
+    },
+    "segmentation_analysis": {
+        "num_clusters": 3,
+        "centros": [
+            [
+                0.0,
+                3.445274542356108,
+                3.445274542356108
+            ],
+            [
+                0.0,
+                0.9543248732347904,
+                0.9543248732347904
+            ],
+            [
+                0.0,
+                1.7811527045817825,
+                1.7811527045817825
+            ]
+        ],
+        "distribucion": [
+            {
+                "prediction": 1,
+                "count": 24
+            },
+            {
+                "prediction": 2,
+                "count": 17
+            },
+            {
+                "prediction": 0,
+                "count": 10
+            }
+        ],
+        "cluster_statistics": [
+            {
+                "prediction": 1,
+                "promedio_cantidad": 1.0,
+                "promedio_precio": 98.33333333333333,
+                "promedio_subtotal": 98.33333333333333
+            },
+            {
+                "prediction": 2,
+                "promedio_cantidad": 1.0,
+                "promedio_precio": 183.52941176470588,
+                "promedio_subtotal": 183.52941176470588
+            },
+            {
+                "prediction": 0,
+                "promedio_cantidad": 1.0,
+                "promedio_precio": 355.0,
+                "promedio_subtotal": 355.0
+            }
+        ]
+    },
+    "evaluation": {
+        "calidad_modelos": {
+            "predictivo": "Excelente"
+        },
+        "insights": [
+            "El mejor modelo predictivo es Linear Regression R2 con R² de 1.0000.",
+            "El servicio con mayor ingreso es GABINETE con $6,220.00.",
+            "El estado con mayor ingreso es PENDIENTE con $9,030.00.",
+            "El ingreso promedio por transacción es $177.06.",
+            "Se identificaron 3 segmentos en el análisis de clustering."
+        ],
+        "recomendaciones": [
+            "Optimizar precios en servicios de laboratorio (ticket promedio bajo)",
+            "Invertir en servicios de gabinete (mayor margen de ganancia)",
+            "Implementar campañas para aumentar frecuencia de clientes",
+            "Analizar viabilidad de paquetes de servicios combinados"
+        ],
+        "mejor_modelo": "linear_regression_r2",
+        "mejor_puntaje": 1.0
+    },
+    "insights_summary": [
+        "El mejor modelo predictivo es Linear Regression R2 con R² de 1.0000.",
+        "El servicio con mayor ingreso es GABINETE con $6,220.00.",
+        "El estado con mayor ingreso es PENDIENTE con $9,030.00.",
+        "El ingreso promedio por transacción es $177.06.",
+        "Se identificaron 3 segmentos en el análisis de clustering."
+    ],
+    "recommendations": [
+        "Optimizar precios en servicios de laboratorio (ticket promedio bajo)",
+        "Invertir en servicios de gabinete (mayor margen de ganancia)",
+        "Implementar campañas para aumentar frecuencia de clientes",
+        "Analizar viabilidad de paquetes de servicios combinados"
+    ]
+}

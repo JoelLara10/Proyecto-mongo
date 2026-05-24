@@ -1,0 +1,24 @@
+{
+    "hallazgos_clave": [
+        "Los servicios de LABORATORIO son los más solicitados con 27 transacciones",
+        "Los servicios de GABINETE son los más solicitados con 24 transacciones",
+        "Los servicios de precio Alto generan $3,270.00",
+        "Los servicios de precio Bajo generan $700.00",
+        "Los servicios de precio Medio generan $5,060.00",
+        "En el mes 4 se generaron $9,030.00"
+    ],
+    "recomendaciones_kdd": [
+        "Enfocar recursos en servicios de laboratorio (mayor volumen)",
+        "Optimizar precios de servicios de gabinete (mayor ticket)",
+        "Analizar estacionalidad para planificar capacidad",
+        "Implementar estrategias de up-selling en servicios de alto valor"
+    ],
+    "resumen_ejecutivo_kdd": {
+        "total_patrones_encontrados": 5,
+        "principales_servicios": [
+            "LABORATORIO",
+            "GABINETE"
+        ],
+        "rango_mas_rentable": "Medio"
+    }
+}

@@ -8,11 +8,11 @@ from sklearn.tree import export_text
 
 
 # ==========================
-# 🔧 PREPARAR DATOS
+#  PREPARAR DATOS
 # ==========================
 def preparar_datos(df):
 
-    # 🔥 UMBRAL AJUSTADO (ANTES 50000)
+    #  UMBRAL AJUSTADO (ANTES 50000)
     df["label"] = (df["ingreso"] > 1000).astype(int)
 
     X = df[["cantidad", "precio", "ingreso"]]
@@ -26,7 +26,7 @@ def preparar_datos(df):
 
 
 # ==========================
-# 🌳 DECISION TREE
+#  DECISION TREE
 # ==========================
 from sklearn.tree import export_text
 
@@ -55,7 +55,7 @@ def modelo_arbol(df):
 
 
 # ==========================
-# 🌲 RANDOM FOREST
+#  RANDOM FOREST
 # ==========================
 def modelo_random_forest(df):
     data = preparar_datos(df)
@@ -75,7 +75,7 @@ def modelo_random_forest(df):
 
 
 # ==========================
-# 📍 KNN
+#  KNN
 # ==========================
 def modelo_knn(df):
     data = preparar_datos(df)
@@ -87,7 +87,7 @@ def modelo_knn(df):
     if len(X_train) < 2:
         return 0
 
-    # 🔥 AJUSTE DINÁMICO DE K
+    #  AJUSTE DINÁMICO DE K
     k = min(3, len(X_train))
 
     model = KNeighborsClassifier(n_neighbors=k)
@@ -98,7 +98,7 @@ def modelo_knn(df):
 
 
 # ==========================
-# 📈 REGRESIÓN LOGÍSTICA
+#  REGRESIÓN LOGÍSTICA
 # ==========================
 def modelo_logistico(df):
     data = preparar_datos(df)

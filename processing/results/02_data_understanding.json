@@ -1,0 +1,29 @@
+{
+    "cuenta_paciente": {
+        "total_registros": 68,
+        "tipos_servicio": [
+            "LABORATORIO",
+            "GABINETE"
+        ],
+        "rango_precios": {
+            "min": 50,
+            "max": 450
+        },
+        "ingreso_total": 29595.0
+    },
+    "pacientes": {
+        "total_pacientes": 14,
+        "total_expedientes": 14
+    },
+    "atenciones": {
+        "total_atenciones": 14,
+        "areas": [
+            "Hospitalizado",
+            "Ambulatorio",
+            "Urgencias",
+            "Hospitalización",
+            "UCI"
+        ],
+        "especialidades": 6
+    }
+}

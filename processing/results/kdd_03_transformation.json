@@ -1,0 +1,9 @@
+{
+    "nuevas_features": [
+        "precio_por_unidad",
+        "mes",
+        "rango_precio"
+    ],
+    "registros_transformados": 51,
+    "fase": "transformation"
+}

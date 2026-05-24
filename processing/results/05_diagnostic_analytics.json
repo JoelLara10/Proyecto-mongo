@@ -1,0 +1,46 @@
+{
+    "correlacion_cantidad_subtotal": null,
+    "analisis_por_especialidad": [
+        {
+            "especialidad": "Medicina general",
+            "ingreso_total": 4820.0,
+            "transacciones": 28,
+            "promedio": 172.14285714285714
+        },
+        {
+            "especialidad": "Cardiología",
+            "ingreso_total": 2910.0,
+            "transacciones": 15,
+            "promedio": 194.0
+        },
+        {
+            "especialidad": "Pediatría",
+            "ingreso_total": 1300.0,
+            "transacciones": 8,
+            "promedio": 162.5
+        }
+    ],
+    "analisis_por_area": [
+        {
+            "area": "Hospitalizado",
+            "ingreso_total": 4710.0,
+            "transacciones": 27
+        },
+        {
+            "area": "Urgencias",
+            "ingreso_total": 2910.0,
+            "transacciones": 15
+        },
+        {
+            "area": "Ambulatorio",
+            "ingreso_total": 1410.0,
+            "transacciones": 9
+        }
+    ],
+    "distribucion_montos": {
+        "menos_100": 10,
+        "entre_100_500": 41,
+        "entre_500_1000": 0,
+        "mas_1000": 0
+    }
+}

@@ -1,0 +1,54 @@
+{
+    "num_clusters": 3,
+    "centros": [
+        [
+            0.0,
+            3.445274542356108,
+            3.445274542356108
+        ],
+        [
+            0.0,
+            0.9543248732347904,
+            0.9543248732347904
+        ],
+        [
+            0.0,
+            1.7811527045817825,
+            1.7811527045817825
+        ]
+    ],
+    "distribucion": [
+        {
+            "prediction": 1,
+            "count": 24
+        },
+        {
+            "prediction": 2,
+            "count": 17
+        },
+        {
+            "prediction": 0,
+            "count": 10
+        }
+    ],
+    "cluster_statistics": [
+        {
+            "prediction": 1,
+            "promedio_cantidad": 1.0,
+            "promedio_precio": 98.33333333333333,
+            "promedio_subtotal": 98.33333333333333
+        },
+        {
+            "prediction": 2,
+            "promedio_cantidad": 1.0,
+            "promedio_precio": 183.52941176470588,
+            "promedio_subtotal": 183.52941176470588
+        },
+        {
+            "prediction": 0,
+            "promedio_cantidad": 1.0,
+            "promedio_precio": 355.0,
+            "promedio_subtotal": 355.0
+        }
+    ]
+}

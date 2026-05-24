@@ -1,0 +1,8 @@
+{
+    "visualizaciones_generadas": [
+        "ingresos_por_tipo",
+        "distribucion_precios",
+        "scatter_cantidad_precio",
+        "comparacion_modelos"
+    ]
+}

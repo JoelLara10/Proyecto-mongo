@@ -1,0 +1,20 @@
+{
+    "calidad_modelos": {
+        "predictivo": "Excelente"
+    },
+    "insights": [
+        "El mejor modelo predictivo es Linear Regression R2 con R² de 1.0000.",
+        "El servicio con mayor ingreso es GABINETE con $6,220.00.",
+        "El estado con mayor ingreso es PENDIENTE con $9,030.00.",
+        "El ingreso promedio por transacción es $177.06.",
+        "Se identificaron 3 segmentos en el análisis de clustering."
+    ],
+    "recomendaciones": [
+        "Optimizar precios en servicios de laboratorio (ticket promedio bajo)",
+        "Invertir en servicios de gabinete (mayor margen de ganancia)",
+        "Implementar campañas para aumentar frecuencia de clientes",
+        "Analizar viabilidad de paquetes de servicios combinados"
+    ],
+    "mejor_modelo": "linear_regression_r2",
+    "mejor_puntaje": 1.0
+}

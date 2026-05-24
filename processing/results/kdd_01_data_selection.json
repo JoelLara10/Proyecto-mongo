@@ -1,0 +1,12 @@
+{
+    "total_registros": 68,
+    "columnas_seleccionadas": [
+        "cantidad",
+        "precio",
+        "subtotal",
+        "tipo",
+        "estado",
+        "fecha"
+    ],
+    "fase": "data_selection"
+}
