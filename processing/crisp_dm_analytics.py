@@ -480,7 +480,7 @@ class CRISPDMAnalytics:
     
     # ==================== FASE 5: EVALUATION ====================
     def evaluate_results(self):
-        """Evaluación de resultados"""
+        """Evaluación de resultados con recomendaciones dinámicas"""
         print("\n⭐ FASE 5: EVALUATION - Evaluando resultados...")
         
         evaluation = {
@@ -492,8 +492,11 @@ class CRISPDMAnalytics:
         descriptive = self.results.get('descriptive', {})
         predictive = self.results.get('predictive', {})
         segmentation = self.results.get('segmentation', {})
-
-        # Evaluar modelos predictivos
+        diagnostic = self.results.get('diagnostic', {})
+        
+        # =========================================================
+        # 1. EVALUAR MODELOS PREDICTIVOS (ya lo tenías)
+        # =========================================================
         if predictive:
             valid_models = {
                 k: v for k, v in predictive.items()
@@ -516,10 +519,10 @@ class CRISPDMAnalytics:
                 evaluation['insights'].append(
                     f"El mejor modelo predictivo es {best_model.replace('_', ' ').title()} con R² de {best_score:.4f}."
                 )
-            else:
-                evaluation['calidad_modelos']['predictivo'] = "No evaluable"
-
-        # Generar insights descriptivos
+        
+        # =========================================================
+        # 2. GENERAR INSIGHTS DESCRIPTIVOS (ya lo tenías)
+        # =========================================================
         if descriptive:
             ingresos_por_tipo = sorted(
                 descriptive.get('ingresos_por_tipo', []),
@@ -531,52 +534,148 @@ class CRISPDMAnalytics:
                 evaluation['insights'].append(
                     f"El servicio con mayor ingreso es {top_servicio['tipo']} con ${top_servicio['ingreso_total']:,.2f}."
                 )
-
-            ingresos_por_estado = sorted(
-                descriptive.get('ingresos_por_estado', []),
-                key=lambda x: x.get('ingreso_total', 0),
-                reverse=True
-            )
-            if ingresos_por_estado:
-                mejor_estado = ingresos_por_estado[0]
-                evaluation['insights'].append(
-                    f"El estado con mayor ingreso es {mejor_estado['estado']} con ${mejor_estado['ingreso_total']:,.2f}."
-                )
+                
+                # Agregar insight del segundo servicio también
+                if len(ingresos_por_tipo) > 1:
+                    segundo = ingresos_por_tipo[1]
+                    evaluation['insights'].append(
+                        f"El servicio {segundo['tipo']} es el segundo con ${segundo['ingreso_total']:,.2f}."
+                    )
 
             stats = descriptive.get('estadisticas_generales', {})
             if stats:
                 evaluation['insights'].append(
                     f"El ingreso promedio por transacción es ${stats.get('ingreso_promedio', 0):,.2f}."
                 )
-
-        # Generar insights de segmentación
+                evaluation['insights'].append(
+                    f"Total de transacciones analizadas: {stats.get('total_transacciones', 0)}."
+                )
+        
+        # =========================================================
+        # 3. INSIGHTS DE DIAGNÓSTICO (distribución de montos)
+        # =========================================================
+        if diagnostic:
+            distribucion = diagnostic.get('distribucion_montos', {})
+            if distribucion:
+                menos_100 = distribucion.get('menos_100', 0)
+                entre_100_500 = distribucion.get('entre_100_500', 0)
+                entre_500_1000 = distribucion.get('entre_500_1000', 0)
+                mas_1000 = distribucion.get('mas_1000', 0)
+                
+                evaluation['insights'].append(
+                    f"Distribución de transacciones: <$100: {menos_100}, $100-500: {entre_100_500}, $500-1000: {entre_500_1000}, >$1000: {mas_1000}"
+                )
+        
+        # =========================================================
+        # 4. INSIGHTS DE SEGMENTACIÓN
+        # =========================================================
         if segmentation and segmentation.get('num_clusters'):
             evaluation['insights'].append(
                 f"Se identificaron {segmentation['num_clusters']} segmentos en el análisis de clustering."
             )
-
-        # Recomendaciones
-        evaluation['recomendaciones'] = [
-            "Optimizar precios en servicios de laboratorio (ticket promedio bajo)",
-            "Invertir en servicios de gabinete (mayor margen de ganancia)",
-            "Implementar campañas para aumentar frecuencia de clientes",
-            "Analizar viabilidad de paquetes de servicios combinados"
-        ]
+            
+            # Insight sobre distribución de clusters
+            distribucion_clusters = segmentation.get('distribucion', [])
+            if distribucion_clusters:
+                for cluster in distribucion_clusters:
+                    evaluation['insights'].append(
+                        f"El segmento {cluster.get('prediction', 'N/A')} tiene {cluster.get('count', 0)} transacciones."
+                    )
         
+        # =========================================================
+        # 5. RECOMENDACIONES DINÁMICAS (basadas en datos reales)
+        # =========================================================
+        recomendaciones = []
+        
+        # Recomendación 1: Basada en ingresos por tipo
+        if ingresos_por_tipo:
+            top = ingresos_por_tipo[0]
+            if top['tipo'] == 'LABORATORIO':
+                recomendaciones.append(
+                    "Los servicios de LABORATORIO generan el mayor ingreso. Considere expandir este servicio."
+                )
+            elif top['tipo'] == 'GABINETE':
+                recomendaciones.append(
+                    "Los servicios de GABINETE son los más rentables. Invierta en equipamiento para este servicio."
+                )
+            
+            # Comparativa de tickets promedio
+            if len(ingresos_por_tipo) > 1:
+                tipo1 = ingresos_por_tipo[0]
+                tipo2 = ingresos_por_tipo[1]
+                if tipo1.get('ticket_promedio', 0) > tipo2.get('ticket_promedio', 0):
+                    recomendaciones.append(
+                        f"El ticket promedio de {tipo1['tipo']} (${tipo1['ticket_promedio']:.2f}) es mayor al de {tipo2['tipo']} (${tipo2['ticket_promedio']:.2f}). Enfoque recursos en {tipo1['tipo']} para maximizar ingresos."
+                    )
+        
+        # Recomendación 2: Basada en el modelo predictivo
+        if predictive and valid_models:
+            best_score = builtins.max(valid_models.values())
+            if best_score < 0.7:
+                recomendaciones.append(
+                    "Los modelos predictivos tienen bajo rendimiento (R² < 0.7). Considere agregar más variables como 'tipo' o 'especialidad' para mejorar las predicciones."
+                )
+            elif best_score >= 0.9:
+                recomendaciones.append(
+                    "Los modelos predictivos tienen excelente rendimiento. Úselos para planificar ingresos futuros."
+                )
+        
+        # Recomendación 3: Basada en distribución de montos
+        if distribucion:
+            total = menos_100 + entre_100_500 + entre_500_1000 + mas_1000
+            if total > 0:
+                porcentaje_menos_100 = (menos_100 / total) * 100
+                if porcentaje_menos_100 > 50:
+                    recomendaciones.append(
+                        f"El {porcentaje_menos_100:.1f}% de las transacciones son menores a $100. Considere aumentar estos precios o agrupar servicios en paquetes."
+                    )
+        
+        # Recomendación 4: Basada en segmentación
+        if segmentation and segmentation.get('cluster_statistics'):
+            stats_clusters = segmentation.get('cluster_statistics', [])
+            for cluster in stats_clusters:
+                promedio_subtotal = cluster.get('promedio_subtotal', 0)
+                if promedio_subtotal > 400:
+                    recomendaciones.append(
+                        f"El segmento {cluster.get('prediction', 'N/A')} tiene alto gasto promedio (${promedio_subtotal:.2f}). Desarrolle programas de fidelización para retener a estos clientes."
+                    )
+        
+        # Recomendación 5: Basada en correlación
+        correlacion = diagnostic.get('correlacion_cantidad_subtotal')
+        if correlacion:
+            if correlacion > 0.8:
+                recomendaciones.append(
+                    f"Existe una fuerte correlación ({correlacion:.2f}) entre cantidad y subtotal. Ofrecer descuentos por volumen podría aumentar los ingresos."
+                )
+            elif correlacion < 0.3:
+                recomendaciones.append(
+                    f"La correlación entre cantidad y subtotal es baja ({correlacion:.2f}). Revise la estructura de precios."
+                )
+        
+        # Recomendación 6: Recomendación general por defecto (solo si no hay otras)
+        if not recomendaciones:
+            recomendaciones.append(
+                "Realice un análisis más detallado de los datos para identificar oportunidades de mejora."
+            )
+        
+        evaluation['recomendaciones'] = recomendaciones
+        
+        # Si no hay insights, agregar uno por defecto
         if not evaluation['insights']:
             evaluation['insights'].append(
                 "No se generaron insights automáticos; revisa los datos de entrada y el pipeline de evaluación."
             )
-
+        
         self.results['evaluation'] = evaluation
         
         # Guardar evaluación
         self._save_json(evaluation, "08_evaluation_results.json")
         
         print(f"  ✅ Insights generados: {len(evaluation['insights'])}")
+        print(f"  ✅ Recomendaciones generadas: {len(evaluation['recomendaciones'])}")
         
         return evaluation
-    
+
     # ==================== FASE 6: DEPLOYMENT ====================
     def generate_visualizations(self):
         """Generar visualizaciones para deployment"""

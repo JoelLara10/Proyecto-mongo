@@ -1,36 +1,37 @@
 {
     "servicios_frecuentes": {
-        "LABORATORIO": 27,
+        "LABORATORIO": 50,
         "GABINETE": 24
     },
     "ingresos_por_rango": {
         "Alto": 3270.0,
-        "Bajo": 700.0,
-        "Medio": 5060.0
+        "Bajo": 1410.0,
+        "Medio": 6610.0
     },
     "ingresos_por_mes": {
-        "4": 9030.0
+        "4": 9030.0,
+        "5": 2260.0
     },
     "estadisticas_por_tipo": {
         "subtotal_sum": {
             "GABINETE": 6220.0,
-            "LABORATORIO": 2810.0
+            "LABORATORIO": 5070.0
         },
         "subtotal_mean": {
             "GABINETE": 259.1666666666667,
-            "LABORATORIO": 104.07407407407408
+            "LABORATORIO": 101.4
         },
         "subtotal_count": {
             "GABINETE": 24,
-            "LABORATORIO": 27
+            "LABORATORIO": 50
         },
         "precio_mean": {
             "GABINETE": 259.1666666666667,
-            "LABORATORIO": 104.07407407407408
+            "LABORATORIO": 101.4
         },
         "precio_std": {
             "GABINETE": 93.47944050485887,
-            "LABORATORIO": 30.54117765842589
+            "LABORATORIO": 29.692986872117714
         }
     },
     "correlaciones": {

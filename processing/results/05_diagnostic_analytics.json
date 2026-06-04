@@ -3,9 +3,9 @@
     "analisis_por_especialidad": [
         {
             "especialidad": "Medicina general",
-            "ingreso_total": 4820.0,
-            "transacciones": 28,
-            "promedio": 172.14285714285714
+            "ingreso_total": 7080.0,
+            "transacciones": 51,
+            "promedio": 138.8235294117647
         },
         {
             "especialidad": "Cardiología",
@@ -33,13 +33,13 @@
         },
         {
             "area": "Ambulatorio",
-            "ingreso_total": 1410.0,
-            "transacciones": 9
+            "ingreso_total": 3670.0,
+            "transacciones": 32
         }
     ],
     "distribucion_montos": {
-        "menos_100": 10,
-        "entre_100_500": 41,
+        "menos_100": 20,
+        "entre_100_500": 54,
         "entre_500_1000": 0,
         "mas_1000": 0
     }

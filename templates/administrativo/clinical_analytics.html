@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Análisis Clínico - INEO Hospital</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Bootstrap 5 -->
+  <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='css/bootstrap-icons.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='css/all.min.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='css/fonts.css') }}" rel="stylesheet">
+
+  <style>
+    * { font-family: 'Inter', sans-serif; }
+
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+    }
+
+    .navbar {
+      background: rgba(255,255,255,0.95);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 4px 30px rgba(0,0,0,0.1);
+    }
+
+    .section-card {
+      background: rgba(255,255,255,0.95);
+      border-radius: 20px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+      transition: all 0.3s ease;
+    }
+
+    .section-card:hover {
+      transform: translateY(-3px);
+    }
+
+    .section-title {
+      color: white;
+      font-weight: 600;
+      font-size: 1.5rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+    }
+
+    .section-title i {
+      margin-right: 1rem;
+      background: rgba(255,255,255,0.2);
+      padding: 0.5rem;
+      border-radius: 15px;
+    }
+
+    .metric-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 15px;
+      padding: 1rem;
+      color: white;
+      text-align: center;
+      margin-bottom: 1rem;
+      transition: transform 0.3s ease;
+    }
+
+    .metric-card:hover {
+      transform: translateY(-5px);
+    }
+
+    .metric-card h3 {
+      font-size: 2rem;
+      font-weight: bold;
+      margin: 0;
+    }
+
+    .risk-high {
+      background: linear-gradient(135deg, #dc3545, #c82333);
+    }
+
+    .risk-medium {
+      background: linear-gradient(135deg, #fd7e14, #e8590c);
+    }
+
+    .risk-low {
+      background: linear-gradient(135deg, #28a745, #20c997);
+    }
+
+    .alert-refresh {
+      background: rgba(255,255,255,0.95);
+      border: none;
+      border-radius: 15px;
+      margin-bottom: 1.5rem;
+    }
+
+    .btn-refresh {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      transition: all 0.3s ease;
+    }
+
+    .btn-refresh:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(102,126,234,0.4);
+    }
+
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(5px);
+      z-index: 9999;
+      display: none;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .loading-spinner {
+      width: 60px;
+      height: 60px;
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #667eea;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .badge-risk {
+      font-size: 0.8rem;
+      padding: 0.3rem 0.8rem;
+    }
+
+    .anomaly-item {
+      border-left: 4px solid #dc3545;
+      padding-left: 1rem;
+      margin-bottom: 0.8rem;
+    }
+
+    .correlation-card {
+      background: #f8f9fa;
+      border-radius: 12px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .btn-analytics-toggle {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      z-index: 999;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      border: none;
+      border-radius: 50px;
+      padding: 12px 20px;
+      font-weight: 600;
+      box-shadow: 0 10px 25px rgba(102,126,234,0.4);
+      transition: all 0.3s ease;
+    }
+
+    .btn-analytics-toggle:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 15px 35px rgba(102,126,234,0.6);
+      color: white;
+    }
+  </style>
+</head>
+
+<body>
+
+<!-- LOADING OVERLAY -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-spinner"></div>
+</div>
+
+<!-- NAVBAR -->
+<nav class="navbar navbar-expand-lg">
+  <div class="container-fluid px-4">
+    <a href="{{ url_for('administrativo') }}" class="btn btn-outline-light me-3">
+      <i class="bi bi-arrow-left me-2"></i>Administrativo
+    </a>
+
+    <span class="navbar-brand fw-bold fs-4">
+      <i class="fas fa-heartbeat me-2"></i>
+      Análisis Clínico con Spark
+    </span>
+
+    <div class="ms-auto">
+      <span class="me-3 fw-semibold">
+        <i class="bi bi-person-circle"></i> {{ session['username'] }}
+      </span>
+      <a href="{{ url_for('logout') }}" class="btn btn-outline-light">
+        <i class="bi bi-box-arrow-right"></i> Salir
+      </a>
+    </div>
+  </div>
+</nav>
+
+<div class="container mt-4">
+
+  <!-- ALERTA DE ERROR O ACTUALIZACIÓN -->
+  {% if error %}
+  <div class="alert alert-danger alert-dismissible fade show" role="alert">
+    <i class="fas fa-exclamation-triangle me-2"></i>
+    {{ error }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+  {% endif %}
+
+  {% if request.args.get('success') %}
+  <div class="alert alert-success alert-dismissible fade show" role="alert">
+    <i class="fas fa-check-circle me-2"></i>
+    Análisis clínico actualizado correctamente con Spark
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+  {% endif %}
+
+  <!-- BOTÓN DE ACTUALIZACIÓN -->
+  <div class="alert-refresh d-flex justify-content-between align-items-center p-3">
+    <div>
+      <i class="fas fa-database me-2" style="color: #667eea;"></i>
+      <strong>Última actualización clínica:</strong> 
+      {{ intelligence.fecha_analisis if intelligence and intelligence.fecha_analisis else 'No disponible' }}
+    </div>
+    <a href="{{ url_for('refresh_clinical') }}" class="btn btn-refresh" id="btnRefresh">
+      <i class="fas fa-sync-alt me-2"></i>
+      Actualizar Análisis Clínico
+    </a>
+  </div>
+
+  <!-- ==================== 1. PREDICCIÓN DE DIABETES ==================== -->
+  <div class="section-title">
+    <i class="fas fa-tint"></i>
+    Predicción de Diabetes
+  </div>
+
+  <div class="section-card">
+    <div class="row g-4">
+      <div class="col-md-3">
+        <div class="metric-card risk-high">
+          <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+          <h3>{{ diabetes.riesgo_alto|default(0) }}</h3>
+          <small>Pacientes con Riesgo ALTO</small>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="metric-card risk-medium">
+          <i class="fas fa-chart-line fa-2x mb-2"></i>
+          <h3>{{ diabetes.riesgo_medio|default(0) }}</h3>
+          <small>Pacientes con Riesgo MEDIO</small>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="metric-card risk-low">
+          <i class="fas fa-check-circle fa-2x mb-2"></i>
+          <h3>{{ diabetes.riesgo_bajo|default(0) }}</h3>
+          <small>Pacientes con Riesgo BAJO</small>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="metric-card">
+          <i class="fas fa-users fa-2x mb-2"></i>
+          <h3>{{ diabetes.total_pacientes_analizados|default(0) }}</h3>
+          <small>Total Pacientes Analizados</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-4">
+      <h6 class="fw-bold mb-3"><i class="fas fa-flask me-2"></i>Criterios de Diagnóstico</h6>
+      <div class="row">
+        <div class="col-md-6">
+          <ul class="list-group">
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              Glucosa en ayunas
+              <span class="badge bg-danger rounded-pill">&gt; 126 mg/dL</span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              Hemoglobina Glicosilada (HbA1c)
+              <span class="badge bg-danger rounded-pill">&gt; 6.5%</span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              Colesterol total
+              <span class="badge bg-warning rounded-pill">&gt; 200 mg/dL</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    {% if diabetes.pacientes_riesgo_alto and diabetes.pacientes_riesgo_alto|length > 0 %}
+    <div class="mt-4">
+      <h6 class="fw-bold mb-3"><i class="fas fa-user-md me-2"></i>Pacientes con Riesgo ALTO de Diabetes</h6>
+      <div class="table-responsive">
+        <table class="table table-sm table-hover">
+          <thead>
+            <tr><th>ID</th><th>Nombre</th><th>Marcadores Positivos</th><th>Edad</th></tr>
+          </thead>
+          <tbody>
+            {% for paciente in diabetes.pacientes_riesgo_alto[:5] %}
+            <tr>
+              <td>{{ paciente.id_examen }}</td>
+              <td>{{ paciente.nom_pac }} {{ paciente.papell }}</td>
+              <td>{{ paciente.marcadores_positivos }}</td>
+              <td>{{ paciente.edad }} años</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- ==================== 2. PREDICCIÓN DE REINGRESOS ==================== -->
+  <div class="section-title">
+    <i class="fas fa-hospital-user"></i>
+    Predicción de Reingresos
+  </div>
+
+  <div class="section-card">
+    <div class="row g-4">
+      <div class="col-md-3">
+        <div class="metric-card risk-high">
+          <i class="fas fa-ambulance fa-2x mb-2"></i>
+          <h3>{{ readmission.riesgo_alto|default(0) }}</h3>
+          <small>Riesgo ALTO de Reingreso</small>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="metric-card risk-medium">
+          <i class="fas fa-chart-line fa-2x mb-2"></i>
+          <h3>{{ readmission.riesgo_medio|default(0) }}</h3>
+          <small>Riesgo MEDIO de Reingreso</small>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="metric-card risk-low">
+          <i class="fas fa-home fa-2x mb-2"></i>
+          <h3>{{ readmission.riesgo_bajo|default(0) }}</h3>
+          <small>Riesgo BAJO de Reingreso</small>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="metric-card">
+          <i class="fas fa-chart-simple fa-2x mb-2"></i>
+          <h3>{{ "%.2f"|format(readmission.promedio_atenciones|default(0)) }}</h3>
+          <small>Promedio de Atenciones</small>
+        </div>
+      </div>
+    </div>
+
+    {% if readmission.pacientes_alto_riesgo and readmission.pacientes_alto_riesgo|length > 0 %}
+    <div class="mt-4">
+      <h6 class="fw-bold mb-3"><i class="fas fa-exclamation-triangle me-2"></i>Pacientes con ALTO Riesgo de Reingreso</h6>
+      <div class="table-responsive">
+        <table class="table table-sm table-hover">
+          <thead>
+            <tr><th>ID</th><th>Nombre</th><th>Total Atenciones</th></tr>
+          </thead>
+          <tbody>
+            {% for paciente in readmission.pacientes_alto_riesgo[:5] %}
+            <tr>
+              <td>{{ paciente.Id_exp }}</td>
+              <td>{{ paciente.nom_pac }} {{ paciente.papell }}</td>
+              <td>{{ paciente.total_atenciones }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- ==================== 3. OCUPACIÓN HOSPITALARIA ==================== -->
+  <div class="section-title">
+    <i class="fas fa-bed"></i>
+    Ocupación Hospitalaria
+  </div>
+
+  <div class="section-card">
+    <div class="row g-4">
+      <div class="col-md-4">
+        <div class="metric-card">
+          <i class="fas fa-procedures fa-2x mb-2"></i>
+          <h3>{{ occupancy.total_camas|default(0) }}</h3>
+          <small>Total de Camas</small>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="metric-card risk-high">
+          <i class="fas fa-bed fa-2x mb-2"></i>
+          <h3>{{ occupancy.camas_ocupadas|default(0) }}</h3>
+          <small>Camas Ocupadas</small>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="metric-card risk-low">
+          <i class="fas fa-bed-pulse fa-2x mb-2"></i>
+          <h3>{{ occupancy.camas_disponibles|default(0) }}</h3>
+          <small>Camas Disponibles</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-4">
+      <h6 class="fw-bold mb-3"><i class="fas fa-chart-pie me-2"></i>Ocupación por Área</h6>
+      <div class="table-responsive">
+        <table class="table table-sm">
+          <thead>
+            <tr><th>Área</th><th>Total Camas</th><th>Ocupadas</th><th>Disponibles</th><th>Ocupación</th></tr>
+          </thead>
+          <tbody>
+            {% for area in occupancy.ocupacion_por_area|default([]) %}
+            <tr>
+              <td><strong>{{ area.area }}</strong></td>
+              <td>{{ area.total_camas }}</td>
+              <td>{{ area.ocupadas }}</td>
+              <td>{{ area.disponibles }}</td>
+              <td>
+                <div class="progress" style="height: 8px;">
+                  <div class="progress-bar {% if area.porcentaje_ocupacion > 80 %}bg-danger{% elif area.porcentaje_ocupacion > 60 %}bg-warning{% else %}bg-success{% endif %}" 
+                       style="width: {{ area.porcentaje_ocupacion }}%"></div>
+                </div>
+                <small>{{ area.porcentaje_ocupacion }}%</small>
+               </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    {% if occupancy.areas_criticas and occupancy.areas_criticas|length > 0 %}
+    <div class="alert alert-danger mt-3">
+      <i class="fas fa-exclamation-triangle me-2"></i>
+      <strong>Áreas Críticas (saturación > 80%):</strong>
+      {% for area in occupancy.areas_criticas %}
+      <span class="badge bg-danger ms-2">{{ area.area }} ({{ area.porcentaje_ocupacion }}%)</span>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- ==================== 4. DETECCIÓN DE ANOMALÍAS ==================== -->
+  <div class="section-title">
+    <i class="fas fa-shield-virus"></i>
+    Detección de Anomalías Clínicas
+  </div>
+
+  <div class="section-card">
+    <div class="row g-4">
+      <div class="col-md-4">
+        <div class="metric-card risk-high">
+          <i class="fas fa-flask fa-2x mb-2"></i>
+          <h3>{{ anomalies.total_anomalias_examenes|default(0) }}</h3>
+          <small>Exámenes Anómalos</small>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="metric-card risk-medium">
+          <i class="fas fa-heartbeat fa-2x mb-2"></i>
+          <h3>{{ anomalies.total_anomalias_signos|default(0) }}</h3>
+          <small>Signos Vitales Anómalos</small>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="metric-card risk-low">
+          <i class="fas fa-clock fa-2x mb-2"></i>
+          <h3>{{ anomalies.total_inconsistencias|default(0) }}</h3>
+          <small>Inconsistencias Detectadas</small>
+        </div>
+      </div>
+    </div>
+
+    {% if anomalies.detalles and anomalies.detalles.examenes_anomalos|default([])|length > 0 %}
+    <div class="mt-4">
+      <h6 class="fw-bold mb-3"><i class="fas fa-chart-line me-2"></i>Exámenes con Resultados Atípicos</h6>
+      <div class="table-responsive">
+        <table class="table table-sm">
+          <thead>
+            <tr><th>ID Examen</th><th>Nombre</th><th>Precio</th><th>Subtotal</th><th>Estado</th></tr>
+          </thead>
+          <tbody>
+            {% for examen in anomalies.detalles.examenes_anomalos[:5] %}
+            <tr class="table-danger">
+              <td>{{ examen.id_examen }}</td>
+              <td>{{ examen.nombre_examen }}</td>
+              <td>${{ examen.precio }}</td>
+              <td>${{ examen.subtotal }}</td>
+              <td><span class="badge bg-warning">{{ examen.estado }}</span></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="mt-3">
+      <h6 class="fw-bold mb-3"><i class="fas fa-chart-line me-2"></i>Rangos de Referencia Normales</h6>
+      <div class="row">
+        <div class="col-md-3">
+          <div class="correlation-card">
+            <small>Frecuencia Cardíaca</small>
+            <strong>60 - 100 lpm</strong>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="correlation-card">
+            <small>Temperatura</small>
+            <strong>36.1 - 37.2 °C</strong>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="correlation-card">
+            <small>Saturación O₂</small>
+            <strong>95 - 100%</strong>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="correlation-card">
+            <small>Presión Arterial</small>
+            <strong>90-120 / 60-80</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 5. SEGMENTACIÓN DE PACIENTES ==================== -->
+  <div class="section-title">
+    <i class="fas fa-chart-pie"></i>
+    Segmentación de Pacientes
+  </div>
+
+  <div class="section-card">
+    <div class="row">
+      {% for segmento in segmentation.segmentos|default([]) %}
+      <div class="col-md-4 mb-3">
+        <div class="card text-center h-100">
+          <div class="card-body">
+            <div class="icon-circle mx-auto mb-3" style="width: 60px; height: 60px; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+              <i class="fas fa-users fa-2x text-white"></i>
+            </div>
+            <h5 class="card-title">{{ segmento.nombre_segmento }}</h5>
+            <p class="card-text">
+              <strong>{{ segmento.total_pacientes }}</strong> pacientes<br>
+              Edad promedio: <strong>{{ segmento.edad_promedio }}</strong> años<br>
+              Atenciones promedio: <strong>{{ segmento.atenciones_promedio }}</strong>
+            </p>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="text-muted small mt-3 text-center">
+      <i class="fas fa-chart-line me-1"></i>
+      Método: K-Means Clustering | Features: Edad, Número de Atenciones
+    </div>
+  </div>
+
+  <!-- ==================== 6. INTELIGENCIA CLÍNICA ==================== -->
+  <div class="section-title">
+    <i class="fas fa-brain"></i>
+    Inteligencia Clínica
+  </div>
+
+  <div class="section-card">
+    <h6 class="fw-bold mb-3"><i class="fas fa-link me-2"></i>Correlaciones Clínicas Identificadas</h6>
+    <div class="row">
+      {% for correlacion in intelligence.correlaciones_clinicas|default([]) %}
+      <div class="col-md-4 mb-3">
+        <div class="correlation-card">
+          <div class="d-flex align-items-center mb-2">
+            <i class="fas fa-stethoscope me-2" style="color: #667eea;"></i>
+            <strong>{{ correlacion.condicion }}</strong>
+          </div>
+          <p class="small text-muted mb-2">
+            <i class="fas fa-exclamation-triangle me-1"></i> {{ correlacion.riesgo_asociado }}
+          </p>
+          <div class="alert alert-info small mb-0 py-2">
+            <i class="fas fa-lightbulb me-1"></i> {{ correlacion.recomendacion }}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="mt-4">
+      <h6 class="fw-bold mb-3"><i class="fas fa-list-check me-2"></i>Recomendaciones Clínicas</h6>
+      <div class="row">
+        {% for rec in intelligence.recomendaciones|default([]) %}
+        <div class="col-md-6 mb-2">
+          <div class="d-flex align-items-start p-2 border rounded">
+            <i class="fas fa-check-circle mt-1 me-3" style="color: #48bb78;"></i>
+            <p class="mb-0">{{ rec }}</p>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 7. VISUALIZACIONES CLÍNICAS ==================== -->
+  <div class="section-title">
+    <i class="fas fa-image"></i>
+    Visualizaciones Clínicas
+  </div>
+
+  <div class="section-card">
+    <div class="row">
+      {% if visualizations and visualizations.graficos_generados and visualizations.graficos_generados|length > 0 %}
+        {% for img_path in visualizations.graficos_generados %}
+        <div class="col-md-6 mb-4">
+          <div class="card h-100">
+            <div class="card-body text-center">
+              {% if img_path is string %}
+                {% set filename = img_path.split('/')[-1] if '/' in img_path else img_path.split('\\')[-1] %}
+                <img src="{{ url_for('serve_clinical_viz', filename=filename) }}" class="img-fluid rounded" alt="Visualización" style="max-height: 300px; width: auto;">
+              {% else %}
+                <p class="text-muted">Formato de imagen no reconocido</p>
+              {% endif %}
+            </div>
+            <div class="card-footer text-muted small text-center">
+              {% if img_path is string %}
+                {% set filename = img_path.split('/')[-1] if '/' in img_path else img_path.split('\\')[-1] %}
+                {{ filename.replace('.png', '').replace('_', ' ').title() }}
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+      <div class="text-center py-5 text-muted">
+        <i class="fas fa-chart-image fa-3x mb-3"></i>
+        <p>Ejecuta "Actualizar Análisis Clínico" para generar visualizaciones</p>
+        <p class="small">Las visualizaciones se guardan en: processing/results/clinical_visualizations/</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="text-center text-white-50 py-4">
+    <small>
+      <i class="fas fa-heartbeat me-2"></i>
+      Powered by Apache Spark & MongoDB Atlas | Análisis Clínico Predictivo
+    </small>
+  </div>
+
+</div>
+
+<!-- Botón flotante para volver a analytics principal -->
+<a href="{{ url_for('analytics_met') }}" class="btn btn-analytics-toggle">
+  <i class="fas fa-chart-line me-2"></i>
+  Ver Analytics Financiero
+</a>
+
+<script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+
+<script>
+  document.getElementById('btnRefresh')?.addEventListener('click', function(e) {
+    document.getElementById('loadingOverlay').style.display = 'flex';
+  });
+
+  window.addEventListener('load', function() {
+    document.getElementById('loadingOverlay').style.display = 'none';
+  });
+</script>
+
+</body>
+</html>

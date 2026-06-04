@@ -1,0 +1,35 @@
+{
+    "patrones_encontrados": [
+        {
+            "patron": "Riesgo de Diabetes Moderado",
+            "descripcion": "139 pacientes con riesgo moderado de diabetes"
+        },
+        {
+            "patron": "Alto Riesgo de Reingresos",
+            "descripcion": "156 pacientes con alto riesgo de reingreso"
+        },
+        {
+            "patron": "Anomalías en Signos Vitales",
+            "descripcion": "139 registros con valores anómalos detectados"
+        }
+    ],
+    "correlaciones_clinicas": [
+        {
+            "condicion": "Pacientes Multiataques",
+            "riesgo_asociado": "Mayor consumo de recursos hospitalarios",
+            "recomendacion": "Coordinar con atención primaria para manejo ambulatorio"
+        }
+    ],
+    "recomendaciones": [
+        "🟡 Fortalecer prevención de diabetes en población general",
+        "🔴 Implementar programa de seguimiento post-alta para pacientes crónicos",
+        "🔴 Establecer contactos de seguimiento en primeras 48 horas post-alta",
+        "🔴 Reforzar monitoreo de signos vitales en UCI/áreas críticas",
+        "🟡 Revisar calibración de dispositivos de monitoreo",
+        "🟡 Pacientes de alta frecuencia (63): Crear programas de manejo crónico",
+        "🟡 Pacientes de alta frecuencia (59): Crear programas de manejo crónico",
+        "🟡 Pacientes de alta frecuencia (78): Crear programas de manejo crónico"
+    ],
+    "fecha_analisis": "2026-06-03T21:36:03.969128",
+    "total_recomendaciones": 8
+}

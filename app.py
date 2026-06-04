@@ -12,6 +12,7 @@ from pathlib import Path
 import re
 import psutil
 import time
+from processing.clinical_analytics import ClinicalAnalytics
 from flask import (
     Flask, render_template, request, redirect,
     url_for, session, flash, jsonify, current_app,
@@ -99,19 +100,60 @@ scheduler = BackgroundScheduler()
 app.config['SCHEDULER'] = scheduler
 
 # ===============================
-# Configuración de Rutas
+# Configuración de Rutas (UNIFICADA)
 # ===============================
 BASE_DIR = Path(__file__).resolve().parent
 PROCESSING_DIR = BASE_DIR / "processing"
-RESULTS_DIR = PROCESSING_DIR / "results"          # ← CORREGIDO
-VIZ_DIR = RESULTS_DIR / "visualizaciones"
 
-# Crear carpetas si no existen
+# Ruta principal de resultados
+RESULTS_DIR = PROCESSING_DIR / "results"
+
+# Subdirectorios específicos
+VIZ_DIR = RESULTS_DIR / "visualizaciones"           # Para analytics general
+CLINICAL_VIZ_DIR = RESULTS_DIR / "clinical_visualizations"  # Para clinical analytics
+CLINICAL_RESULTS_DIR = RESULTS_DIR  # ← Para clinical analytics (mismo directorio)
+
+# Crear todas las carpetas necesarias
 RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 VIZ_DIR.mkdir(parents=True, exist_ok=True)
+CLINICAL_VIZ_DIR.mkdir(parents=True, exist_ok=True)
 
-print(f"📁 RESULTS_DIR configurado en: {RESULTS_DIR}")
+print(f"📁 RESULTS_DIR: {RESULTS_DIR}")
+print(f"📁 VIZ_DIR: {VIZ_DIR}")
+print(f"📁 CLINICAL_VIZ_DIR: {CLINICAL_VIZ_DIR}")
 
+@app.route('/admin/debug-paths')
+def debug_paths():
+    """Ruta de debug para verificar todas las rutas"""
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    
+    import os
+    
+    debug_info = {
+        'BASE_DIR': str(BASE_DIR),
+        'PROCESSING_DIR': str(PROCESSING_DIR),
+        'RESULTS_DIR': str(RESULTS_DIR),
+        'RESULTS_DIR_exists': RESULTS_DIR.exists(),
+        'VIZ_DIR': str(VIZ_DIR),
+        'VIZ_DIR_exists': VIZ_DIR.exists(),
+        'CLINICAL_VIZ_DIR': str(CLINICAL_VIZ_DIR),
+        'CLINICAL_VIZ_DIR_exists': CLINICAL_VIZ_DIR.exists(),
+        'archivos_en_results': [],
+        'archivos_en_clinical_viz': [],
+        'archivos_en_viz': []
+    }
+    
+    if RESULTS_DIR.exists():
+        debug_info['archivos_en_results'] = [f.name for f in RESULTS_DIR.iterdir() if f.is_file()]
+    
+    if CLINICAL_VIZ_DIR.exists():
+        debug_info['archivos_en_clinical_viz'] = [f.name for f in CLINICAL_VIZ_DIR.glob("*")]
+    
+    if VIZ_DIR.exists():
+        debug_info['archivos_en_viz'] = [f.name for f in VIZ_DIR.glob("*")]
+    
+    return jsonify(debug_info)
 
 # Configuración para servir imágenes de resultados
 @app.route('/results/visualizaciones/<path:filename>')
@@ -573,6 +615,154 @@ def formato_fecha(valor, formato='%d/%m/%Y'):
     except Exception as e:
         print(f"Error en filtro formato_fecha: {e}")
         return str(valor)
+
+
+@app.route('/admin/clinical-analytics')
+def clinical_analytics():
+    """Dashboard de análisis clínico"""
+    if 'username' not in session:
+        return redirect(url_for('login'))
+
+    # Usar RESULTS_DIR en lugar de CLINICAL_RESULTS_DIR
+    results_path = RESULTS_DIR / "clinical_00_complete_results.json"
+    
+    # Inicializar con estructura correcta
+    analytics_data = {
+        'diabetes': {
+            'riesgo_alto': 0,
+            'riesgo_medio': 0,
+            'riesgo_bajo': 0,
+            'total_pacientes_analizados': 0,
+            'pacientes_riesgo_alto': []
+        },
+        'readmission': {
+            'riesgo_alto': 0,
+            'riesgo_medio': 0,
+            'riesgo_bajo': 0,
+            'total_pacientes': 0,
+            'promedio_atenciones': 0,
+            'pacientes_alto_riesgo': []
+        },
+        'occupancy': {
+            'total_camas': 0,
+            'camas_ocupadas': 0,
+            'camas_disponibles': 0,
+            'porcentaje_ocupacion_general': 0,
+            'ocupacion_por_area': [],
+            'demanda_por_especialidad': [],
+            'areas_criticas': []
+        },
+        'anomalies': {
+            'total_anomalias_examenes': 0,
+            'total_anomalias_signos': 0,
+            'total_inconsistencias': 0,
+            'detalles': {},
+            'rangos_referencia': {}
+        },
+        'segmentation': {
+            'num_segmentos': 0,
+            'segmentos': [],
+            'metodo': ''
+        },
+        'intelligence': {
+            'patrones_encontrados': [],
+            'correlaciones_clinicas': [],
+            'recomendaciones': [],
+            'fecha_analisis': '',
+            'total_recomendaciones': 0
+        },
+        'visualizations': {
+            'graficos_generados': []
+        },
+        'error': None
+    }
+
+    if results_path.exists():
+        try:
+            with open(results_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                
+                # Asegurar que los datos tengan la estructura correcta
+                analytics_data['diabetes'] = data.get('diabetes_prediction', analytics_data['diabetes'])
+                analytics_data['readmission'] = data.get('readmission_prediction', analytics_data['readmission'])
+                analytics_data['occupancy'] = data.get('occupancy_analysis', analytics_data['occupancy'])
+                analytics_data['anomalies'] = data.get('anomaly_detection', analytics_data['anomalies'])
+                analytics_data['segmentation'] = data.get('patient_segmentation', analytics_data['segmentation'])
+                analytics_data['intelligence'] = data.get('clinical_intelligence', analytics_data['intelligence'])
+                analytics_data['visualizations'] = data.get('clinical_visualizations', analytics_data['visualizations'])
+                
+                # Convertir listas a strings si es necesario para el template
+                if analytics_data.get('visualizations', {}).get('graficos_generados'):
+                    # Si es una lista, convertir a lista de strings (ya debería serlo)
+                    pass
+                    
+        except Exception as e:
+            analytics_data['error'] = f"Error al leer el archivo: {str(e)}"
+            print(f"❌ Error: {e}")
+    else:
+        analytics_data['error'] = f"No se encontraron resultados en {results_path}. Ejecuta 'python main_clinical_analytics.py' primero."
+
+    return render_template('administrativo/clinical_analytics.html', **analytics_data)
+
+@app.route('/admin/clinical-refresh')
+def refresh_clinical():
+    """Actualiza análisis clínico"""
+    if 'username' not in session:
+        return redirect(url_for('login'))
+
+    try:
+        import subprocess
+        import sys
+        
+        # Buscar main_clinical_analytics.py en diferentes ubicaciones
+        posibles_ubicaciones = [
+            BASE_DIR / "main_clinical_analytics.py",
+            PROCESSING_DIR / "main_clinical_analytics.py",
+            BASE_DIR / "processing" / "main_clinical_analytics.py"
+        ]
+        
+        script_path = None
+        for ubicacion in posibles_ubicaciones:
+            if ubicacion.exists():
+                script_path = ubicacion
+                break
+        
+        if script_path is None:
+            return redirect(url_for('clinical_analytics', error="No se encontró main_clinical_analytics.py"))
+
+        result = subprocess.run(
+            [sys.executable, str(script_path)],
+            capture_output=True,
+            text=True,
+            cwd=BASE_DIR
+        )
+
+        if result.returncode == 0:
+            flash('Análisis clínico actualizado correctamente', 'success')
+            return redirect(url_for('clinical_analytics'))
+        else:
+            flash(f'Error: {result.stderr[:500]}', 'error')
+            return redirect(url_for('clinical_analytics'))
+    except Exception as e:
+        flash(f'Error: {str(e)}', 'error')
+        return redirect(url_for('clinical_analytics'))
+
+
+@app.route('/clinical-viz/<filename>')
+def serve_clinical_viz(filename):
+    """Sirve imágenes de visualizaciones clínicas"""
+    # Usar CLINICAL_VIZ_DIR que definimos arriba
+    if CLINICAL_VIZ_DIR.exists():
+        # Verificar si el archivo existe
+        file_path = CLINICAL_VIZ_DIR / filename
+        if file_path.exists():
+            return send_from_directory(str(CLINICAL_VIZ_DIR), filename)
+        else:
+            # Listar archivos disponibles para debug
+            archivos = list(CLINICAL_VIZ_DIR.glob("*.png"))
+            return f"Archivo {filename} no encontrado. Archivos disponibles: {[f.name for f in archivos]}", 404
+    
+    return f"Directorio de visualizaciones no encontrado en {CLINICAL_VIZ_DIR}", 404
 
 # Filtro personalizado para strftime
 @app.template_filter('strftime')

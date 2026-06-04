@@ -1,6 +1,6 @@
 {
     "cuenta_paciente": {
-        "total_registros": 68,
+        "total_registros": 91,
         "tipos_servicio": [
             "LABORATORIO",
             "GABINETE"
@@ -9,7 +9,7 @@
             "min": 50,
             "max": 450
         },
-        "ingreso_total": 29595.0
+        "ingreso_total": 31855.0
     },
     "pacientes": {
         "total_pacientes": 14,

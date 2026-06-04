@@ -1,0 +1,945 @@
+{
+    "total_pacientes": 200,
+    "riesgo_alto": 156,
+    "riesgo_medio": 24,
+    "riesgo_bajo": 20,
+    "pacientes_alto_riesgo": [
+        {
+            "Id_exp": 148,
+            "nom_pac": "María",
+            "papell": "García",
+            "total_atenciones": 3
+        },
+        {
+            "Id_exp": 137,
+            "nom_pac": "José",
+            "papell": "Pérez",
+            "total_atenciones": 7
+        },
+        {
+            "Id_exp": 65,
+            "nom_pac": "Ana",
+            "papell": "Pérez",
+            "total_atenciones": 8
+        },
+        {
+            "Id_exp": 53,
+            "nom_pac": "Carlos",
+            "papell": "Hernández",
+            "total_atenciones": 3
+        },
+        {
+            "Id_exp": 133,
+            "nom_pac": "María",
+            "papell": "García",
+            "total_atenciones": 7
+        },
+        {
+            "Id_exp": 108,
+            "nom_pac": "Carmen",
+            "papell": "Martínez",
+            "total_atenciones": 7
+        },
+        {
+            "Id_exp": 193,
+            "nom_pac": "Laura",
+            "papell": "Pérez",
+            "total_atenciones": 7
+        },
+        {
+            "Id_exp": 101,
+            "nom_pac": "María",
+            "papell": "García",
+            "total_atenciones": 3
+        },
+        {
+            "Id_exp": 126,
+            "nom_pac": "María",
+            "papell": "Pérez",
+            "total_atenciones": 4
+        },
+        {
+            "Id_exp": 28,
+            "nom_pac": "Ana",
+            "papell": "López",
+            "total_atenciones": 6
+        },
+        {
+            "Id_exp": 183,
+            "nom_pac": "Juan",
+            "papell": "López",
+            "total_atenciones": 3
+        },
+        {
+            "Id_exp": 76,
+            "nom_pac": "Carlos",
+            "papell": "López",
+            "total_atenciones": 5
+        },
+        {
+            "Id_exp": 26,
+            "nom_pac": "María",
+            "papell": "Hernández",
+            "total_atenciones": 7
+        },
+        {
+            "Id_exp": 27,
+            "nom_pac": "Juan",
+            "papell": "Martínez",
+            "total_atenciones": 5
+        },
+        {
+            "Id_exp": 44,
+            "nom_pac": "Juan",
+            "papell": "López",
+            "total_atenciones": 5
+        },
+        {
+            "Id_exp": 159,
+            "nom_pac": "Luis",
+            "papell": "Pérez",
+            "total_atenciones": 5
+        },
+        {
+            "Id_exp": 103,
+            "nom_pac": "Ana",
+            "papell": "Martínez",
+            "total_atenciones": 8
+        },
+        {
+            "Id_exp": 91,
+            "nom_pac": "Carlos",
+            "papell": "López",
+            "total_atenciones": 8
+        },
+        {
+            "Id_exp": 128,
+            "nom_pac": "Carlos",
+            "papell": "Hernández",
+            "total_atenciones": 8
+        },
+        {
+            "Id_exp": 122,
+            "nom_pac": "Juan",
+            "papell": "Pérez",
+            "total_atenciones": 7
+        },
+        {
+            "Id_exp": 93,
+            "nom_pac": "María",
+            "papell": "Pérez",
+            "total_atenciones": 4
+        },
+        {
+            "Id_exp": 157,
+            "nom_pac": "María",
+            "papell": "Pérez",
+            "total_atenciones": 4
+        },
+        {
+            "Id_exp": 111,
+            "nom_pac": "Carlos",
+            "papell": "Martínez",
+            "total_atenciones": 3
+        },
+        {
+            "Id_exp": 47,
+            "nom_pac": "María",
+            "papell": "Hernández",
+            "total_atenciones": 8
+        },
+        {
+            "Id_exp": 140,
+            "nom_pac": "Juan",
+            "papell": "Hernández",
+            "total_atenciones": 4
+        },
+        {
+            "Id_exp": 177,
+            "nom_pac": "José",
+            "papell": "Pérez",
+            "total_atenciones": 4
+        },
+        {
+            "Id_exp": 132,
+            "nom_pac": "Luis",
+            "papell": "Martínez",
+            "total_atenciones": 6
+        },
+        {
+            "Id_exp": 152,
+            "nom_pac": "Carlos",
+            "papell": "López",
+            "total_atenciones": 6
+        },
+        {
+            "Id_exp": 185,
+            "nom_pac": "Carmen",
+            "papell": "Pérez",
+            "total_atenciones": 7
+        },
+        {
+            "Id_exp": 146,
+            "nom_pac": "Ana",
+            "papell": "Hernández",
+            "total_atenciones": 7
+        },
+        {
+            "Id_exp": 1,
+            "nom_pac": "Laura",
+            "papell": "Hernández",
+            "total_atenciones": 6
+        },
+        {
+            "Id_exp": 182,
+            "nom_pac": "José",
+            "papell": "García",
+            "total_atenciones": 3
+        },
+        {
+            "Id_exp": 13,
+            "nom_pac": "Juan",
+            "papell": "López",
+            "total_atenciones": 5
+        },
+        {
+            "Id_exp": 16,
+            "nom_pac": "Juan",
+            "papell": "López",
+            "total_atenciones": 3
+        },
+        {
+            "Id_exp": 86,
+            "nom_pac": "Carmen",
+            "papell": "López",
+            "total_atenciones": 3
+        },
+        {
+            "Id_exp": 168,
+            "nom_pac": "Luis",
+            "papell": "Martínez",
+            "total_atenciones": 6
+        },
+        {
+            "Id_exp": 3,
+            "nom_pac": "Laura",
+            "papell": "Hernández",
+            "total_atenciones": 7
+        },
+        {
+            "Id_exp": 142,
+            "nom_pac": "José",
+            "papell": "Pérez",
+            "total_atenciones": 8
+        },
+        {
+            "Id_exp": 20,
+            "nom_pac": "Juan",
+            "papell": "Martínez",
+            "total_atenciones": 5
+        },
+        {
+            "Id_exp": 40,
+            "nom_pac": "Carmen",
+            "papell": "Martínez",
+            "total_atenciones": 4
+        },
+        {
+            "Id_exp": 164,
+            "nom_pac": "Carlos",
+            "papell": "López",
+            "total_atenciones": 6
+        },
+        {
+            "Id_exp": 169,
+            "nom_pac": "Carlos",
+            "papell": "Pérez",
+            "total_atenciones": 8
+        },
+        {
+            "Id_exp": 139,
+            "nom_pac": "María",
+            "papell": "Hernández",
+            "total_atenciones": 4
+        },
+        {
+            "Id_exp": 57,
+            "nom_pac": "José",
+            "papell": "Hernández",
+            "total_atenciones": 3
+        },
+        {
+            "Id_exp": 54,
+            "nom_pac": "Ana",
+            "papell": "Martínez",
+            "total_atenciones": 6
+        },
+        {
+            "Id_exp": 120,
+            "nom_pac": "Ana",
+            "papell": "Pérez",
+            "total_atenciones": 3
+        },
+        {
+            "Id_exp": 5,
+            "nom_pac": "Juan",
+            "papell": "Martínez",
+            "total_atenciones": 3
+        },
+        {
+            "Id_exp": 163,
+            "nom_pac": "Ana",
+            "papell": "Hernández",
+            "total_atenciones": 3
+        },
+        {
+            "Id_exp": 191,
+            "nom_pac": "Juan",
+            "papell": "Pérez",
+            "total_atenciones": 7
+        },
+        {
+            "Id_exp": 19,
+            "nom_pac": "Juan",
+            "papell": "Martínez",
+            "total_atenciones": 7
+        },
+        {
+            "Id_exp": 92,
+            "nom_pac": "Juan",
+            "papell": "López",
+            "total_atenciones": 4
+        },
+        {
+            "Id_exp": 64,
+            "nom_pac": "María",
+            "papell": "Martínez",
+            "total_atenciones": 7
+        },
+        {
+            "Id_exp": 117,
+            "nom_pac": "Laura",
+            "papell": "García",
+            "total_atenciones": 7
+        },
+        {
+            "Id_exp": 154,
+            "nom_pac": "María",
+            "papell": "López",
+            "total_atenciones": 5
+        },
+        {
+            "Id_exp": 15,
+            "nom_pac": "Luis",
+            "papell": "Hernández",
+            "total_atenciones": 4
+        },
+        {
+            "Id_exp": 43,
+            "nom_pac": "Luis",
+            "papell": "Hernández",
+            "total_atenciones": 7
+        },
+        {
+            "Id_exp": 112,
+            "nom_pac": "María",
+            "papell": "López",
+            "total_atenciones": 4
+        },
+        {
+            "Id_exp": 165,
+            "nom_pac": "Carmen",
+            "papell": "Hernández",
+            "total_atenciones": 8
+        },
+        {
+            "Id_exp": 179,
+            "nom_pac": "Carmen",
+            "papell": "Martínez",
+            "total_atenciones": 3
+        },
+        {
+            "Id_exp": 189,
+            "nom_pac": "Carlos",
+            "papell": "Hernández",
+            "total_atenciones": 6
+        },
+        {
+            "Id_exp": 61,
+            "nom_pac": "Laura",
+            "papell": "Pérez",
+            "total_atenciones": 5
+        },
+        {
+            "Id_exp": 127,
+            "nom_pac": "José",
+            "papell": "López",
+            "total_atenciones": 6
+        },
+        {
+            "Id_exp": 197,
+            "nom_pac": "Carlos",
+            "papell": "García",
+            "total_atenciones": 4
+        },
+        {
+            "Id_exp": 107,
+            "nom_pac": "Carlos",
+            "papell": "Pérez",
+            "total_atenciones": 5
+        },
+        {
+            "Id_exp": 9,
+            "nom_pac": "Ana",
+            "papell": "Martínez",
+            "total_atenciones": 3
+        },
+        {
+            "Id_exp": 17,
+            "nom_pac": "María",
+            "papell": "Martínez",
+            "total_atenciones": 5
+        },
+        {
+            "Id_exp": 72,
+            "nom_pac": "Laura",
+            "papell": "Hernández",
+            "total_atenciones": 8
+        },
+        {
+            "Id_exp": 35,
+            "nom_pac": "Carmen",
+            "papell": "García",
+            "total_atenciones": 3
+        },
+        {
+            "Id_exp": 114,
+            "nom_pac": "Juan",
+            "papell": "Martínez",
+            "total_atenciones": 6
+        },
+        {
+            "Id_exp": 173,
+            "nom_pac": "Juan",
+            "papell": "López",
+            "total_atenciones": 8
+        },
+        {
+            "Id_exp": 55,
+            "nom_pac": "Ana",
+            "papell": "López",
+            "total_atenciones": 3
+        },
+        {
+            "Id_exp": 8,
+            "nom_pac": "Laura",
+            "papell": "Martínez",
+            "total_atenciones": 5
+        },
+        {
+            "Id_exp": 100,
+            "nom_pac": "Laura",
+            "papell": "Pérez",
+            "total_atenciones": 6
+        },
+        {
+            "Id_exp": 161,
+            "nom_pac": "Juan",
+            "papell": "López",
+            "total_atenciones": 8
+        },
+        {
+            "Id_exp": 23,
+            "nom_pac": "Carlos",
+            "papell": "Hernández",
+            "total_atenciones": 8
+        },
+        {
+            "Id_exp": 39,
+            "nom_pac": "Carmen",
+            "papell": "García",
+            "total_atenciones": 5
+        },
+        {
+            "Id_exp": 49,
+            "nom_pac": "Ana",
+            "papell": "Martínez",
+            "total_atenciones": 3
+        },
+        {
+            "Id_exp": 176,
+            "nom_pac": "Juan",
+            "papell": "López",
+            "total_atenciones": 5
+        },
+        {
+            "Id_exp": 7,
+            "nom_pac": "Ana",
+            "papell": "López",
+            "total_atenciones": 7
+        },
+        {
+            "Id_exp": 162,
+            "nom_pac": "Laura",
+            "papell": "Hernández",
+            "total_atenciones": 4
+        },
+        {
+            "Id_exp": 130,
+            "nom_pac": "Carmen",
+            "papell": "Pérez",
+            "total_atenciones": 7
+        },
+        {
+            "Id_exp": 84,
+            "nom_pac": "María",
+            "papell": "Martínez",
+            "total_atenciones": 8
+        },
+        {
+            "Id_exp": 136,
+            "nom_pac": "José",
+            "papell": "Pérez",
+            "total_atenciones": 8
+        },
+        {
+            "Id_exp": 87,
+            "nom_pac": "José",
+            "papell": "Martínez",
+            "total_atenciones": 5
+        },
+        {
+            "Id_exp": 194,
+            "nom_pac": "Luis",
+            "papell": "López",
+            "total_atenciones": 7
+        },
+        {
+            "Id_exp": 69,
+            "nom_pac": "Ana",
+            "papell": "Martínez",
+            "total_atenciones": 5
+        },
+        {
+            "Id_exp": 129,
+            "nom_pac": "José",
+            "papell": "López",
+            "total_atenciones": 3
+        },
+        {
+            "Id_exp": 166,
+            "nom_pac": "Carmen",
+            "papell": "García",
+            "total_atenciones": 5
+        },
+        {
+            "Id_exp": 97,
+            "nom_pac": "Carlos",
+            "papell": "García",
+            "total_atenciones": 3
+        },
+        {
+            "Id_exp": 63,
+            "nom_pac": "Juan",
+            "papell": "López",
+            "total_atenciones": 5
+        },
+        {
+            "Id_exp": 10,
+            "nom_pac": "Ana",
+            "papell": "Hernández",
+            "total_atenciones": 8
+        },
+        {
+            "Id_exp": 77,
+            "nom_pac": "José",
+            "papell": "Martínez",
+            "total_atenciones": 4
+        },
+        {
+            "Id_exp": 102,
+            "nom_pac": "Luis",
+            "papell": "López",
+            "total_atenciones": 8
+        },
+        {
+            "Id_exp": 50,
+            "nom_pac": "Luis",
+            "papell": "Hernández",
+            "total_atenciones": 4
+        },
+        {
+            "Id_exp": 45,
+            "nom_pac": "Carmen",
+            "papell": "Pérez",
+            "total_atenciones": 8
+        },
+        {
+            "Id_exp": 38,
+            "nom_pac": "Carlos",
+            "papell": "López",
+            "total_atenciones": 4
+        },
+        {
+            "Id_exp": 82,
+            "nom_pac": "Laura",
+            "papell": "Hernández",
+            "total_atenciones": 5
+        },
+        {
+            "Id_exp": 167,
+            "nom_pac": "Ana",
+            "papell": "Martínez",
+            "total_atenciones": 6
+        },
+        {
+            "Id_exp": 80,
+            "nom_pac": "José",
+            "papell": "Martínez",
+            "total_atenciones": 3
+        },
+        {
+            "Id_exp": 25,
+            "nom_pac": "Laura",
+            "papell": "García",
+            "total_atenciones": 8
+        },
+        {
+            "Id_exp": 73,
+            "nom_pac": "Laura",
+            "papell": "Pérez",
+            "total_atenciones": 8
+        },
+        {
+            "Id_exp": 113,
+            "nom_pac": "Carlos",
+            "papell": "García",
+            "total_atenciones": 4
+        },
+        {
+            "Id_exp": 160,
+            "nom_pac": "Carmen",
+            "papell": "García",
+            "total_atenciones": 4
+        },
+        {
+            "Id_exp": 62,
+            "nom_pac": "Carlos",
+            "papell": "López",
+            "total_atenciones": 7
+        },
+        {
+            "Id_exp": 121,
+            "nom_pac": "Luis",
+            "papell": "López",
+            "total_atenciones": 3
+        },
+        {
+            "Id_exp": 125,
+            "nom_pac": "José",
+            "papell": "Martínez",
+            "total_atenciones": 7
+        },
+        {
+            "Id_exp": 156,
+            "nom_pac": "Luis",
+            "papell": "López",
+            "total_atenciones": 4
+        },
+        {
+            "Id_exp": 143,
+            "nom_pac": "Juan",
+            "papell": "López",
+            "total_atenciones": 8
+        },
+        {
+            "Id_exp": 95,
+            "nom_pac": "Ana",
+            "papell": "García",
+            "total_atenciones": 3
+        },
+        {
+            "Id_exp": 29,
+            "nom_pac": "Carmen",
+            "papell": "Martínez",
+            "total_atenciones": 3
+        },
+        {
+            "Id_exp": 21,
+            "nom_pac": "José",
+            "papell": "Martínez",
+            "total_atenciones": 8
+        },
+        {
+            "Id_exp": 98,
+            "nom_pac": "Juan",
+            "papell": "García",
+            "total_atenciones": 8
+        },
+        {
+            "Id_exp": 195,
+            "nom_pac": "Carmen",
+            "papell": "García",
+            "total_atenciones": 4
+        },
+        {
+            "Id_exp": 32,
+            "nom_pac": "José",
+            "papell": "García",
+            "total_atenciones": 6
+        },
+        {
+            "Id_exp": 60,
+            "nom_pac": "María",
+            "papell": "Pérez",
+            "total_atenciones": 3
+        },
+        {
+            "Id_exp": 90,
+            "nom_pac": "Juan",
+            "papell": "Pérez",
+            "total_atenciones": 6
+        },
+        {
+            "Id_exp": 75,
+            "nom_pac": "Laura",
+            "papell": "Pérez",
+            "total_atenciones": 4
+        },
+        {
+            "Id_exp": 141,
+            "nom_pac": "Laura",
+            "papell": "Martínez",
+            "total_atenciones": 4
+        },
+        {
+            "Id_exp": 145,
+            "nom_pac": "Juan",
+            "papell": "Hernández",
+            "total_atenciones": 3
+        },
+        {
+            "Id_exp": 200,
+            "nom_pac": "Carlos",
+            "papell": "García",
+            "total_atenciones": 8
+        },
+        {
+            "Id_exp": 109,
+            "nom_pac": "María",
+            "papell": "Hernández",
+            "total_atenciones": 6
+        },
+        {
+            "Id_exp": 170,
+            "nom_pac": "María",
+            "papell": "López",
+            "total_atenciones": 8
+        },
+        {
+            "Id_exp": 105,
+            "nom_pac": "Ana",
+            "papell": "García",
+            "total_atenciones": 5
+        },
+        {
+            "Id_exp": 58,
+            "nom_pac": "Carlos",
+            "papell": "Pérez",
+            "total_atenciones": 4
+        },
+        {
+            "Id_exp": 188,
+            "nom_pac": "Carmen",
+            "papell": "Hernández",
+            "total_atenciones": 7
+        },
+        {
+            "Id_exp": 11,
+            "nom_pac": "María",
+            "papell": "García",
+            "total_atenciones": 7
+        },
+        {
+            "Id_exp": 83,
+            "nom_pac": "José",
+            "papell": "Martínez",
+            "total_atenciones": 4
+        },
+        {
+            "Id_exp": 110,
+            "nom_pac": "Laura",
+            "papell": "Pérez",
+            "total_atenciones": 6
+        },
+        {
+            "Id_exp": 68,
+            "nom_pac": "Ana",
+            "papell": "López",
+            "total_atenciones": 7
+        },
+        {
+            "Id_exp": 106,
+            "nom_pac": "José",
+            "papell": "López",
+            "total_atenciones": 3
+        },
+        {
+            "Id_exp": 147,
+            "nom_pac": "Luis",
+            "papell": "López",
+            "total_atenciones": 7
+        },
+        {
+            "Id_exp": 14,
+            "nom_pac": "Laura",
+            "papell": "Pérez",
+            "total_atenciones": 5
+        },
+        {
+            "Id_exp": 198,
+            "nom_pac": "Laura",
+            "papell": "Hernández",
+            "total_atenciones": 6
+        },
+        {
+            "Id_exp": 123,
+            "nom_pac": "José",
+            "papell": "López",
+            "total_atenciones": 7
+        },
+        {
+            "Id_exp": 199,
+            "nom_pac": "Luis",
+            "papell": "López",
+            "total_atenciones": 4
+        },
+        {
+            "Id_exp": 135,
+            "nom_pac": "Carlos",
+            "papell": "López",
+            "total_atenciones": 4
+        },
+        {
+            "Id_exp": 2,
+            "nom_pac": "Juan",
+            "papell": "Hernández",
+            "total_atenciones": 3
+        },
+        {
+            "Id_exp": 79,
+            "nom_pac": "José",
+            "papell": "Martínez",
+            "total_atenciones": 8
+        },
+        {
+            "Id_exp": 131,
+            "nom_pac": "Carmen",
+            "papell": "Pérez",
+            "total_atenciones": 3
+        },
+        {
+            "Id_exp": 149,
+            "nom_pac": "Carlos",
+            "papell": "Martínez",
+            "total_atenciones": 8
+        },
+        {
+            "Id_exp": 124,
+            "nom_pac": "Carlos",
+            "papell": "Pérez",
+            "total_atenciones": 5
+        },
+        {
+            "Id_exp": 30,
+            "nom_pac": "Luis",
+            "papell": "Martínez",
+            "total_atenciones": 6
+        },
+        {
+            "Id_exp": 99,
+            "nom_pac": "María",
+            "papell": "Pérez",
+            "total_atenciones": 5
+        },
+        {
+            "Id_exp": 184,
+            "nom_pac": "Laura",
+            "papell": "López",
+            "total_atenciones": 6
+        },
+        {
+            "Id_exp": 66,
+            "nom_pac": "María",
+            "papell": "García",
+            "total_atenciones": 8
+        },
+        {
+            "Id_exp": 67,
+            "nom_pac": "Luis",
+            "papell": "Pérez",
+            "total_atenciones": 4
+        },
+        {
+            "Id_exp": 186,
+            "nom_pac": "Ana",
+            "papell": "Hernández",
+            "total_atenciones": 3
+        },
+        {
+            "Id_exp": 174,
+            "nom_pac": "Juan",
+            "papell": "Pérez",
+            "total_atenciones": 7
+        },
+        {
+            "Id_exp": 172,
+            "nom_pac": "María",
+            "papell": "García",
+            "total_atenciones": 8
+        },
+        {
+            "Id_exp": 153,
+            "nom_pac": "Juan",
+            "papell": "Martínez",
+            "total_atenciones": 3
+        },
+        {
+            "Id_exp": 74,
+            "nom_pac": "José",
+            "papell": "Hernández",
+            "total_atenciones": 7
+        },
+        {
+            "Id_exp": 138,
+            "nom_pac": "Luis",
+            "papell": "Pérez",
+            "total_atenciones": 5
+        },
+        {
+            "Id_exp": 104,
+            "nom_pac": "María",
+            "papell": "Pérez",
+            "total_atenciones": 5
+        },
+        {
+            "Id_exp": 180,
+            "nom_pac": "Juan",
+            "papell": "Martínez",
+            "total_atenciones": 7
+        },
+        {
+            "Id_exp": 134,
+            "nom_pac": "Luis",
+            "papell": "García",
+            "total_atenciones": 4
+        },
+        {
+            "Id_exp": 187,
+            "nom_pac": "Ana",
+            "papell": "Martínez",
+            "total_atenciones": 7
+        }
+    ],
+    "promedio_atenciones": 4.6
+}

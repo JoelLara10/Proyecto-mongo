@@ -1,0 +1,13 @@
+{
+    "total_pacientes_analizados": 832,
+    "riesgo_alto": 0,
+    "riesgo_medio": 139,
+    "riesgo_bajo": 693,
+    "pacientes_riesgo_alto": [],
+    "criterios_diabetes": {
+        "Glucosa": 126,
+        "Hemoglobina Glicosilada": 6.5,
+        "Química Sanguínea": 126,
+        "Perfil Lipídico": 200
+    }
+}

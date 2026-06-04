@@ -1,0 +1,16 @@
+==================================================
+RESUMEN ESTADÍSTICO - ECO MART
+==================================================
+
+Total de productos: 9
+Categorías: 3
+Stock total: 131 unidades
+Valor total inventario: $252.50
+
+Productos por categoría:
+  - Lácteos: 5 productos
+  - Carnes: 3 productos
+  - Panadería: 1 productos
+
+R² del modelo: 49.95%
+Error absoluto medio: 21.15

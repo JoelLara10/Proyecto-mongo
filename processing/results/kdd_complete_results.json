@@ -1,37 +1,38 @@
 {
     "patterns": {
         "servicios_frecuentes": {
-            "LABORATORIO": 27,
+            "LABORATORIO": 50,
             "GABINETE": 24
         },
         "ingresos_por_rango": {
             "Alto": 3270.0,
-            "Bajo": 700.0,
-            "Medio": 5060.0
+            "Bajo": 1410.0,
+            "Medio": 6610.0
         },
         "ingresos_por_mes": {
-            "4": 9030.0
+            "4": 9030.0,
+            "5": 2260.0
         },
         "estadisticas_por_tipo": {
             "subtotal_sum": {
                 "GABINETE": 6220.0,
-                "LABORATORIO": 2810.0
+                "LABORATORIO": 5070.0
             },
             "subtotal_mean": {
                 "GABINETE": 259.1666666666667,
-                "LABORATORIO": 104.07407407407408
+                "LABORATORIO": 101.4
             },
             "subtotal_count": {
                 "GABINETE": 24,
-                "LABORATORIO": 27
+                "LABORATORIO": 50
             },
             "precio_mean": {
                 "GABINETE": 259.1666666666667,
-                "LABORATORIO": 104.07407407407408
+                "LABORATORIO": 101.4
             },
             "precio_std": {
                 "GABINETE": 93.47944050485887,
-                "LABORATORIO": 30.54117765842589
+                "LABORATORIO": 29.692986872117714
             }
         },
         "correlaciones": {
@@ -54,12 +55,13 @@
     },
     "interpretation": {
         "hallazgos_clave": [
-            "Los servicios de LABORATORIO son los más solicitados con 27 transacciones",
+            "Los servicios de LABORATORIO son los más solicitados con 50 transacciones",
             "Los servicios de GABINETE son los más solicitados con 24 transacciones",
             "Los servicios de precio Alto generan $3,270.00",
-            "Los servicios de precio Bajo generan $700.00",
-            "Los servicios de precio Medio generan $5,060.00",
-            "En el mes 4 se generaron $9,030.00"
+            "Los servicios de precio Bajo generan $1,410.00",
+            "Los servicios de precio Medio generan $6,610.00",
+            "En el mes 4 se generaron $9,030.00",
+            "En el mes 5 se generaron $2,260.00"
         ],
         "recomendaciones_kdd": [
             "Enfocar recursos en servicios de laboratorio (mayor volumen)",

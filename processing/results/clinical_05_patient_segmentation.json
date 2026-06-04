@@ -1,0 +1,27 @@
+{
+    "num_segmentos": 3,
+    "segmentos": [
+        {
+            "segmento_id": 1,
+            "nombre_segmento": "ALTA FRECUENCIA",
+            "edad_promedio": 69.3,
+            "atenciones_promedio": 2.78,
+            "total_pacientes": 63
+        },
+        {
+            "segmento_id": 2,
+            "nombre_segmento": "ALTA FRECUENCIA",
+            "edad_promedio": 60.0,
+            "atenciones_promedio": 7.05,
+            "total_pacientes": 59
+        },
+        {
+            "segmento_id": 0,
+            "nombre_segmento": "ALTA FRECUENCIA",
+            "edad_promedio": 31.1,
+            "atenciones_promedio": 4.22,
+            "total_pacientes": 78
+        }
+    ],
+    "metodo": "K-Means"
+}

@@ -2,9 +2,9 @@
     "ingresos_por_tipo": [
         {
             "tipo": "LABORATORIO",
-            "total_transacciones": 27,
-            "ingreso_total": 2810.0,
-            "ticket_promedio": 104.07407407407408,
+            "total_transacciones": 50,
+            "ingreso_total": 5070.0,
+            "ticket_promedio": 101.4,
             "max_ingreso": 150.0,
             "min_ingreso": 50.0
         },
@@ -20,8 +20,8 @@
     "ingresos_por_estado": [
         {
             "estado": "PENDIENTE",
-            "ingreso_total": 9030.0,
-            "cantidad": 51
+            "ingreso_total": 11290.0,
+            "cantidad": 74
         }
     ],
     "top_servicios": [
@@ -31,13 +31,13 @@
         },
         {
             "tipo": "LABORATORIO",
-            "total": 2810.0
+            "total": 5070.0
         }
     ],
     "estadisticas_generales": {
-        "ingreso_promedio": 177.05882352941177,
-        "desviacion_ingreso": 103.03968396005604,
-        "ingreso_total": 9030.0,
-        "total_transacciones": 51
+        "ingreso_promedio": 152.56756756756758,
+        "desviacion_ingreso": 94.20264968513813,
+        "ingreso_total": 11290.0,
+        "total_transacciones": 74
     }
 }
