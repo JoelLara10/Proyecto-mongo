@@ -1,7 +1,7 @@
 {
     "total_anomalias_examenes": 0,
     "total_anomalias_signos": 139,
-    "total_inconsistencias": 2600,
+    "total_inconsistencias": 2611,
     "detalles": {
         "examenes_anomalos": [],
         "signos_anomalos": [
@@ -9300,6 +9300,97 @@
                 "precio": 160,
                 "resultado": NaN,
                 "subtotal": 160.0,
+                "unidad": NaN
+            },
+            {
+                "_id": "6a20f1847aa94a778a00e0ca",
+                "cantidad": 1,
+                "estado": "PENDIENTE",
+                "fecha": "2026-05-28T21:31:13.565509",
+                "id_catalogo": 13,
+                "id_examen": 1204,
+                "nombre_examen": "Retinografía",
+                "precio": 240,
+                "resultado": NaN,
+                "subtotal": 240.0,
+                "unidad": NaN
+            },
+            {
+                "_id": "6a20f1847aa94a778a00e0cb",
+                "cantidad": 1,
+                "estado": "PENDIENTE",
+                "fecha": "2026-05-28T21:31:13.565509",
+                "id_catalogo": 8,
+                "id_examen": 1205,
+                "nombre_examen": "OCT de nervio óptico",
+                "precio": 350,
+                "resultado": NaN,
+                "subtotal": 350.0,
+                "unidad": NaN
+            },
+            {
+                "_id": "6a20f1847aa94a778a00e0cd",
+                "cantidad": 1,
+                "estado": "PENDIENTE",
+                "fecha": "2026-05-28T21:31:13.565509",
+                "id_catalogo": 1,
+                "id_examen": 1207,
+                "nombre_examen": "Agudeza visual",
+                "precio": 150,
+                "resultado": NaN,
+                "subtotal": 150.0,
+                "unidad": NaN
+            },
+            {
+                "_id": "6a20f1847aa94a778a00e0ce",
+                "cantidad": 1,
+                "estado": "PENDIENTE",
+                "fecha": "2026-05-28T21:31:13.565509",
+                "id_catalogo": 2,
+                "id_examen": 1208,
+                "nombre_examen": "Refracción",
+                "precio": 200,
+                "resultado": NaN,
+                "subtotal": 200.0,
+                "unidad": NaN
+            },
+            {
+                "_id": "6a20f1847aa94a778a00e0cf",
+                "cantidad": 1,
+                "estado": "PENDIENTE",
+                "fecha": "2026-05-28T21:31:13.565509",
+                "id_catalogo": 20,
+                "id_examen": 1209,
+                "nombre_examen": "Creatinina",
+                "precio": 70,
+                "resultado": NaN,
+                "subtotal": 70.0,
+                "unidad": NaN
+            },
+            {
+                "_id": "6a20f1847aa94a778a00e0d0",
+                "cantidad": 1,
+                "estado": "PENDIENTE",
+                "fecha": "2026-05-28T21:31:13.565509",
+                "id_catalogo": 9,
+                "id_examen": 1210,
+                "nombre_examen": "Paquimetría",
+                "precio": 160,
+                "resultado": NaN,
+                "subtotal": 160.0,
+                "unidad": NaN
+            },
+            {
+                "_id": "6a20f1847aa94a778a00e0d1",
+                "cantidad": 1,
+                "estado": "PENDIENTE",
+                "fecha": "2026-05-28T21:31:13.565509",
+                "id_catalogo": 15,
+                "id_examen": 1211,
+                "nombre_examen": "Queratometría",
+                "precio": 170,
+                "resultado": NaN,
+                "subtotal": 170.0,
                 "unidad": NaN
             },
             {
@@ -19456,6 +19547,19 @@
                 "unidad": NaN
             },
             {
+                "_id": "6a20f1847aa94a778a00e6c3",
+                "cantidad": 1,
+                "estado": "PENDIENTE",
+                "fecha": "2026-05-29T21:31:13.584918",
+                "id_catalogo": 20,
+                "id_examen": 2733,
+                "nombre_examen": "Creatinina",
+                "precio": 70,
+                "resultado": NaN,
+                "subtotal": 70.0,
+                "unidad": NaN
+            },
+            {
                 "_id": "6a20f1847aa94a778a00e6c4",
                 "cantidad": 1,
                 "estado": "PENDIENTE",
@@ -27188,6 +27292,45 @@
                 "precio": 240,
                 "resultado": NaN,
                 "subtotal": 240.0,
+                "unidad": NaN
+            },
+            {
+                "_id": "6a20f1847aa94a778a00eb53",
+                "cantidad": 1,
+                "estado": "PENDIENTE",
+                "fecha": "2026-05-29T21:31:13.598654",
+                "id_catalogo": 14,
+                "id_examen": 3901,
+                "nombre_examen": "Gonioscopía",
+                "precio": 190,
+                "resultado": NaN,
+                "subtotal": 190.0,
+                "unidad": NaN
+            },
+            {
+                "_id": "6a20f1847aa94a778a00eb54",
+                "cantidad": 1,
+                "estado": "PENDIENTE",
+                "fecha": "2026-05-29T21:31:13.598654",
+                "id_catalogo": 9,
+                "id_examen": 3902,
+                "nombre_examen": "Paquimetría",
+                "precio": 160,
+                "resultado": NaN,
+                "subtotal": 160.0,
+                "unidad": NaN
+            },
+            {
+                "_id": "6a20f1847aa94a778a00eb55",
+                "cantidad": 1,
+                "estado": "PENDIENTE",
+                "fecha": "2026-05-29T21:31:13.598654",
+                "id_catalogo": 7,
+                "id_examen": 3903,
+                "nombre_examen": "OCT de mácula",
+                "precio": 400,
+                "resultado": NaN,
+                "subtotal": 400.0,
                 "unidad": NaN
             },
             {

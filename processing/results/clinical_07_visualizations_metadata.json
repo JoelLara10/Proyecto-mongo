@@ -1,9 +1,8 @@
 {
     "graficos_generados": [
-        "C:\\8VoCuatri\\BDA\\PROYECTO-Mongo\\processing\\results\\clinical_visualizations\\01_diabetes_risk_distribution.png",
-        "C:\\8VoCuatri\\BDA\\PROYECTO-Mongo\\processing\\results\\clinical_visualizations\\02_occupancy_by_area.png",
-        "C:\\8VoCuatri\\BDA\\PROYECTO-Mongo\\processing\\results\\clinical_visualizations\\03_anomalies_detected.png",
-        "C:\\8VoCuatri\\BDA\\PROYECTO-Mongo\\processing\\results\\clinical_visualizations\\04_patient_segmentation_pie.png",
-        "C:\\8VoCuatri\\BDA\\PROYECTO-Mongo\\processing\\results\\clinical_visualizations\\05_readmission_risk.png"
+        "C:\\Proyecto-mongo\\processing\\results\\clinical_visualizations\\01_ocular_relapse_risk.png",
+        "C:\\Proyecto-mongo\\processing\\results\\clinical_visualizations\\02_occupancy_by_area.png",
+        "C:\\Proyecto-mongo\\processing\\results\\clinical_visualizations\\03_anomalies_detected.png",
+        "C:\\Proyecto-mongo\\processing\\results\\clinical_visualizations\\04_patient_segmentation_pie.png"
     ]
 }

@@ -1,12 +1,8 @@
 {
     "patrones_encontrados": [
         {
-            "patron": "Riesgo de Diabetes Moderado",
-            "descripcion": "139 pacientes con riesgo moderado de diabetes"
-        },
-        {
-            "patron": "Alto Riesgo de Reingresos",
-            "descripcion": "156 pacientes con alto riesgo de reingreso"
+            "patron": "Alto Riesgo de Recaída Ocular",
+            "descripcion": "182 pacientes con alto riesgo por patrón de exámenes oftalmológicos"
         },
         {
             "patron": "Anomalías en Signos Vitales",
@@ -15,21 +11,20 @@
     ],
     "correlaciones_clinicas": [
         {
-            "condicion": "Pacientes Multiataques",
-            "riesgo_asociado": "Mayor consumo de recursos hospitalarios",
-            "recomendacion": "Coordinar con atención primaria para manejo ambulatorio"
+            "condicion": "Exámenes oftalmológicos recurrentes",
+            "riesgo_asociado": "Posible recaída o progresión ocular",
+            "recomendacion": "Revisar historial de OCT, tonometría, fondo de ojo y campimetría antes de la próxima consulta"
         }
     ],
     "recomendaciones": [
-        "🟡 Fortalecer prevención de diabetes en población general",
-        "🔴 Implementar programa de seguimiento post-alta para pacientes crónicos",
-        "🔴 Establecer contactos de seguimiento en primeras 48 horas post-alta",
+        "🔴 Priorizar revisión oftalmológica para pacientes con riesgo alto de recaída",
+        "🔴 Programar seguimiento por retina, glaucoma o córnea según perfil de estudios",
         "🔴 Reforzar monitoreo de signos vitales en UCI/áreas críticas",
         "🟡 Revisar calibración de dispositivos de monitoreo",
         "🟡 Pacientes de alta frecuencia (63): Crear programas de manejo crónico",
         "🟡 Pacientes de alta frecuencia (59): Crear programas de manejo crónico",
         "🟡 Pacientes de alta frecuencia (78): Crear programas de manejo crónico"
     ],
-    "fecha_analisis": "2026-06-03T21:36:03.969128",
-    "total_recomendaciones": 8
+    "fecha_analisis": "2026-06-06T23:18:37.460073",
+    "total_recomendaciones": 7
 }

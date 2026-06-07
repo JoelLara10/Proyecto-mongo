@@ -237,142 +237,98 @@
     </a>
   </div>
 
-  <!-- ==================== 1. PREDICCIÓN DE DIABETES ==================== -->
+  <!-- ==================== 2. PREDICCIÓN DE RECAÍDA OCULAR ==================== -->
   <div class="section-title">
-    <i class="fas fa-tint"></i>
-    Predicción de Diabetes
+    <i class="fas fa-eye"></i>
+    Predicción de Recaída Ocular
   </div>
 
   <div class="section-card">
     <div class="row g-4">
       <div class="col-md-3">
         <div class="metric-card risk-high">
-          <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
-          <h3>{{ diabetes.riesgo_alto|default(0) }}</h3>
-          <small>Pacientes con Riesgo ALTO</small>
-        </div>
-      </div>
-      <div class="col-md-3">
-        <div class="metric-card risk-medium">
-          <i class="fas fa-chart-line fa-2x mb-2"></i>
-          <h3>{{ diabetes.riesgo_medio|default(0) }}</h3>
-          <small>Pacientes con Riesgo MEDIO</small>
-        </div>
-      </div>
-      <div class="col-md-3">
-        <div class="metric-card risk-low">
-          <i class="fas fa-check-circle fa-2x mb-2"></i>
-          <h3>{{ diabetes.riesgo_bajo|default(0) }}</h3>
-          <small>Pacientes con Riesgo BAJO</small>
-        </div>
-      </div>
-      <div class="col-md-3">
-        <div class="metric-card">
-          <i class="fas fa-users fa-2x mb-2"></i>
-          <h3>{{ diabetes.total_pacientes_analizados|default(0) }}</h3>
-          <small>Total Pacientes Analizados</small>
-        </div>
-      </div>
-    </div>
-
-    <div class="mt-4">
-      <h6 class="fw-bold mb-3"><i class="fas fa-flask me-2"></i>Criterios de Diagnóstico</h6>
-      <div class="row">
-        <div class="col-md-6">
-          <ul class="list-group">
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-              Glucosa en ayunas
-              <span class="badge bg-danger rounded-pill">&gt; 126 mg/dL</span>
-            </li>
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-              Hemoglobina Glicosilada (HbA1c)
-              <span class="badge bg-danger rounded-pill">&gt; 6.5%</span>
-            </li>
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-              Colesterol total
-              <span class="badge bg-warning rounded-pill">&gt; 200 mg/dL</span>
-            </li>
-          </ul>
-        </div>
-      </div>
-    </div>
-
-    {% if diabetes.pacientes_riesgo_alto and diabetes.pacientes_riesgo_alto|length > 0 %}
-    <div class="mt-4">
-      <h6 class="fw-bold mb-3"><i class="fas fa-user-md me-2"></i>Pacientes con Riesgo ALTO de Diabetes</h6>
-      <div class="table-responsive">
-        <table class="table table-sm table-hover">
-          <thead>
-            <tr><th>ID</th><th>Nombre</th><th>Marcadores Positivos</th><th>Edad</th></tr>
-          </thead>
-          <tbody>
-            {% for paciente in diabetes.pacientes_riesgo_alto[:5] %}
-            <tr>
-              <td>{{ paciente.id_examen }}</td>
-              <td>{{ paciente.nom_pac }} {{ paciente.papell }}</td>
-              <td>{{ paciente.marcadores_positivos }}</td>
-              <td>{{ paciente.edad }} años</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </div>
-    {% endif %}
-  </div>
-
-  <!-- ==================== 2. PREDICCIÓN DE REINGRESOS ==================== -->
-  <div class="section-title">
-    <i class="fas fa-hospital-user"></i>
-    Predicción de Reingresos
-  </div>
-
-  <div class="section-card">
-    <div class="row g-4">
-      <div class="col-md-3">
-        <div class="metric-card risk-high">
-          <i class="fas fa-ambulance fa-2x mb-2"></i>
+          <i class="fas fa-eye-slash fa-2x mb-2"></i>
           <h3>{{ readmission.riesgo_alto|default(0) }}</h3>
-          <small>Riesgo ALTO de Reingreso</small>
+          <small>Riesgo ALTO de Recaída</small>
         </div>
       </div>
       <div class="col-md-3">
         <div class="metric-card risk-medium">
           <i class="fas fa-chart-line fa-2x mb-2"></i>
           <h3>{{ readmission.riesgo_medio|default(0) }}</h3>
-          <small>Riesgo MEDIO de Reingreso</small>
+          <small>Riesgo MEDIO de Recaída</small>
         </div>
       </div>
       <div class="col-md-3">
         <div class="metric-card risk-low">
-          <i class="fas fa-home fa-2x mb-2"></i>
+          <i class="fas fa-check-circle fa-2x mb-2"></i>
           <h3>{{ readmission.riesgo_bajo|default(0) }}</h3>
-          <small>Riesgo BAJO de Reingreso</small>
+          <small>Riesgo BAJO de Recaída</small>
         </div>
       </div>
       <div class="col-md-3">
         <div class="metric-card">
-          <i class="fas fa-chart-simple fa-2x mb-2"></i>
-          <h3>{{ "%.2f"|format(readmission.promedio_atenciones|default(0)) }}</h3>
-          <small>Promedio de Atenciones</small>
+          <i class="fas fa-notes-medical fa-2x mb-2"></i>
+          <h3>{{ readmission.total_pacientes_con_examen_ocular|default(0) }}</h3>
+          <small>Pacientes con Exámenes Oculares</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-4">
+      <h6 class="fw-bold mb-3"><i class="fas fa-eye-dropper me-2"></i>Criterios de Riesgo Ocular</h6>
+      <div class="row">
+        <div class="col-md-4">
+          <ul class="list-group">
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              Retina / Mácula
+              <span class="badge bg-danger rounded-pill">OCT, Fondo, Angiografía</span>
+            </li>
+          </ul>
+        </div>
+        <div class="col-md-4">
+          <ul class="list-group">
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              Glaucoma / Nervio óptico
+              <span class="badge bg-warning rounded-pill">Tonometría, Campimetría</span>
+            </li>
+          </ul>
+        </div>
+        <div class="col-md-4">
+          <ul class="list-group">
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              Córnea
+              <span class="badge bg-info rounded-pill">Paquimetría, Topografía</span>
+            </li>
+          </ul>
         </div>
       </div>
     </div>
 
     {% if readmission.pacientes_alto_riesgo and readmission.pacientes_alto_riesgo|length > 0 %}
     <div class="mt-4">
-      <h6 class="fw-bold mb-3"><i class="fas fa-exclamation-triangle me-2"></i>Pacientes con ALTO Riesgo de Reingreso</h6>
+      <h6 class="fw-bold mb-3"><i class="fas fa-exclamation-triangle me-2"></i>Pacientes con ALTO Riesgo de Recaída Ocular</h6>
       <div class="table-responsive">
         <table class="table table-sm table-hover">
           <thead>
-            <tr><th>ID</th><th>Nombre</th><th>Total Atenciones</th></tr>
+            <tr>
+              <th>ID</th>
+              <th>Nombre</th>
+              <th>Score</th>
+              <th>Exámenes Oculares</th>
+              <th>Perfil</th>
+              <th>Último Estudio</th>
+            </tr>
           </thead>
           <tbody>
             {% for paciente in readmission.pacientes_alto_riesgo[:5] %}
             <tr>
               <td>{{ paciente.Id_exp }}</td>
               <td>{{ paciente.nom_pac }} {{ paciente.papell }}</td>
-              <td>{{ paciente.total_atenciones }}</td>
+              <td><span class="badge bg-danger">{{ paciente.score_recaida }}</span></td>
+              <td>{{ paciente.total_examenes_oculares }}</td>
+              <td>{{ paciente.perfil_principal }}</td>
+              <td>{{ paciente.ultimo_estudio|default('Sin fecha') }}</td>
             </tr>
             {% endfor %}
           </tbody>

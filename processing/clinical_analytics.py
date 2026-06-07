@@ -181,51 +181,309 @@ class ClinicalAnalytics:
         print(f"  ✅ Riesgo ALTO de diabetes: {diabetes_results['riesgo_alto']}")
         return diabetes_results
 
-    # ==================== 2. PREDICCIÓN DE REINGRESOS ====================
+    # ==================== 2. PREDICCIÓN DE RECAÍDA OCULAR ====================
     def predict_readmissions(self):
-        print("\n🏥 2. PREDICCIÓN DE REINGRESOS")
+        """
+        Predicción heurística de recaída o necesidad de seguimiento ocular.
 
+        Nota de compatibilidad: se conserva el nombre del método, la llave
+        readmission_prediction y el archivo clinical_02_readmission_prediction.json
+        para no romper app.py ni la variable readmission que ya usa la vista.
+        """
+        print("\n👁️ 2. PREDICCIÓN DE RECAÍDA OCULAR")
+
+        df_detalle = self.data.get("examenes_det")
+        df_examenes = self.data.get("examenes")
         df_atencion = self.data.get("atencion")
         df_pacientes = self.data.get("pacientes")
+        df_diagnosticos = self.data.get("diagnosticos")
 
-        if df_atencion is None:
-            print("  ❌ No se encontraron datos de atenciones")
-            return None
-
-        atenciones_por_paciente = df_atencion.groupBy("Id_exp").agg(
-            count("*").alias("total_atenciones"),
-            collect_list("especialidad").alias("especialidades")
-        )
-
-        readmission_risk = atenciones_por_paciente.withColumn(
-            "riesgo_reingreso",
-            when(col("total_atenciones") >= 3, "ALTO")
-            .when(col("total_atenciones") == 2, "MEDIO")
-            .otherwise("BAJO")
-        )
-
-        if df_pacientes:
-            readmission_risk = readmission_risk.join(
-                df_pacientes.select("Id_exp", "nom_pac", "papell"),
-                on="Id_exp", how="left"
-            )
-
-        readmission_results = {
-            "total_pacientes": readmission_risk.count(),
-            "riesgo_alto": readmission_risk.filter(col("riesgo_reingreso") == "ALTO").count(),
-            "riesgo_medio": readmission_risk.filter(col("riesgo_reingreso") == "MEDIO").count(),
-            "riesgo_bajo": readmission_risk.filter(col("riesgo_reingreso") == "BAJO").count(),
-            "pacientes_alto_riesgo": self._safe_to_pandas(
-                readmission_risk.filter(col("riesgo_reingreso") == "ALTO")
-                .select("Id_exp", "nom_pac", "papell", "total_atenciones")
-            ),
-            "promedio_atenciones": readmission_risk.agg(avg("total_atenciones")).collect()[0][0] or 0
+        default_results = {
+            "tipo_prediccion": "recaida_ocular",
+            "total_pacientes": 0,
+            "total_pacientes_con_examen_ocular": 0,
+            "total_examenes_oculares": 0,
+            "riesgo_alto": 0,
+            "riesgo_medio": 0,
+            "riesgo_bajo": 0,
+            "pacientes_alto_riesgo": [],
+            "promedio_examenes_oculares": 0,
+            "promedio_atenciones": 0,
+            "criterios_recaida_ocular": {
+                "alto": "Score >= 8",
+                "medio": "Score 4-7",
+                "bajo": "Score 0-3"
+            }
         }
 
-        self.results['readmission_prediction'] = readmission_results
-        self._save_json(readmission_results, "clinical_02_readmission_prediction.json")
-        print(f"  ✅ Riesgo ALTO de reingreso: {readmission_results['riesgo_alto']}")
-        return readmission_results
+        if df_detalle is None or df_examenes is None or df_atencion is None:
+            print("  ❌ No hay datos suficientes de exámenes/atenciones para predicción ocular")
+            self.results['readmission_prediction'] = default_results
+            self.results['ocular_relapse_prediction'] = default_results
+            self._save_json(default_results, "clinical_02_readmission_prediction.json")
+            return default_results
+
+        try:
+            for campo in ["id_catalogo", "nombre_examen", "estado", "fecha_realizado"]:
+                if campo not in df_detalle.columns:
+                    df_detalle = df_detalle.withColumn(campo, lit(None))
+
+            base_pacientes = df_atencion.select("Id_exp").filter(col("Id_exp").isNotNull()).distinct()
+
+            # Renombramos fecha para evitar ambigüedad después del join.
+            df_examenes_base = df_examenes.select(
+                "id_examen",
+                "id_atencion",
+                col("fecha").alias("fecha_examen")
+            )
+
+            detalles = df_detalle.join(
+                df_examenes_base,
+                on="id_examen", how="left"
+            ).join(
+                df_atencion.select("id_atencion", "Id_exp"),
+                on="id_atencion", how="left"
+            ).filter(
+                col("Id_exp").isNotNull()
+            ).withColumn(
+                "id_catalogo_num", col("id_catalogo").cast("int")
+            ).withColumn(
+                "nombre_lower", expr("lower(coalesce(nombre_examen, ''))")
+            ).withColumn(
+                "estado_normalizado", expr("upper(coalesce(estado, ''))")
+            ).withColumn(
+                "fecha_estudio", to_date(expr("coalesce(fecha_realizado, fecha_examen)"))
+            )
+
+            ocular_ids = list(range(1, 16))
+            retina_ids = [5, 7, 12, 13]
+            glaucoma_ids = [3, 6, 8, 14]
+            cornea_ids = [9, 10, 15]
+            sistemicos_ids = [17, 18, 21, 25]
+
+            condicion_ocular = col("id_catalogo_num").isin(ocular_ids)
+            for palabra in ["oct", "tonometr", "fondo de ojo", "campimetr", "paquimetr",
+                            "topograf", "retinograf", "angiograf", "gonioscop", "queratometr",
+                            "biomicroscop", "agudeza", "refracci", "ultrasonido ocular"]:
+                condicion_ocular = condicion_ocular | col("nombre_lower").contains(palabra)
+
+            condicion_retina = (
+                col("id_catalogo_num").isin(retina_ids) |
+                col("nombre_lower").contains("retin") |
+                col("nombre_lower").contains("macul") |
+                col("nombre_lower").contains("fondo de ojo") |
+                col("nombre_lower").contains("angiograf")
+            )
+            condicion_glaucoma = (
+                col("id_catalogo_num").isin(glaucoma_ids) |
+                col("nombre_lower").contains("tonometr") |
+                col("nombre_lower").contains("campimetr") |
+                col("nombre_lower").contains("nervio") |
+                col("nombre_lower").contains("gonioscop")
+            )
+            condicion_cornea = (
+                col("id_catalogo_num").isin(cornea_ids) |
+                col("nombre_lower").contains("paquimetr") |
+                col("nombre_lower").contains("topograf") |
+                col("nombre_lower").contains("queratometr") |
+                col("nombre_lower").contains("corneal")
+            )
+
+            examenes_oculares = detalles.filter(condicion_ocular)
+
+            ocular_por_paciente = examenes_oculares.groupBy("Id_exp").agg(
+                count("*").alias("total_examenes_oculares"),
+                expr("count(DISTINCT nombre_examen)").alias("tipos_examenes_oculares"),
+                sum(when(col("estado_normalizado") == "REALIZADO", 1).otherwise(0)).alias("examenes_realizados"),
+                sum(when(col("estado_normalizado") == "PENDIENTE", 1).otherwise(0)).alias("examenes_pendientes"),
+                sum(when(condicion_retina, 1).otherwise(0)).alias("estudios_retina"),
+                sum(when(condicion_glaucoma, 1).otherwise(0)).alias("estudios_glaucoma"),
+                sum(when(condicion_cornea, 1).otherwise(0)).alias("estudios_corneales"),
+                collect_list("nombre_examen").alias("examenes_oculares"),
+                min("fecha_estudio").alias("primer_estudio"),
+                max("fecha_estudio").alias("ultimo_estudio")
+            ).withColumn(
+                "examenes_repetidos",
+                col("total_examenes_oculares") - col("tipos_examenes_oculares")
+            )
+
+            marcadores_sistemicos = detalles.filter(
+                col("id_catalogo_num").isin(sistemicos_ids) |
+                col("nombre_lower").contains("glucosa") |
+                col("nombre_lower").contains("glicosilada") |
+                col("nombre_lower").contains("lip") |
+                col("nombre_lower").contains("química") |
+                col("nombre_lower").contains("quimica")
+            ).groupBy("Id_exp").agg(
+                count("*").alias("marcadores_sistemicos"),
+                collect_list("nombre_examen").alias("examenes_sistemicos")
+            )
+
+            riesgo = base_pacientes.join(ocular_por_paciente, "Id_exp", "left") \
+                .join(marcadores_sistemicos, "Id_exp", "left")
+
+            if df_diagnosticos is not None:
+                for campo in ["diagnostico_principal", "diagnosticos_secundarios", "observaciones"]:
+                    if campo not in df_diagnosticos.columns:
+                        df_diagnosticos = df_diagnosticos.withColumn(campo, lit(""))
+
+                diagnosticos = df_diagnosticos.join(
+                    df_atencion.select("id_atencion", "Id_exp"),
+                    on="id_atencion", how="left"
+                ).filter(
+                    col("Id_exp").isNotNull()
+                ).withColumn(
+                    "texto_diag",
+                    expr("lower(concat_ws(' ', coalesce(diagnostico_principal, ''), coalesce(diagnosticos_secundarios, ''), coalesce(observaciones, '')))")
+                )
+
+                condicion_diag_ocular = (
+                    col("texto_diag").contains("glau") |
+                    col("texto_diag").contains("retin") |
+                    col("texto_diag").contains("macul") |
+                    col("texto_diag").contains("catar") |
+                    col("texto_diag").contains("querat") |
+                    col("texto_diag").contains("uve") |
+                    col("texto_diag").contains("cornea") |
+                    col("texto_diag").contains("córnea") |
+                    col("texto_diag").contains("ocular") |
+                    col("texto_diag").contains("ojo")
+                )
+
+                diag_por_paciente = diagnosticos.groupBy("Id_exp").agg(
+                    max(when(condicion_diag_ocular, 1).otherwise(0)).alias("diagnostico_ocular"),
+                    count("*").alias("total_diagnosticos"),
+                    collect_list("diagnostico_principal").alias("diagnosticos")
+                )
+                riesgo = riesgo.join(diag_por_paciente, "Id_exp", "left")
+            else:
+                riesgo = riesgo.withColumn("diagnostico_ocular", lit(0)).withColumn("total_diagnosticos", lit(0))
+
+            riesgo = riesgo.fillna({
+                "total_examenes_oculares": 0,
+                "tipos_examenes_oculares": 0,
+                "examenes_realizados": 0,
+                "examenes_pendientes": 0,
+                "estudios_retina": 0,
+                "estudios_glaucoma": 0,
+                "estudios_corneales": 0,
+                "examenes_repetidos": 0,
+                "marcadores_sistemicos": 0,
+                "diagnostico_ocular": 0,
+                "total_diagnosticos": 0
+            })
+
+            score_examenes = when(col("total_examenes_oculares") >= 5, 3) \
+                .when(col("total_examenes_oculares") >= 3, 2) \
+                .when(col("total_examenes_oculares") >= 1, 1) \
+                .otherwise(0)
+
+            riesgo = riesgo.withColumn(
+                "score_recaida",
+                score_examenes +
+                when(col("estudios_retina") >= 2, 2).when(col("estudios_retina") >= 1, 1).otherwise(0) +
+                when(col("estudios_glaucoma") >= 2, 2).when(col("estudios_glaucoma") >= 1, 1).otherwise(0) +
+                when(col("estudios_corneales") >= 2, 2).when(col("estudios_corneales") >= 1, 1).otherwise(0) +
+                when(col("examenes_repetidos") >= 1, 2).otherwise(0) +
+                when(col("examenes_pendientes") >= 3, 1).otherwise(0) +
+                when(col("diagnostico_ocular") == 1, 2).otherwise(0) +
+                when(col("marcadores_sistemicos") >= 2, 1).otherwise(0)
+            ).withColumn(
+                "nivel_riesgo_recaida",
+                when(col("score_recaida") >= 8, "ALTO")
+                .when(col("score_recaida") >= 4, "MEDIO")
+                .otherwise("BAJO")
+            ).withColumn(
+    "perfil_principal",
+    when(
+        (col("estudios_retina") >= col("estudios_glaucoma")) &
+        (col("estudios_retina") >= col("estudios_corneales")) &
+        (col("estudios_retina") > 0),
+        "Retina/Mácula"
+    ).when(
+        (col("estudios_glaucoma") >= col("estudios_retina")) &
+        (col("estudios_glaucoma") >= col("estudios_corneales")) &
+        (col("estudios_glaucoma") > 0),
+        "Glaucoma/Nervio óptico"
+    ).when(
+        col("estudios_corneales") > 0,
+        "Córnea"
+    ).otherwise("Sin perfil ocular dominante")
+).withColumn(
+    "factores_detectados",
+    expr("""
+        concat_ws(', ',
+            case when estudios_retina > 0 then 'Retina/Mácula' end,
+            case when estudios_glaucoma > 0 then 'Glaucoma/Nervio óptico' end,
+            case when estudios_corneales > 0 then 'Córnea' end,
+            case when marcadores_sistemicos > 0 then 'Metabólico' end
+        )
+    """)
+).withColumn(
+                "dias_desde_ultimo_estudio",
+                datediff(current_date(), col("ultimo_estudio"))
+            )
+
+            if df_pacientes is not None and "Id_exp" in df_pacientes.columns:
+                paciente_cols = [c for c in ["Id_exp", "nom_pac", "papell", "sapell", "fecnac"] if c in df_pacientes.columns]
+                riesgo = riesgo.join(df_pacientes.select(*paciente_cols), "Id_exp", "left")
+                if "fecnac" in riesgo.columns:
+                    riesgo = riesgo.withColumn("edad", floor(months_between(current_date(), to_date(col("fecnac"))) / 12))
+                else:
+                    riesgo = riesgo.withColumn("edad", lit(None))
+            else:
+                riesgo = riesgo.withColumn("edad", lit(None))
+
+            for campo in ["nom_pac", "papell", "sapell"]:
+                if campo not in riesgo.columns:
+                    riesgo = riesgo.withColumn(campo, lit(""))
+
+            promedio_examenes = riesgo.agg(avg("total_examenes_oculares")).collect()[0][0] or 0
+            total_examenes = riesgo.agg(sum("total_examenes_oculares")).collect()[0][0] or 0
+
+            ocular_results = {
+                "tipo_prediccion": "recaida_ocular",
+                "total_pacientes": riesgo.count(),
+                "total_pacientes_con_examen_ocular": riesgo.filter(col("total_examenes_oculares") > 0).count(),
+                "total_examenes_oculares": int(total_examenes),
+                "riesgo_alto": riesgo.filter(col("nivel_riesgo_recaida") == "ALTO").count(),
+                "riesgo_medio": riesgo.filter(col("nivel_riesgo_recaida") == "MEDIO").count(),
+                "riesgo_bajo": riesgo.filter(col("nivel_riesgo_recaida") == "BAJO").count(),
+                "pacientes_alto_riesgo": self._safe_to_pandas(
+                    riesgo.filter(col("nivel_riesgo_recaida") == "ALTO")
+                    .orderBy(desc("score_recaida"))
+                    .select(
+                        "Id_exp", "nom_pac", "papell", "edad", "score_recaida",
+                        "total_examenes_oculares", "examenes_repetidos", "examenes_pendientes",
+                        "perfil_principal", "factores_detectados", "ultimo_estudio"
+                    )
+                ),
+                "promedio_examenes_oculares": builtins.round(float(promedio_examenes), 2),
+                "promedio_atenciones": builtins.round(float(promedio_examenes), 2),
+                "criterios_recaida_ocular": {
+                    "alto": "Score >= 8: múltiples estudios oculares, repetición y/o patrones retina-glaucoma-córnea",
+                    "medio": "Score 4-7: seguimiento oftalmológico activo con uno o más grupos de riesgo",
+                    "bajo": "Score 0-3: sin patrón ocular activo o controles aislados",
+                    "grupos": {
+                        "retina_macula": ["OCT de mácula", "Fondo de ojo", "Angiografía fluoresceínica", "Retinografía"],
+                        "glaucoma_nervio_optico": ["Tonometría", "Campimetría", "OCT de nervio óptico", "Gonioscopía"],
+                        "cornea": ["Paquimetría", "Topografía corneal", "Queratometría"]
+                    }
+                }
+            }
+
+            self.results['readmission_prediction'] = ocular_results
+            self.results['ocular_relapse_prediction'] = ocular_results
+            self._save_json(ocular_results, "clinical_02_readmission_prediction.json")
+            print(f"  ✅ Riesgo ALTO de recaída ocular: {ocular_results['riesgo_alto']}")
+            return ocular_results
+
+        except Exception as e:
+            print(f"  ❌ Error en predicción de recaída ocular: {e}")
+            self.results['readmission_prediction'] = default_results
+            self.results['ocular_relapse_prediction'] = default_results
+            self._save_json(default_results, "clinical_02_readmission_prediction.json")
+            return default_results
 
     # ==================== 3. ANÁLISIS DE OCUPACIÓN ====================
     def analyze_occupancy(self):
@@ -460,28 +718,28 @@ class ClinicalAnalytics:
                 })
                 recomendaciones.append("🟡 Fortalecer prevención de diabetes en población general")
         
-        # Análisis de Reingresos
-        readmission = self.results.get('readmission_prediction', {})
-        if readmission:
-            riesgo_alto_reingreso = readmission.get('riesgo_alto', 0)
-            promedio_atenciones = readmission.get('promedio_atenciones', 0)
+        # Análisis de Recaída Ocular
+        ocular_relapse = self.results.get('readmission_prediction', {})
+        if ocular_relapse:
+            riesgo_alto_ocular = ocular_relapse.get('riesgo_alto', 0)
+            promedio_examenes = ocular_relapse.get('promedio_examenes_oculares', 0)
+            pacientes_oculares = ocular_relapse.get('total_pacientes_con_examen_ocular', 0)
             
-            if riesgo_alto_reingreso > 0:
+            if riesgo_alto_ocular > 0:
                 hallazgos.append({
-                    "patron": "Alto Riesgo de Reingresos",
-                    "descripcion": f"{riesgo_alto_reingreso} pacientes con alto riesgo de reingreso"
+                    "patron": "Alto Riesgo de Recaída Ocular",
+                    "descripcion": f"{riesgo_alto_ocular} pacientes con alto riesgo por patrón de exámenes oftalmológicos"
                 })
-                recomendaciones.append("🔴 Implementar programa de seguimiento post-alta para pacientes crónicos")
-                recomendaciones.append("🔴 Establecer contactos de seguimiento en primeras 48 horas post-alta")
+                recomendaciones.append("🔴 Priorizar revisión oftalmológica para pacientes con riesgo alto de recaída")
+                recomendaciones.append("🔴 Programar seguimiento por retina, glaucoma o córnea según perfil de estudios")
             
-            if promedio_atenciones > 2:
+            if pacientes_oculares > 0 and promedio_examenes >= 2:
                 correlaciones.append({
-                    "condicion": "Pacientes Multiataques",
-                    "riesgo_asociado": "Mayor consumo de recursos hospitalarios",
-                    "recomendacion": "Coordinar con atención primaria para manejo ambulatorio"
+                    "condicion": "Exámenes oftalmológicos recurrentes",
+                    "riesgo_asociado": "Posible recaída o progresión ocular",
+                    "recomendacion": "Revisar historial de OCT, tonometría, fondo de ojo y campimetría antes de la próxima consulta"
                 })
-        
-        # Análisis de Ocupación
+                # Análisis de Ocupación
         occupancy = self.results.get('occupancy_analysis', {})
         if occupancy:
             porcentaje = occupancy.get('porcentaje_ocupacion_general', 0)
@@ -577,39 +835,53 @@ class ClinicalAnalytics:
         viz_data = {"graficos_generados": []}
         
         try:
-            # Gráfico 1: Distribución de Riesgo de Diabetes
-            diabetes = self.results.get('diabetes_prediction', {})
-            if diabetes:
+            # Gráfico 1: Riesgo de Recaída Ocular
+            readmission = self.results.get('readmission_prediction', {})
+            if readmission:
                 fig, ax = plt.subplots(figsize=(10, 6))
-                riesgos = ['BAJO', 'MEDIO', 'ALTO']
-                valores = [
-                    int(diabetes.get('riesgo_bajo', 0)),
-                    int(diabetes.get('riesgo_medio', 0)),
-                    int(diabetes.get('riesgo_alto', 0))
+                riesgos_oculares = ['BAJO', 'MEDIO', 'ALTO']
+                valores_oculares = [
+                    int(readmission.get('riesgo_bajo', 0)),
+                    int(readmission.get('riesgo_medio', 0)),
+                    int(readmission.get('riesgo_alto', 0))
                 ]
-                colores = ['#48bb78', '#ed8936', '#f56565']
-                
-                bars = ax.bar(riesgos, valores, color=colores, edgecolor='black', linewidth=1.5)
+                colores_oculares = ['#48bb78', '#ed8936', '#f56565']
+
+                bars = ax.bar(
+                    riesgos_oculares,
+                    valores_oculares,
+                    color=colores_oculares,
+                    edgecolor='black',
+                    linewidth=1.5
+                )
+
                 ax.set_ylabel('Número de Pacientes', fontsize=12, fontweight='bold')
-                ax.set_title('Distribución de Riesgo de Diabetes', fontsize=14, fontweight='bold')
-                max_val = builtins.max(valores) if valores else 5
-                ax.set_ylim(0, max_val + 2)
-                
+                ax.set_title('Riesgo de Recaída Ocular', fontsize=14, fontweight='bold')
+
+                max_ocular = builtins.max(valores_oculares) if valores_oculares else 0
+                ax.set_ylim(0, max_ocular + 2)
+
                 for bar in bars:
                     height = bar.get_height()
                     if height > 0:
-                        ax.text(bar.get_x() + bar.get_width()/2., height,
-                               f'{int(height)}', ha='center', va='bottom', fontweight='bold')
-                
+                        ax.text(
+                            bar.get_x() + bar.get_width() / 2.,
+                            height,
+                            f'{int(height)}',
+                            ha='center',
+                            va='bottom',
+                            fontweight='bold'
+                        )
+
                 plt.tight_layout()
-                filepath = viz_dir / "01_diabetes_risk_distribution.png"
+                filepath = viz_dir / "01_ocular_relapse_risk.png"
                 plt.savefig(filepath, dpi=150, bbox_inches='tight')
                 plt.close()
+
                 viz_data['graficos_generados'].append(str(filepath))
-                print(f"  ✅ Gráfico diabetes: {filepath.name}")
-        
+                print(f"  ✅ Gráfico recaída ocular: {filepath.name}")
         except Exception as e:
-            print(f"  ⚠️ Error generando gráfico diabetes: {e}")
+            print(f"  ⚠️ Error generando gráfico de recaída ocular: {e}")
         
         try:
             # Gráfico 2: Ocupación Hospitalaria por Área
@@ -707,42 +979,7 @@ class ClinicalAnalytics:
         except Exception as e:
             print(f"  ⚠️ Error generando gráfico segmentación: {e}")
         
-        try:
-            # Gráfico 5: Riesgo de Reingresos
-            readmission = self.results.get('readmission_prediction', {})
-            if readmission:
-                fig, ax = plt.subplots(figsize=(10, 6))
-                riesgos_reingreso = ['BAJO', 'MEDIO', 'ALTO']
-                valores_reingreso = [
-                    int(readmission.get('riesgo_bajo', 0)),
-                    int(readmission.get('riesgo_medio', 0)),
-                    int(readmission.get('riesgo_alto', 0))
-                ]
-                colores_reingreso = ['#48bb78', '#ed8936', '#f56565']
-                
-                bars = ax.bar(riesgos_reingreso, valores_reingreso, color=colores_reingreso, 
-                             edgecolor='black', linewidth=1.5)
-                ax.set_ylabel('Número de Pacientes', fontsize=12, fontweight='bold')
-                ax.set_title('Riesgo de Reingresos Hospitalarios', fontsize=14, fontweight='bold')
-                max_reingreso = builtins.max(valores_reingreso) if valores_reingreso else 0
-                ax.set_ylim(0, max_reingreso + 2)
-                
-                for bar in bars:
-                    height = bar.get_height()
-                    if height > 0:
-                        ax.text(bar.get_x() + bar.get_width()/2., height,
-                               f'{int(height)}', ha='center', va='bottom', fontweight='bold')
-                
-                plt.tight_layout()
-                filepath = viz_dir / "05_readmission_risk.png"
-                plt.savefig(filepath, dpi=150, bbox_inches='tight')
-                plt.close()
-                viz_data['graficos_generados'].append(str(filepath))
-                print(f"  ✅ Gráfico reingresos: {filepath.name}")
-        
-        except Exception as e:
-            print(f"  ⚠️ Error generando gráfico reingresos: {e}")
-        
+       
         self.results['clinical_visualizations'] = viz_data
         self._save_json(viz_data, "clinical_07_visualizations_metadata.json")
         print("  ✅ Visualizaciones generadas exitosamente")
@@ -755,7 +992,6 @@ class ClinicalAnalytics:
         print("="*60)
 
         self.load_clinical_data()
-        self.predict_diabetes()
         self.predict_readmissions()
         self.analyze_occupancy()
         self.detect_anomalies()

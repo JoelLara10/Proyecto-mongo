@@ -25,22 +25,32 @@ def main():
     print("📋 RESUMEN EJECUTIVO - ANÁLISIS CLÍNICO")
     print("=" * 60)
 
-    diabetes = results.get('diabetes_prediction', {})
-    reingresos = results.get('readmission_prediction', {})
-    ocupacion = results.get('occupancy_analysis', {})
-    anomalias = results.get('anomaly_detection', {})
-    segmentacion = results.get('patient_segmentation', {})
-    inteligencia = results.get('clinical_intelligence', {})
 
-    print(f"\n🩺 PREDICCIÓN DE DIABETES:")
-    print(f"   - Riesgo ALTO: {diabetes.get('riesgo_alto', 0)} pacientes")
-    print(f"   - Riesgo MEDIO: {diabetes.get('riesgo_medio', 0)} pacientes")
-    print(f"   - Riesgo BAJO: {diabetes.get('riesgo_bajo', 0)} pacientes")
+    recaida_ocular = results.get("readmission_prediction", {})
+    ocupacion = results.get("occupancy_analysis", {})
+    anomalias = results.get("anomaly_detection", {})
+    segmentacion = results.get("patient_segmentation", {})
+    inteligencia = results.get("clinical_intelligence", {})
 
-    print(f"\n🏥 PREDICCIÓN DE REINGRESOS:")
-    print(f"   - Riesgo ALTO: {reingresos.get('riesgo_alto', 0)} pacientes")
-    print(f"   - Riesgo MEDIO: {reingresos.get('riesgo_medio', 0)} pacientes")
-    print(f"   - Promedio atenciones: {reingresos.get('promedio_atenciones', 0):.2f}")
+
+    print(f"\n👁️ PREDICCIÓN DE RECAÍDA OCULAR:")
+    print(f"   - Riesgo ALTO: {recaida_ocular.get('riesgo_alto', 0)} pacientes")
+    print(f"   - Riesgo MEDIO: {recaida_ocular.get('riesgo_medio', 0)} pacientes")
+    print(f"   - Riesgo BAJO: {recaida_ocular.get('riesgo_bajo', 0)} pacientes")
+    print(f"   - Pacientes con exámenes oculares: {recaida_ocular.get('total_pacientes_con_examen_ocular', 0)}")
+    print(f"   - Total exámenes oculares: {recaida_ocular.get('total_examenes_oculares', 0)}")
+    print(f"   - Promedio exámenes oculares: {recaida_ocular.get('promedio_examenes_oculares', 0):.2f}")
+
+    pacientes_alto_riesgo = recaida_ocular.get("pacientes_alto_riesgo", [])
+    if pacientes_alto_riesgo:
+        print(f"\n   Pacientes con mayor riesgo ocular:")
+        for paciente in pacientes_alto_riesgo[:5]:
+            nombre = f"{paciente.get('nom_pac', '')} {paciente.get('papell', '')}".strip()
+            print(
+                f"   - ID {paciente.get('Id_exp')}: {nombre} | "
+                f"Score: {paciente.get('score_recaida', 0)} | "
+                f"Perfil: {paciente.get('grupos_riesgo', 'Sin perfil')}"
+            )
 
     print(f"\n🛏️ OCUPACIÓN HOSPITALARIA:")
     print(f"   - Ocupación general: {ocupacion.get('porcentaje_ocupacion_general', 0)}%")
@@ -52,11 +62,16 @@ def main():
     print(f"   - Signos vitales anómalos: {anomalias.get('total_anomalias_signos', 0)}")
 
     print(f"\n📊 SEGMENTACIÓN:")
-    for seg in segmentacion.get('segmentos', []):
-        print(f"   - {seg.get('nombre_segmento')}: {seg.get('total_pacientes')} pacientes (edad: {seg.get('edad_promedio')}, atenciones: {seg.get('atenciones_promedio')})")
+    for seg in segmentacion.get("segmentos", []):
+        print(
+            f"   - {seg.get('nombre_segmento')}: "
+            f"{seg.get('total_pacientes')} pacientes "
+            f"(edad: {seg.get('edad_promedio')}, "
+            f"atenciones: {seg.get('atenciones_promedio')})"
+        )
 
     print(f"\n🧠 INTELIGENCIA CLÍNICA:")
-    for rec in inteligencia.get('recomendaciones', []):
+    for rec in inteligencia.get("recomendaciones", []):
         print(f"   • {rec}")
 
     print("\n" + "=" * 60)
