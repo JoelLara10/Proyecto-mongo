@@ -108,89 +108,16 @@ class ClinicalAnalytics:
 
         return self.data
 
-    # ==================== 1. PREDICCIÓN DE DIABETES ====================
-    def predict_diabetes(self):
-        print("\n🩺 1. PREDICCIÓN DE DIABETES")
-
-        df_examenes = self.data.get("examenes_det")
-        df_pacientes = self.data.get("pacientes")
-
-        if df_examenes is None:
-            print("  ❌ No se encontraron datos de exámenes")
-            return None
-
-        # Filtrar exámenes relevantes
-        examenes_diabetes = df_examenes.filter(
-            col("nombre_examen").isin(["Glucosa", "Química Sanguínea", 
-                                       "Hemoglobina Glicosilada", "Perfil Lipídico"])
-        )
-
-        diabetes_risk = examenes_diabetes.withColumn(
-            "riesgo_diabetes",
-            when(
-                ((col("nombre_examen") == "Glucosa") & (col("subtotal") > 126)) |
-                ((col("nombre_examen") == "Hemoglobina Glicosilada") & (col("subtotal") > 6.5)) |
-                ((col("nombre_examen") == "Química Sanguínea") & (col("subtotal") > 126)) |
-                ((col("nombre_examen") == "Perfil Lipídico") & (col("subtotal") > 200)),
-                1
-            ).otherwise(0)
-        )
-
-        riesgo_por_paciente = diabetes_risk.groupBy("id_examen").agg(
-            sum("riesgo_diabetes").alias("marcadores_positivos"),
-            count("*").alias("total_examenes"),
-            collect_list("nombre_examen").alias("examenes")
-        )
-
-        riesgo_clasificado = riesgo_por_paciente.withColumn(
-            "nivel_riesgo",
-            when(col("marcadores_positivos") >= 2, "ALTO")
-            .when(col("marcadores_positivos") == 1, "MEDIO")
-            .otherwise("BAJO")
-        )
-
-        if df_pacientes:
-            riesgo_final = riesgo_clasificado.join(
-                df_pacientes.select("Id_exp", "nom_pac", "papell", "fecnac"),
-                riesgo_clasificado["id_examen"] == df_pacientes["Id_exp"],
-                "left"
-            ).withColumn(
-                "edad",
-                floor(months_between(current_date(), to_date(col("fecnac"))) / 12)
-            )
-        else:
-            riesgo_final = riesgo_clasificado.withColumn("edad", lit(None))
-
-        diabetes_results = {
-            "total_pacientes_analizados": riesgo_final.count(),
-            "riesgo_alto": riesgo_final.filter(col("nivel_riesgo") == "ALTO").count(),
-            "riesgo_medio": riesgo_final.filter(col("nivel_riesgo") == "MEDIO").count(),
-            "riesgo_bajo": riesgo_final.filter(col("nivel_riesgo") == "BAJO").count(),
-            "pacientes_riesgo_alto": self._safe_to_pandas(
-                riesgo_final.filter(col("nivel_riesgo") == "ALTO")
-                .select("id_examen", "nom_pac", "papell", "marcadores_positivos", "edad")
-            ),
-            "criterios_diabetes": {
-                "Glucosa": 126, "Hemoglobina Glicosilada": 6.5,
-                "Química Sanguínea": 126, "Perfil Lipídico": 200
-            }
-        }
-
-        self.results['diabetes_prediction'] = diabetes_results
-        self._save_json(diabetes_results, "clinical_01_diabetes_prediction.json")
-        print(f"  ✅ Riesgo ALTO de diabetes: {diabetes_results['riesgo_alto']}")
-        return diabetes_results
-
-    # ==================== 2. PREDICCIÓN DE RECAÍDA OCULAR ====================
+    # ==================== 1. PREDICCIÓN DE RECAÍDA OCULAR ====================
     def predict_readmissions(self):
         """
         Predicción heurística de recaída o necesidad de seguimiento ocular.
 
         Nota de compatibilidad: se conserva el nombre del método, la llave
-        readmission_prediction y el archivo clinical_02_readmission_prediction.json
+        readmission_prediction y el archivo clinical_01_readmission_prediction.json
         para no romper app.py ni la variable readmission que ya usa la vista.
         """
-        print("\n👁️ 2. PREDICCIÓN DE RECAÍDA OCULAR")
+        print("\n👁️ 1. PREDICCIÓN DE RECAÍDA OCULAR")
 
         df_detalle = self.data.get("examenes_det")
         df_examenes = self.data.get("examenes")
@@ -220,7 +147,7 @@ class ClinicalAnalytics:
             print("  ❌ No hay datos suficientes de exámenes/atenciones para predicción ocular")
             self.results['readmission_prediction'] = default_results
             self.results['ocular_relapse_prediction'] = default_results
-            self._save_json(default_results, "clinical_02_readmission_prediction.json")
+            self._save_json(default_results, "clinical_01_readmission_prediction.json")
             return default_results
 
         try:
@@ -394,32 +321,32 @@ class ClinicalAnalytics:
                 .when(col("score_recaida") >= 4, "MEDIO")
                 .otherwise("BAJO")
             ).withColumn(
-    "perfil_principal",
-    when(
-        (col("estudios_retina") >= col("estudios_glaucoma")) &
-        (col("estudios_retina") >= col("estudios_corneales")) &
-        (col("estudios_retina") > 0),
-        "Retina/Mácula"
-    ).when(
-        (col("estudios_glaucoma") >= col("estudios_retina")) &
-        (col("estudios_glaucoma") >= col("estudios_corneales")) &
-        (col("estudios_glaucoma") > 0),
-        "Glaucoma/Nervio óptico"
-    ).when(
-        col("estudios_corneales") > 0,
-        "Córnea"
-    ).otherwise("Sin perfil ocular dominante")
-).withColumn(
-    "factores_detectados",
-    expr("""
-        concat_ws(', ',
-            case when estudios_retina > 0 then 'Retina/Mácula' end,
-            case when estudios_glaucoma > 0 then 'Glaucoma/Nervio óptico' end,
-            case when estudios_corneales > 0 then 'Córnea' end,
-            case when marcadores_sistemicos > 0 then 'Metabólico' end
-        )
-    """)
-).withColumn(
+                "perfil_principal",
+                when(
+                    (col("estudios_retina") >= col("estudios_glaucoma")) &
+                    (col("estudios_retina") >= col("estudios_corneales")) &
+                    (col("estudios_retina") > 0),
+                    "Retina/Mácula"
+                ).when(
+                    (col("estudios_glaucoma") >= col("estudios_retina")) &
+                    (col("estudios_glaucoma") >= col("estudios_corneales")) &
+                    (col("estudios_glaucoma") > 0),
+                    "Glaucoma/Nervio óptico"
+                ).when(
+                    col("estudios_corneales") > 0,
+                    "Córnea"
+                ).otherwise("Sin perfil ocular dominante")
+            ).withColumn(
+                "factores_detectados",
+                expr("""
+                    concat_ws(', ',
+                        case when estudios_retina > 0 then 'Retina/Mácula' end,
+                        case when estudios_glaucoma > 0 then 'Glaucoma/Nervio óptico' end,
+                        case when estudios_corneales > 0 then 'Córnea' end,
+                        case when marcadores_sistemicos > 0 then 'Metabólico' end
+                    )
+                """)
+            ).withColumn(
                 "dias_desde_ultimo_estudio",
                 datediff(current_date(), col("ultimo_estudio"))
             )
@@ -474,7 +401,7 @@ class ClinicalAnalytics:
 
             self.results['readmission_prediction'] = ocular_results
             self.results['ocular_relapse_prediction'] = ocular_results
-            self._save_json(ocular_results, "clinical_02_readmission_prediction.json")
+            self._save_json(ocular_results, "clinical_01_readmission_prediction.json")
             print(f"  ✅ Riesgo ALTO de recaída ocular: {ocular_results['riesgo_alto']}")
             return ocular_results
 
@@ -482,12 +409,12 @@ class ClinicalAnalytics:
             print(f"  ❌ Error en predicción de recaída ocular: {e}")
             self.results['readmission_prediction'] = default_results
             self.results['ocular_relapse_prediction'] = default_results
-            self._save_json(default_results, "clinical_02_readmission_prediction.json")
+            self._save_json(default_results, "clinical_01_readmission_prediction.json")
             return default_results
 
-    # ==================== 3. ANÁLISIS DE OCUPACIÓN ====================
+    # ==================== 2. ANÁLISIS DE OCUPACIÓN ====================
     def analyze_occupancy(self):
-        print("\n🛏️ 3. ANÁLISIS DE OCUPACIÓN HOSPITALARIA")
+        print("\n🛏️ 2. ANÁLISIS DE OCUPACIÓN HOSPITALARIA")
         df_camas = self.data.get("camas")
         df_atencion = self.data.get("atencion")
 
@@ -539,7 +466,7 @@ class ClinicalAnalytics:
             }
 
             self.results['occupancy_analysis'] = occupancy_results
-            self._save_json(occupancy_results, "clinical_03_occupancy_analysis.json")
+            self._save_json(occupancy_results, "clinical_02_occupancy_analysis.json")
             print(f"  ✅ Ocupación general: {porcentaje_general}%")
             return occupancy_results
 
@@ -552,12 +479,12 @@ class ClinicalAnalytics:
                    "porcentaje_ocupacion_general": 0, "ocupacion_por_area": [],
                    "demanda_por_especialidad": [], "areas_criticas": []}
         self.results['occupancy_analysis'] = default
-        self._save_json(default, "clinical_03_occupancy_analysis.json")
+        self._save_json(default, "clinical_02_occupancy_analysis.json")
         return default
 
-    # ==================== 4. DETECCIÓN DE ANOMALÍAS ====================
+    # ==================== 3. DETECCIÓN DE ANOMALÍAS ====================
     def detect_anomalies(self):
-        print("\n⚠️ 4. DETECCIÓN DE ANOMALÍAS CLÍNICAS")
+        print("\n⚠️ 3. DETECCIÓN DE ANOMALÍAS CLÍNICAS")
         df_examenes = self.data.get("examenes_det")
         df_signos = self.data.get("signos_vitales")
 
@@ -603,7 +530,7 @@ class ClinicalAnalytics:
         }
 
         self.results['anomaly_detection'] = results
-        self._save_json(results, "clinical_04_anomaly_detection.json")
+        self._save_json(results, "clinical_03_anomaly_detection.json")
         print(f"  ✅ Anomalías: {results['total_anomalias_examenes']} exámenes | {results['total_anomalias_signos']} signos")
         return results
 
@@ -621,9 +548,9 @@ class ClinicalAnalytics:
             print(f"⚠️ Error convirtiendo a pandas: {e}")
             return []
 
-    # ==================== 5. SEGMENTACIÓN DE PACIENTES ====================
+    # ==================== 4. SEGMENTACIÓN DE PACIENTES ====================
     def segment_patients(self):
-        print("\n📊 5. SEGMENTACIÓN DE PACIENTES")
+        print("\n📊 4. SEGMENTACIÓN DE PACIENTES")
         df_pacientes = self.data.get("pacientes")
         df_atencion = self.data.get("atencion")
 
@@ -681,42 +608,17 @@ class ClinicalAnalytics:
 
         result = {"num_segmentos": 3, "segmentos": segmentos, "metodo": "K-Means"}
         self.results['patient_segmentation'] = result
-        self._save_json(result, "clinical_05_patient_segmentation.json")
+        self._save_json(result, "clinical_04_patient_segmentation.json")
         print(f"  ✅ Segmentos creados: {len(segmentos)}")
         return result
 
-    # ==================== 6. INTELIGENCIA CLÍNICA ====================
+    # ==================== 5. INTELIGENCIA CLÍNICA ====================
     def clinical_intelligence(self):
-        print("\n🧠 6. INTELIGENCIA CLÍNICA")
+        print("\n🧠 5. INTELIGENCIA CLÍNICA")
         
         recomendaciones = []
         hallazgos = []
         correlaciones = []
-        
-        # Análisis de Diabetes
-        diabetes = self.results.get('diabetes_prediction', {})
-        if diabetes:
-            riesgo_alto = diabetes.get('riesgo_alto', 0)
-            riesgo_medio = diabetes.get('riesgo_medio', 0)
-            
-            if riesgo_alto > 0:
-                hallazgos.append({
-                    "patron": "Riesgo de Diabetes Elevado",
-                    "descripcion": f"{riesgo_alto} pacientes con alto riesgo de diabetes detectados"
-                })
-                recomendaciones.append("🔴 Implementar programa urgente de prevención de diabetes")
-                recomendaciones.append("🔴 Intensificar controles de glucosa en pacientes de alto riesgo")
-                correlaciones.append({
-                    "condicion": "Diabetes + Hipertensión",
-                    "riesgo_asociado": "Enfermedad cardiovascular severa",
-                    "recomendacion": "Seguimiento cardiológico cada 3 meses"
-                })
-            elif riesgo_medio > 0:
-                hallazgos.append({
-                    "patron": "Riesgo de Diabetes Moderado",
-                    "descripcion": f"{riesgo_medio} pacientes con riesgo moderado de diabetes"
-                })
-                recomendaciones.append("🟡 Fortalecer prevención de diabetes en población general")
         
         # Análisis de Recaída Ocular
         ocular_relapse = self.results.get('readmission_prediction', {})
@@ -739,7 +641,8 @@ class ClinicalAnalytics:
                     "riesgo_asociado": "Posible recaída o progresión ocular",
                     "recomendacion": "Revisar historial de OCT, tonometría, fondo de ojo y campimetría antes de la próxima consulta"
                 })
-                # Análisis de Ocupación
+        
+        # Análisis de Ocupación
         occupancy = self.results.get('occupancy_analysis', {})
         if occupancy:
             porcentaje = occupancy.get('porcentaje_ocupacion_general', 0)
@@ -822,11 +725,11 @@ class ClinicalAnalytics:
         }
 
         self.results['clinical_intelligence'] = result
-        self._save_json(result, "clinical_06_clinical_intelligence.json")
+        self._save_json(result, "clinical_05_clinical_intelligence.json")
         print("  ✅ Inteligencia clínica generada")
         return result
 
-    # ==================== 7. VISUALIZACIONES ====================
+    # ==================== 6. VISUALIZACIONES ====================
     def generate_clinical_visualizations(self):
         print("\n📊 Generando visualizaciones...")
         viz_dir = self.results_dir / "clinical_visualizations"
@@ -981,7 +884,7 @@ class ClinicalAnalytics:
         
        
         self.results['clinical_visualizations'] = viz_data
-        self._save_json(viz_data, "clinical_07_visualizations_metadata.json")
+        self._save_json(viz_data, "clinical_06_visualizations_metadata.json")
         print("  ✅ Visualizaciones generadas exitosamente")
         return viz_data
 

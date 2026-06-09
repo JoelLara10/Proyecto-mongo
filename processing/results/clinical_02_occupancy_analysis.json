@@ -1,0 +1,96 @@
+{
+    "total_camas": 91,
+    "camas_ocupadas": 46,
+    "camas_disponibles": 45,
+    "porcentaje_ocupacion_general": 50.55,
+    "ocupacion_por_area": [
+        {
+            "area": "Hospitalizado",
+            "total_camas": 36,
+            "ocupadas": 21,
+            "disponibles": 15,
+            "porcentaje_ocupacion": 58.33
+        },
+        {
+            "area": "Urgencias",
+            "total_camas": 25,
+            "ocupadas": 12,
+            "disponibles": 13,
+            "porcentaje_ocupacion": 48.0
+        },
+        {
+            "area": "UCI",
+            "total_camas": 10,
+            "ocupadas": 3,
+            "disponibles": 7,
+            "porcentaje_ocupacion": 30.0
+        },
+        {
+            "area": "Ambulatorio",
+            "total_camas": 10,
+            "ocupadas": 6,
+            "disponibles": 4,
+            "porcentaje_ocupacion": 60.0
+        },
+        {
+            "area": "Consultorio Externo",
+            "total_camas": 10,
+            "ocupadas": 4,
+            "disponibles": 6,
+            "porcentaje_ocupacion": 40.0
+        }
+    ],
+    "demanda_por_especialidad": [
+        {
+            "especialidad": "Ginecología",
+            "area": "Hospitalizado",
+            "total_atenciones": 34
+        },
+        {
+            "especialidad": "Neurología",
+            "area": "Consultorio Externo",
+            "total_atenciones": 32
+        },
+        {
+            "especialidad": "Traumatología",
+            "area": "Ambulatorio",
+            "total_atenciones": 31
+        },
+        {
+            "especialidad": "Oftalmología",
+            "area": "Hospitalizado",
+            "total_atenciones": 29
+        },
+        {
+            "especialidad": "Psiquiatría",
+            "area": "Urgencias",
+            "total_atenciones": 27
+        },
+        {
+            "especialidad": "Cardiología",
+            "area": "Hospitalizado",
+            "total_atenciones": 27
+        },
+        {
+            "especialidad": "Oftalmología",
+            "area": "Urgencias",
+            "total_atenciones": 26
+        },
+        {
+            "especialidad": "Pediatría",
+            "area": "Urgencias",
+            "total_atenciones": 26
+        },
+        {
+            "especialidad": "Traumatología",
+            "area": "UCI",
+            "total_atenciones": 26
+        },
+        {
+            "especialidad": "Medicina General",
+            "area": "Hospitalizado",
+            "total_atenciones": 26
+        }
+    ],
+    "areas_criticas": []
+}

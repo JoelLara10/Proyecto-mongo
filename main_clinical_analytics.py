@@ -25,13 +25,11 @@ def main():
     print("📋 RESUMEN EJECUTIVO - ANÁLISIS CLÍNICO")
     print("=" * 60)
 
-
     recaida_ocular = results.get("readmission_prediction", {})
     ocupacion = results.get("occupancy_analysis", {})
     anomalias = results.get("anomaly_detection", {})
     segmentacion = results.get("patient_segmentation", {})
     inteligencia = results.get("clinical_intelligence", {})
-
 
     print(f"\n👁️ PREDICCIÓN DE RECAÍDA OCULAR:")
     print(f"   - Riesgo ALTO: {recaida_ocular.get('riesgo_alto', 0)} pacientes")
@@ -46,10 +44,12 @@ def main():
         print(f"\n   Pacientes con mayor riesgo ocular:")
         for paciente in pacientes_alto_riesgo[:5]:
             nombre = f"{paciente.get('nom_pac', '')} {paciente.get('papell', '')}".strip()
+            # CORREGIDO: usar 'perfil_principal' en lugar de 'grupos_riesgo'
+            perfil = paciente.get('perfil_principal', 'Sin perfil')
             print(
                 f"   - ID {paciente.get('Id_exp')}: {nombre} | "
                 f"Score: {paciente.get('score_recaida', 0)} | "
-                f"Perfil: {paciente.get('grupos_riesgo', 'Sin perfil')}"
+                f"Perfil: {perfil}"
             )
 
     print(f"\n🛏️ OCUPACIÓN HOSPITALARIA:")
@@ -57,9 +57,15 @@ def main():
     print(f"   - Camas ocupadas: {ocupacion.get('camas_ocupadas', 0)}")
     print(f"   - Camas disponibles: {ocupacion.get('camas_disponibles', 0)}")
 
+    # Mostrar áreas críticas si existen
+    areas_criticas = ocupacion.get('areas_criticas', [])
+    if areas_criticas:
+        print(f"   - Áreas críticas (>80%): {', '.join([a.get('area', '') for a in areas_criticas])}")
+
     print(f"\n⚠️ ANOMALÍAS DETECTADAS:")
     print(f"   - Exámenes anómalos: {anomalias.get('total_anomalias_examenes', 0)}")
     print(f"   - Signos vitales anómalos: {anomalias.get('total_anomalias_signos', 0)}")
+    print(f"   - Inconsistencias: {anomalias.get('total_inconsistencias', 0)}")
 
     print(f"\n📊 SEGMENTACIÓN:")
     for seg in segmentacion.get("segmentos", []):
@@ -71,8 +77,15 @@ def main():
         )
 
     print(f"\n🧠 INTELIGENCIA CLÍNICA:")
-    for rec in inteligencia.get("recomendaciones", []):
+    for rec in inteligencia.get("recomendaciones", [])[:8]:  # Mostrar primeras 8 recomendaciones
         print(f"   • {rec}")
+
+    # Mostrar hallazgos principales
+    hallazgos = inteligencia.get("patrones_encontrados", [])
+    if hallazgos:
+        print(f"\n   Hallazgos principales:")
+        for hallazgo in hallazgos[:3]:
+            print(f"   • {hallazgo.get('patron', '')}: {hallazgo.get('descripcion', '')}")
 
     print("\n" + "=" * 60)
     print("✅ ANÁLISIS CLÍNICO COMPLETADO")
