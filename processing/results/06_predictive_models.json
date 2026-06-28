@@ -1,9 +1,31 @@
 {
-    "linear_regression_r2": 1.0,
-    "random_forest_r2": 0.5842,
-    "gbt_r2": 1.0,
+    "linear_regression_r2": 0.9301,
+    "linear_regression_mae": 10.9261,
+    "linear_regression_rmse": 29.7207,
+    "random_forest_r2": 0.562,
+    "random_forest_mae": 56.7305,
+    "random_forest_rmse": 74.4158,
+    "gbt_r2": 0.9911,
+    "gbt_mae": 3.0195,
+    "gbt_rmse": 10.5994,
     "feature_importance": {
         "cantidad": 0.0,
         "precio": 1.0
+    },
+    "logistic_regression": {
+        "accuracy": 0.9494,
+        "precision": 0.9542,
+        "recall": 0.9494,
+        "f1": 0.9493,
+        "umbral_clasificacion": 177.0,
+        "clase_positiva": "Subtotal >= 177.0 (Alto)",
+        "clase_negativa": "Subtotal < 177.0 (Bajo)",
+        "confusion_matrix": {
+            "tp": 473,
+            "fp": 0,
+            "fn": 51,
+            "tn": 483
+        },
+        "total_test": 1007
     }
 }

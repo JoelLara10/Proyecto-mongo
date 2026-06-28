@@ -1,5 +1,5 @@
 {
-    "fecha_analisis": "2026-05-25T19:11:23.628505",
+    "fecha_analisis": "2026-06-27T17:53:29.068011",
     "directorio_resultados": "C:\\8VoCuatri\\BDA\\PROYECTO-Mongo\\processing\\results",
     "archivos_generados": [
         "00_resumen_ejecutivo.json",
@@ -13,6 +13,20 @@
         "08_evaluation_results.json",
         "09_visualizations_summary.json",
         "10_complete_crisp_dm_results.json",
+        "clinical_00_complete_results.json",
+        "clinical_01_diabetes_prediction.json",
+        "clinical_01_readmission_prediction.json",
+        "clinical_02_occupancy_analysis.json",
+        "clinical_02_readmission_prediction.json",
+        "clinical_03_anomaly_detection.json",
+        "clinical_03_occupancy_analysis.json",
+        "clinical_04_anomaly_detection.json",
+        "clinical_04_patient_segmentation.json",
+        "clinical_05_clinical_intelligence.json",
+        "clinical_05_patient_segmentation.json",
+        "clinical_06_clinical_intelligence.json",
+        "clinical_06_visualizations_metadata.json",
+        "clinical_07_visualizations_metadata.json",
         "kdd_01_data_selection.json",
         "kdd_02_preprocessing.json",
         "kdd_03_transformation.json",
@@ -20,20 +34,20 @@
         "kdd_05_interpretation.json",
         "kdd_complete_results.json"
     ],
-    "total_registros_analizados": 91,
-    "ingreso_total": 11290.0,
-    "mejor_modelo_prediccion": "linear_regression_r2",
+    "total_registros_analizados": 5224,
+    "ingreso_total": 994452.8000000003,
+    "mejor_modelo_prediccion": "random_forest_rmse",
     "segmentos_identificados": 3,
     "insights_principales": [
-        "El mejor modelo predictivo es Linear Regression R2 con R² de 1.0000.",
-        "El servicio con mayor ingreso es GABINETE con $6,220.00.",
-        "El servicio LABORATORIO es el segundo con $5,070.00.",
-        "El ingreso promedio por transacción es $152.57.",
-        "Total de transacciones analizadas: 74."
+        "El mejor modelo predictivo es Gbt con R² de 0.9911.",
+        "El servicio con mayor ingreso es GABINETE con $802,280.00.",
+        "El servicio LABORATORIO es el segundo con $192,172.80.",
+        "El ingreso promedio por transacción es $190.36.",
+        "Total de transacciones analizadas: 5224."
     ],
     "recomendaciones": [
         "Los servicios de GABINETE son los más rentables. Invierta en equipamiento para este servicio.",
-        "El ticket promedio de GABINETE ($259.17) es mayor al de LABORATORIO ($101.40). Enfoque recursos en GABINETE para maximizar ingresos.",
+        "El ticket promedio de GABINETE ($258.47) es mayor al de LABORATORIO ($90.65). Enfoque recursos en GABINETE para maximizar ingresos.",
         "Los modelos predictivos tienen excelente rendimiento. Úselos para planificar ingresos futuros."
     ]
 }

@@ -1,6 +1,6 @@
 {
     "cuenta_paciente": {
-        "total_registros": 91,
+        "total_registros": 5224,
         "tipos_servicio": [
             "LABORATORIO",
             "GABINETE"
@@ -9,21 +9,21 @@
             "min": 50,
             "max": 450
         },
-        "ingreso_total": 31855.0
+        "ingreso_total": 994452.8000000003
     },
     "pacientes": {
-        "total_pacientes": 14,
-        "total_expedientes": 14
+        "total_pacientes": 200,
+        "total_expedientes": 200
     },
     "atenciones": {
-        "total_atenciones": 14,
+        "total_atenciones": 920,
         "areas": [
-            "Hospitalizado",
             "Ambulatorio",
-            "Urgencias",
-            "Hospitalización",
-            "UCI"
+            "Hospitalizado",
+            "UCI",
+            "Consultorio Externo",
+            "Urgencias"
         ],
-        "especialidades": 6
+        "especialidades": 8
     }
 }

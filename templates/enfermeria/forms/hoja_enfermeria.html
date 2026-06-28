@@ -1,0 +1,83 @@
+{% extends 'enfermeria/header_enfermeria.html' %}
+
+{% block content %}
+
+<section class="content-header">
+    <div class="container-fluid">
+        <div class="page-header" style="background:rgba(255,255,255,.1);backdrop-filter:blur(10px);border-radius:15px;padding:1.2rem;">
+            <h1 class="text-white mb-0">
+                <i class="fas fa-file-medical me-3"></i>
+                Hoja de Enfermería
+            </h1>
+        </div>
+    </div>
+</section>
+
+<section class="content">
+<div class="container-fluid">
+
+    <div class="main-card">
+        <div class="card-header-custom">
+            <h5 class="mb-0">
+                <i class="fas fa-notes-medical me-2"></i>
+                Registro del Turno
+            </h5>
+        </div>
+
+        <form method="POST">
+            <div class="card-body-custom">
+
+                <div class="row g-3">
+
+                    <div class="col-md-6">
+                        <label class="form-label">Turno</label>
+                        <select name="turno" class="form-control" required>
+                            <option value="">Selecciona un turno</option>
+                            <option value="Matutino">Matutino</option>
+                            <option value="Vespertino">Vespertino</option>
+                            <option value="Nocturno">Nocturno</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Responsable</label>
+                        <input type="text" name="responsable" class="form-control" value="{{ session.get('username', '') }}">
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label">Actividades realizadas</label>
+                        <textarea name="actividades" rows="4" class="form-control" required></textarea>
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label">Incidencias</label>
+                        <textarea name="incidencias" rows="4" class="form-control"></textarea>
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label">Observaciones</label>
+                        <textarea name="observaciones" rows="4" class="form-control"></textarea>
+                    </div>
+
+                </div>
+
+                <div class="d-flex justify-content-end gap-2 mt-4">
+                    <a href="{{ url_for('enfermeria') }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>
+                        Regresar
+                    </a>
+
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>
+                        Guardar hoja
+                    </button>
+                </div>
+
+            </div>
+        </form>
+    </div>
+
+</div>
+</section>
+
+{% endblock %}

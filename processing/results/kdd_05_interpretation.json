@@ -1,12 +1,22 @@
 {
     "hallazgos_clave": [
-        "Los servicios de LABORATORIO son los más solicitados con 50 transacciones",
-        "Los servicios de GABINETE son los más solicitados con 24 transacciones",
-        "Los servicios de precio Alto generan $3,270.00",
-        "Los servicios de precio Bajo generan $1,410.00",
-        "Los servicios de precio Medio generan $6,610.00",
-        "En el mes 4 se generaron $9,030.00",
-        "En el mes 5 se generaron $2,260.00"
+        "Los servicios de GABINETE son los más solicitados con 3104 transacciones",
+        "Los servicios de LABORATORIO son los más solicitados con 2120 transacciones",
+        "Los servicios de precio Alto generan $380,900.00",
+        "Los servicios de precio Bajo generan $85,632.00",
+        "Los servicios de precio Medio generan $527,920.80",
+        "En el mes 1 se generaron $88,884.80",
+        "En el mes 2 se generaron $64,925.00",
+        "En el mes 3 se generaron $79,920.40",
+        "En el mes 4 se generaron $81,735.40",
+        "En el mes 5 se generaron $83,798.00",
+        "En el mes 6 se generaron $102,963.60",
+        "En el mes 7 se generaron $73,788.60",
+        "En el mes 8 se generaron $81,850.30",
+        "En el mes 9 se generaron $78,061.50",
+        "En el mes 10 se generaron $97,791.40",
+        "En el mes 11 se generaron $84,040.20",
+        "En el mes 12 se generaron $76,693.60"
     ],
     "recomendaciones_kdd": [
         "Enfocar recursos en servicios de laboratorio (mayor volumen)",
@@ -17,8 +27,8 @@
     "resumen_ejecutivo_kdd": {
         "total_patrones_encontrados": 5,
         "principales_servicios": [
-            "LABORATORIO",
-            "GABINETE"
+            "GABINETE",
+            "LABORATORIO"
         ],
         "rango_mas_rentable": "Medio"
     }

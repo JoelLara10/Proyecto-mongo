@@ -325,31 +325,42 @@ def analytics():
 
 @app.route('/admin/actualizar_analytics')
 def actualizar_analytics():
-    """Actualiza los datos ejecutando Spark"""
+    """Actualiza los datos ejecutando main_analytics.py y redirige al dashboard CRISP-DM"""
     if 'username' not in session:
         return redirect(url_for('login'))
     
     try:
-        # Importar y ejecutar la función de Spark
-        from main_mongo import generar_y_guardar_analytics
-        generar_y_guardar_analytics()
+        import subprocess
+        import sys
+        import os as _os
         
-        # Redirigir con mensaje de éxito
-        return redirect(url_for('analytics'))
+        # Ejecutar main_analytics.py con encoding UTF-8
+        _env = _os.environ.copy()
+        _env['PYTHONIOENCODING'] = 'utf-8'
+        result = subprocess.run(
+            [sys.executable, "main_analytics.py"],
+            capture_output=True,
+            text=True,
+            encoding='utf-8',
+            env=_env,
+            cwd=BASE_DIR
+        )
+        
+        print(f"📊 Salida del análisis: {result.stdout}")
+        if result.stderr:
+            print(f"⚠️ Errores: {result.stderr}")
+        
+        # Redirigir al nuevo dashboard CRISP-DM
+        if result.returncode == 0:
+            return redirect(url_for('analytics_met', success='true'))
+        else:
+            return redirect(url_for('analytics_met', error=result.stderr[:500]))
     except Exception as e:
-        print(f"Error al actualizar: {e}")
-        return redirect(url_for('analytics'))
-    """Actualiza los datos ejecutando Spark nuevamente"""
-    if 'username' not in session:
-        return redirect(url_for('login'))
-    
-    # Importar la función de main_mongo
-    from main_mongo import generar_y_guardar_analytics
-    
-    # Ejecutar Spark (puede tomar unos segundos)
-    generar_y_guardar_analytics()
-    
-    return redirect(url_for('analytics'))
+        print(f"❌ Error al actualizar: {str(e)}")
+        return redirect(url_for('analytics_met', error=str(e)))
+
+@app.route('/admin/analytics-dashboard')
+def analytics_dashboard():
     """Dashboard de analytics con Spark y ML"""
 
     if 'username' not in session:
@@ -520,10 +531,15 @@ def refresh_analytics():
         import sys
         
         # Ejecutar main_analytics.py que está en la raíz
+        import os as _os
+        _env = _os.environ.copy()
+        _env['PYTHONIOENCODING'] = 'utf-8'
         result = subprocess.run(
             [sys.executable, "main_analytics.py"],
             capture_output=True,
             text=True,
+            encoding='utf-8',
+            env=_env,
             cwd=BASE_DIR  # Usar BASE_DIR en lugar de Path(__file__).resolve().parent
         )
         
@@ -628,13 +644,6 @@ def clinical_analytics():
     
     # Inicializar con estructura correcta
     analytics_data = {
-        'diabetes': {
-            'riesgo_alto': 0,
-            'riesgo_medio': 0,
-            'riesgo_bajo': 0,
-            'total_pacientes_analizados': 0,
-            'pacientes_riesgo_alto': []
-        },
         'readmission': {
             'riesgo_alto': 0,
             'riesgo_medio': 0,
@@ -674,6 +683,7 @@ def clinical_analytics():
         'visualizations': {
             'graficos_generados': []
         },
+        'clinical_predictive_models': {},
         'error': None
     }
 
@@ -683,13 +693,17 @@ def clinical_analytics():
                 data = json.load(f)
                 
                 # Asegurar que los datos tengan la estructura correcta
-                analytics_data['diabetes'] = data.get('diabetes_prediction', analytics_data['diabetes'])
                 analytics_data['readmission'] = data.get('readmission_prediction', analytics_data['readmission'])
                 analytics_data['occupancy'] = data.get('occupancy_analysis', analytics_data['occupancy'])
                 analytics_data['anomalies'] = data.get('anomaly_detection', analytics_data['anomalies'])
                 analytics_data['segmentation'] = data.get('patient_segmentation', analytics_data['segmentation'])
                 analytics_data['intelligence'] = data.get('clinical_intelligence', analytics_data['intelligence'])
                 analytics_data['visualizations'] = data.get('clinical_visualizations', analytics_data['visualizations'])
+                
+                # Cargar modelos predictivos: clinical_predictive contiene {'risk_classification': {...}}
+                clinical_pred_data = data.get('clinical_predictive', {})
+                if clinical_pred_data and isinstance(clinical_pred_data, dict):
+                    analytics_data['clinical_predictive_models'] = clinical_pred_data
                 
                 # Convertir listas a strings si es necesario para el template
                 if analytics_data.get('visualizations', {}).get('graficos_generados'):
@@ -704,9 +718,37 @@ def clinical_analytics():
 
     return render_template('administrativo/clinical_analytics.html', **analytics_data)
 
+@app.route('/admin/clinical-debug')
+def clinical_debug():
+    """Ruta de debug para verificar datos clínicos"""
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    
+    results_path = RESULTS_DIR / "clinical_00_complete_results.json"
+    debug_info = {
+        'archivo_existe': results_path.exists(),
+        'ruta': str(results_path),
+        'contenido': {},
+        'errores': []
+    }
+    
+    if results_path.exists():
+        try:
+            with open(results_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                debug_info['contenido'] = {
+                    'keys': list(data.keys()),
+                    'clinical_predictive': data.get('clinical_predictive', 'NO ENCONTRADO'),
+                    'clinical_predictive_type': str(type(data.get('clinical_predictive')))
+                }
+        except Exception as e:
+            debug_info['errores'].append(f"Error al leer: {str(e)}")
+    
+    return jsonify(debug_info)
+
 @app.route('/admin/clinical-refresh')
 def refresh_clinical():
-    """Actualiza análisis clínico"""
+    """Actualiza análisis clínico con timeout para evitar bloqueos"""
     if 'username' not in session:
         return redirect(url_for('login'))
 
@@ -728,23 +770,37 @@ def refresh_clinical():
                 break
         
         if script_path is None:
-            return redirect(url_for('clinical_analytics', error="No se encontró main_clinical_analytics.py"))
+            flash('❌ No se encontró main_clinical_analytics.py', 'danger')
+            return redirect(url_for('clinical_analytics'))
 
+        import os as _os
+        _env = _os.environ.copy()
+        _env['PYTHONIOENCODING'] = 'utf-8'
+        
+        # Ejecutar con timeout de 10 minutos para evitar bloqueos
         result = subprocess.run(
             [sys.executable, str(script_path)],
             capture_output=True,
             text=True,
-            cwd=BASE_DIR
+            encoding='utf-8',
+            env=_env,
+            cwd=BASE_DIR,
+            timeout=600  # 10 minutos máximo
         )
 
         if result.returncode == 0:
-            flash('Análisis clínico actualizado correctamente', 'success')
-            return redirect(url_for('clinical_analytics'))
+            flash('✅ Análisis clínico actualizado correctamente', 'success')
         else:
-            flash(f'Error: {result.stderr[:500]}', 'error')
-            return redirect(url_for('clinical_analytics'))
+            error_msg = result.stderr if result.stderr else result.stdout
+            flash(f'⚠️ Error en análisis: {error_msg[:300]}', 'warning')
+        
+        return redirect(url_for('clinical_analytics'))
+    
+    except subprocess.TimeoutExpired:
+        flash('⏱️ El análisis tardó demasiado (timeout). Intenta de nuevo más tarde.', 'danger')
+        return redirect(url_for('clinical_analytics'))
     except Exception as e:
-        flash(f'Error: {str(e)}', 'error')
+        flash(f'❌ Error: {str(e)[:200]}', 'danger')
         return redirect(url_for('clinical_analytics'))
 
 
@@ -1066,6 +1122,7 @@ def dashboard():
     if role == 'admin':
         menu_options = [
             {'name': 'Administrativo', 'url': url_for('administrativo')},
+            {'name': 'Enfermería', 'url': url_for('enfermeria')},
             {'name': 'Médico', 'url': url_for('medico')},
             {'name': 'Estudios', 'url': url_for('estudios.estudios_home')},
             {'name': 'Configuración', 'url': url_for('menu_configuracion')},
@@ -1082,7 +1139,7 @@ def dashboard():
         ]
     elif role == 'enfermero':
         menu_options = [
-            {'name': 'Signos Vitales', 'url': url_for('dashboard')} # cambia si tienes ruta propia
+             {'name': 'Enfermería', 'url': url_for('enfermeria')}, # cambia si tienes ruta propia
         ]
     elif role == 'estudios':
         menu_options = [
@@ -4413,6 +4470,375 @@ def rendimiento():
         logs=logs
     )
 
+# ====================================================================================
+# ============================ ENFERMERIA ============================================
+# ====================================================================================
+
+@app.route('/enfermeria/enfermeria')
+def enfermeria():
+    if 'user_id' not in session or session.get('role') not in ('admin', 'enfermero'):
+        flash('Acceso denegado.', 'error')
+        return redirect(url_for('dashboard'))
+
+    db = get_db_connection()
+
+    # ==================== PAGINACIÓN ====================
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 25, type=int)  # Puedes cambiar a 50 si quieres más
+
+    # Evitamos cargar miles de registros de golpe
+    skip = (page - 1) * per_page
+
+    # ==================== CONSULTA OPTIMIZADA CON $lookup ====================
+    pipeline = [
+        {
+            "$match": {
+                "estatus": {"$in": ["ACTIVO", "activo", None, ""]}
+            }
+        },
+        {"$sort": {"fecha_ing": -1}},           # Más recientes primero
+        {"$skip": skip},
+        {"$limit": per_page},
+        {
+            "$lookup": {
+                "from": "pacientes",
+                "localField": "Id_exp",
+                "foreignField": "Id_exp",
+                "as": "paciente_info"
+            }
+        },
+        {"$unwind": {"path": "$paciente_info", "preserveNullAndEmptyArrays": True}}
+    ]
+
+    atenciones = list(db['atencion'].aggregate(pipeline))
+
+    pacientes = []
+    for at in atenciones:
+        p_info = at.get('paciente_info', {})
+        paciente = {
+            "_id": str(at["_id"]),
+            "Id_exp": at.get("Id_exp", "Sin expediente"),
+            "area": at.get("area", ""),
+            "fecha_ing": at.get("fecha_ing", ""),
+            "diagnostico": at.get("motivo", ""),
+            "estatus": at.get("estatus", "ACTIVO"),
+            "nom_pac": p_info.get("nom_pac", "Sin nombre"),
+            "papell": p_info.get("papell", ""),
+            "sapell": p_info.get("sapell", ""),
+        }
+        pacientes.append(paciente)
+
+    # Contar total para la paginación
+    total = db['atencion'].count_documents({
+        "estatus": {"$in": ["ACTIVO", "activo", None, ""]}
+    })
+
+    total_pages = (total + per_page - 1) // per_page
+
+    return render_template(
+        'enfermeria/enfermeria.html',
+        pacientes=pacientes,
+        page=page,
+        per_page=per_page,
+        total_pages=total_pages,
+        total=total
+    )
+    
+
+@app.route('/enfermeria/paciente/<id_atencion>')
+def enfermeria_paciente(id_atencion):
+
+    if 'user_id' not in session or session.get('role') not in ('admin', 'enfermero'):
+        flash('Acceso denegado.', 'error')
+        return redirect(url_for('dashboard'))
+
+    db = get_db_connection()
+
+    atencion = db['atencion'].find_one({
+        "_id": ObjectId(id_atencion)
+    })
+
+    if not atencion:
+        flash('Paciente no encontrado.', 'error')
+        return redirect(url_for('enfermeria'))
+
+    paciente = db['pacientes'].find_one({
+        "Id_exp": atencion.get("Id_exp")
+    })
+
+    cama = {
+        "num_cama": "Sin cama",
+        "tipo": atencion.get("area", "")
+    }
+
+    if atencion.get("id_cama"):
+        cama_data = db['camas'].find_one({
+            "id_cama": atencion.get("id_cama")
+        })
+
+        if cama_data:
+            cama = {
+                "num_cama": cama_data.get("numero", "Sin cama"),
+                "tipo": cama_data.get("area", "")
+            }
+
+    if paciente:
+        paciente['_id'] = str(paciente['_id'])
+        paciente['Id_exp'] = atencion.get('Id_exp', '')
+        paciente['area'] = atencion.get('area', '')
+        paciente['fecha_ing'] = atencion.get('fecha_ing', '')
+        paciente['diagnostico'] = atencion.get('motivo', '')
+        paciente['id_atencion'] = str(atencion['_id'])
+    else:
+        paciente = {
+            "_id": "",
+            "Id_exp": atencion.get("Id_exp", "Sin expediente"),
+            "nom_pac": "Sin nombre",
+            "papell": "",
+            "sapell": "",
+            "area": atencion.get("area", ""),
+            "fecha_ing": atencion.get("fecha_ing", ""),
+            "diagnostico": atencion.get("motivo", ""),
+            "id_atencion": str(atencion["_id"])
+        }
+
+    return render_template(
+        'enfermeria/paciente.html',
+        paciente=paciente,
+        cama=cama,
+        id_atencion=str(atencion['_id'])
+    )
+# ====================================================================================
+# SIGNOS VITALES
+# ====================================================================================
+
+@app.route('/enfermeria/signos-vitales', methods=['GET', 'POST'])
+def enfermeria_signos_vitales():
+
+    db = get_db_connection()
+
+    if request.method == 'POST':
+
+        db['signos_vitales'].insert_one({
+
+            "temperatura": request.form.get('temperatura'),
+            "presion_arterial": request.form.get('presion_arterial'),
+            "frecuencia_cardiaca": request.form.get('frecuencia_cardiaca'),
+            "frecuencia_respiratoria": request.form.get('frecuencia_respiratoria'),
+            "saturacion": request.form.get('saturacion'),
+            "peso": request.form.get('peso'),
+            "talla": request.form.get('talla'),
+            "fecha": datetime.now()
+
+        })
+
+        flash('Signos vitales registrados correctamente', 'success')
+
+    return render_template(
+        'enfermeria/forms/signos_vitales.html'
+    )
+
+
+# ====================================================================================
+# VALORACION DE ENFERMERIA
+# ====================================================================================
+
+@app.route('/enfermeria/valoracion-enfermeria', methods=['GET', 'POST'])
+def enfermeria_valoracion():
+
+    db = get_db_connection()
+
+    if request.method == 'POST':
+
+        db['valoracion_enfermeria'].insert_one({
+
+            "estado_general": request.form.get('estado_general'),
+            "nivel_conciencia": request.form.get('nivel_conciencia'),
+            "movilidad": request.form.get('movilidad'),
+            "dolor": request.form.get('dolor'),
+            "observaciones": request.form.get('observaciones'),
+            "fecha": datetime.now()
+
+        })
+
+        flash('Valoración registrada correctamente', 'success')
+
+    return render_template(
+        'enfermeria/forms/valoracion_enfermeria.html'
+    )
+
+
+# ====================================================================================
+# MEDICAMENTOS
+# ====================================================================================
+
+@app.route('/enfermeria/administracion-medicamentos', methods=['GET', 'POST'])
+def enfermeria_medicamentos():
+
+    db = get_db_connection()
+
+    if request.method == 'POST':
+
+        db['administracion_medicamentos'].insert_one({
+
+            "medicamento": request.form.get('medicamento'),
+            "dosis": request.form.get('dosis'),
+            "via": request.form.get('via'),
+            "hora": request.form.get('hora'),
+            "observaciones": request.form.get('observaciones'),
+            "fecha": datetime.now()
+
+        })
+
+        flash('Medicamento registrado correctamente', 'success')
+
+    return render_template(
+        'enfermeria/forms/administracion_medicamentos.html'
+    )
+
+
+# ====================================================================================
+# BALANCE HIDRICO
+# ====================================================================================
+
+@app.route('/enfermeria/balance-hidrico', methods=['GET', 'POST'])
+def enfermeria_balance_hidrico():
+
+    db = get_db_connection()
+
+    if request.method == 'POST':
+
+        db['balance_hidrico'].insert_one({
+
+            "ingresos": request.form.get('ingresos'),
+            "egresos": request.form.get('egresos'),
+            "balance": request.form.get('balance'),
+            "fecha": datetime.now()
+
+        })
+
+        flash('Balance hídrico guardado correctamente', 'success')
+
+    return render_template(
+        'enfermeria/forms/balance_hidrico.html'
+    )
+
+
+# ====================================================================================
+# HOJA DE ENFERMERIA
+# ====================================================================================
+
+@app.route('/enfermeria/hoja-enfermeria', methods=['GET', 'POST'])
+def enfermeria_hoja():
+
+    db = get_db_connection()
+
+    if request.method == 'POST':
+
+        db['hoja_enfermeria'].insert_one({
+
+            "turno": request.form.get('turno'),
+            "actividades": request.form.get('actividades'),
+            "incidencias": request.form.get('incidencias'),
+            "observaciones": request.form.get('observaciones'),
+            "fecha": datetime.now()
+
+        })
+
+        flash('Hoja de enfermería guardada correctamente', 'success')
+
+    return render_template(
+        'enfermeria/forms/hoja_enfermeria.html'
+    )
+
+
+# ====================================================================================
+# CUIDADOS DE ENFERMERIA
+# ====================================================================================
+
+@app.route('/enfermeria/cuidados-enfermeria', methods=['GET', 'POST'])
+def enfermeria_cuidados():
+
+    db = get_db_connection()
+
+    if request.method == 'POST':
+
+        db['cuidados_enfermeria'].insert_one({
+
+            "curaciones": request.form.get('curaciones'),
+            "higiene": request.form.get('higiene'),
+            "cambio_posicion": request.form.get('cambio_posicion'),
+            "observaciones": request.form.get('observaciones'),
+            "fecha": datetime.now()
+
+        })
+
+        flash('Cuidados registrados correctamente', 'success')
+
+    return render_template(
+        'enfermeria/forms/cuidados_enfermeria.html'
+    )
+
+# ===================== API PARA APP MÓVIL =====================
+from flask_cors import CORS
+
+# Activar CORS (agrega esto justo después de app = Flask(__name__))
+CORS(app, supports_credentials=True, origins=["*"])  # Para desarrollo
+
+@app.route('/api/login', methods=['POST'])
+def api_login():
+    try:
+        username = request.json.get('username') or request.form.get('username')
+        password = request.json.get('password') or request.form.get('password')
+
+        if not username or not password:
+            return jsonify({"success": False, "message": "Usuario y contraseña son requeridos"}), 400
+
+        db = get_db_connection()
+        users_coll = db['users']
+        user = users_coll.find_one({"username": username})
+
+        if not user:
+            return jsonify({"success": False, "message": "Usuario no encontrado"}), 401
+
+        # Verificar contraseña (usando tu misma lógica robusta)
+        stored_password = user['password']
+        
+        def extract_bcrypt_hash(pwd):
+            if isinstance(pwd, bytes):
+                if pwd.startswith(b'$2b$'):
+                    return pwd
+                try:
+                    pwd_str = pwd.decode('utf-8')
+                except:
+                    pwd_str = str(pwd)
+            else:
+                pwd_str = str(pwd)
+
+            if '$2b$' in pwd_str:
+                start = pwd_str.find('$2b$')
+                if start != -1:
+                    pwd_str = pwd_str[start:]
+            return pwd_str.encode('utf-8') if isinstance(pwd_str, str) else pwd_str
+
+        normalized = extract_bcrypt_hash(stored_password)
+
+        if bcrypt.checkpw(password.encode('utf-8'), normalized):
+            return jsonify({
+                "success": True,
+                "message": "Login exitoso",
+                "user": {
+                    "username": user['username'],
+                    "role": user.get('role', 'user'),
+                    "user_id": str(user['_id'])
+                }
+            })
+        else:
+            return jsonify({"success": False, "message": "Contraseña incorrecta"}), 401
+
+    except Exception as e:
+        print("Error en api_login:", e)
+        return jsonify({"success": False, "message": "Error interno del servidor"}), 500
 
 
 @app.route('/logout')

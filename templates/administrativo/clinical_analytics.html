@@ -338,6 +338,110 @@
     {% endif %}
   </div>
 
+  <!-- ==================== 2.5 MODELOS PREDICTIVOS CLÍNICOS ==================== -->
+  <div class="section-title">
+    <i class="fas fa-brain"></i>
+    Modelos Predictivos Clínicos (Riesgo de Recaída)
+  </div>
+
+  <div class="section-card">
+    {% set risk_clf = clinical_predictive_models.get('risk_classification', {}) %}
+    
+    {% if risk_clf %}
+    <div class="row g-3 mb-4">
+      <div class="col-md-6 col-lg-3">
+        <div class="metric-card" style="background: linear-gradient(135deg, #48bb78, #38a169);">
+          <small>Precisión (Accuracy)</small>
+          <h3>{{ "%.1f"|format(risk_clf.accuracy * 100) if risk_clf.accuracy else 'N/A' }}%</h3>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-3">
+        <div class="metric-card" style="background: linear-gradient(135deg, #4299e1, #2b6cb0);">
+          <small>Precisión (Precision)</small>
+          <h3>{{ "%.1f"|format(risk_clf.precision * 100) if risk_clf.precision else 'N/A' }}%</h3>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-3">
+        <div class="metric-card" style="background: linear-gradient(135deg, #ed8936, #c05621);">
+          <small>Exhaustividad (Recall)</small>
+          <h3>{{ "%.1f"|format(risk_clf.recall * 100) if risk_clf.recall else 'N/A' }}%</h3>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-3">
+        <div class="metric-card" style="background: linear-gradient(135deg, #9f7aea, #6b46c1);">
+          <small>F1 Score</small>
+          <h3>{{ "%.1f"|format(risk_clf.f1_score * 100) if risk_clf.f1_score else 'N/A' }}%</h3>
+        </div>
+      </div>
+    </div>
+
+    <!-- MATRIZ DE CONFUSIÓN -->
+    {% if risk_clf.confusion_matrix %}
+    {% set cm = risk_clf.confusion_matrix %}
+    <div class="mt-4">
+      <h6 class="fw-bold mb-3"><i class="fas fa-th me-2"></i>Matriz de Confusión — Clasificación de Riesgo</h6>
+      <div class="table-responsive" style="max-width: 520px;">
+        <table class="table table-bordered text-center mb-1" style="font-size: 0.95rem;">
+          <thead>
+            <tr>
+              <th rowspan="2" colspan="2" class="align-middle bg-light">Matriz</th>
+              <th colspan="2" class="bg-primary text-white">Predicción</th>
+            </tr>
+            <tr>
+              <th class="bg-primary text-white">Alto Riesgo</th>
+              <th class="bg-primary text-white">Bajo Riesgo</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th rowspan="2" class="align-middle bg-secondary text-white" style="writing-mode: vertical-rl; transform: rotate(180deg); width: 40px;">Real</th>
+              <th class="bg-secondary text-white">Alto Riesgo</th>
+              <td class="table-success fw-bold fs-5">{{ cm.tp }}</td>
+              <td class="table-danger fw-bold fs-5">{{ cm.fn }}</td>
+            </tr>
+            <tr>
+              <th class="bg-secondary text-white">Bajo Riesgo</th>
+              <td class="table-warning fw-bold fs-5">{{ cm.fp }}</td>
+              <td class="table-success fw-bold fs-5">{{ cm.tn }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="row g-2 mt-2" style="max-width: 520px;">
+        <div class="col-6">
+          <div class="p-2 rounded text-center small" style="background:#c6f6d5;">
+            <strong>VP:</strong> {{ cm.tp }} (correctamente identificados como Alto Riesgo)
+          </div>
+        </div>
+        <div class="col-6">
+          <div class="p-2 rounded text-center small" style="background:#fed7d7;">
+            <strong>FN:</strong> {{ cm.fn }} (Alto Riesgo no detectados)
+          </div>
+        </div>
+        <div class="col-6">
+          <div class="p-2 rounded text-center small" style="background:#fefcbf;">
+            <strong>FP:</strong> {{ cm.fp }} (Falsos positivos)
+          </div>
+        </div>
+        <div class="col-6">
+          <div class="p-2 rounded text-center small" style="background:#c6f6d5;">
+            <strong>VN:</strong> {{ cm.tn }} (correctamente identificados como Bajo Riesgo)
+          </div>
+        </div>
+      </div>
+      <p class="text-muted small mt-2">
+        Umbral: {{ risk_clf.umbral_riesgo }} atenciones &nbsp;|&nbsp; Total test: {{ risk_clf.total_test }}
+      </p>
+    </div>
+    {% endif %}
+    {% else %}
+    <div class="alert alert-info">
+      <i class="fas fa-info-circle me-2"></i>
+      Ejecuta "Actualizar Análisis Clínico" para generar los modelos predictivos.
+    </div>
+    {% endif %}
+  </div>
+
   <!-- ==================== 3. OCUPACIÓN HOSPITALARIA ==================== -->
   <div class="section-title">
     <i class="fas fa-bed"></i>

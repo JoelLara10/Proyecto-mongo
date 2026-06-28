@@ -1,7 +1,7 @@
 {
-    "registros_iniciales": 91,
-    "registros_finales": 74,
-    "registros_eliminados": 17,
-    "tasa_retencion": 81.32,
+    "registros_iniciales": 5224,
+    "registros_finales": 5224,
+    "registros_eliminados": 0,
+    "tasa_retencion": 100.0,
     "fase": "preprocessing"
 }

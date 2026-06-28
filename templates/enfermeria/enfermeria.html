@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Módulo Enfermería - INEO</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/bootstrap-icons.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/all.min.css') }}">
+    <link href="{{ url_for('static', filename='css/fonts.css') }}" rel="stylesheet">
+
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .navbar {
+            background: rgba(255,255,255,.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 30px rgba(0,0,0,.1);
+            padding: .8rem 0;
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+            background: linear-gradient(135deg,#667eea,#764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .btn-outline-light {
+            border: 1px solid #e2e8f0;
+            color: #4a5568;
+            border-radius: 10px;
+            padding: .5rem 1.2rem;
+            font-weight: 500;
+        }
+
+        .main-container { padding: 1rem 1.5rem; }
+
+        .main-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: white;
+            margin: 1.5rem 0 1rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .main-title i {
+            margin-right: 1rem;
+            font-size: 2.5rem;
+            background: rgba(255,255,255,.2);
+            padding: .5rem;
+            border-radius: 15px;
+        }
+
+        .section-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin: 2rem 0 1rem;
+            padding: .8rem 1.5rem;
+            background: rgba(255,255,255,.95);
+            border-radius: 15px;
+            display: flex;
+            justify-content: space-between;
+            box-shadow: 0 4px 15px rgba(0,0,0,.1);
+            color: #4299e1;
+            border-left: 5px solid #4299e1;
+        }
+
+        .badge-count {
+            background: linear-gradient(135deg,#667eea,#764ba2);
+            color: white;
+            padding: .3rem 1rem;
+            border-radius: 20px;
+            font-size: .9rem;
+        }
+
+        .patient-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .bed-card {
+            background: rgba(255,255,255,.95);
+            border-radius: 15px;
+            padding: 1rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,.1);
+            text-align: center;
+            transition: .3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .bed-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg,#f56565,#ed8936);
+        }
+
+        .bed-card:hover {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 15px 30px rgba(245,101,101,.2);
+        }
+
+        .bed-icon {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: linear-gradient(135deg,#f56565,#ed8936);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto .8rem;
+            font-size: 2rem;
+        }
+
+        .bed-number {
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: #2d3748;
+            margin-bottom: .3rem;
+        }
+
+        .patient-name {
+            font-size: .9rem;
+            color: #718096;
+            margin-bottom: .5rem;
+        }
+
+        .status-badge {
+            background: #f56565;
+            color: white;
+            font-size: .75rem;
+            padding: .2rem .8rem;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        a { text-decoration: none; }
+        body {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.main-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+    </style>
+</head>
+
+<body>
+
+<nav class="navbar navbar-expand-lg">
+    <div class="container-fluid px-4">
+        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-light me-3">
+            <i class="bi bi-arrow-left me-2"></i>Dashboard
+        </a>
+
+        <span class="navbar-brand fw-semibold fs-4">
+            <i class="fas fa-user-nurse me-2" style="color:#667eea;"></i>
+            Módulo Enfermería
+        </span>
+
+        <div class="ms-auto d-flex align-items-center">
+            <span class="navbar-text me-4">
+                <i class="bi bi-person-circle me-2" style="color:#667eea;"></i>
+                <span class="fw-medium">{{ session['username'] }}</span>
+                <span class="badge ms-2" style="background:linear-gradient(135deg,#667eea,#764ba2);color:white;">
+                    {{ session['role']|capitalize }}
+                </span>
+            </span>
+
+            <a href="{{ url_for('logout') }}" class="btn btn-outline-light">
+                <i class="bi bi-box-arrow-right me-2"></i>Salir
+            </a>
+        </div>
+    </div>
+</nav>
+
+<div class="main-container">
+
+    <div class="main-title">
+        <i class="fas fa-user-nurse"></i>
+        Panel de Enfermería
+    </div>
+
+    <div class="section-title">
+        <div>
+            <i class="fas fa-procedures me-2"></i>
+            PACIENTES REGISTRADOS
+        </div>
+        <span class="badge-count">{{ pacientes|length }}</span>
+    </div>
+
+    <div class="patient-grid">
+        {% for paciente in pacientes %}
+        <a href="{{ url_for('enfermeria_paciente', id_atencion=paciente._id) }}">
+            <div class="bed-card">
+                <div class="bed-icon">
+                    <i class="fas fa-user"></i>
+                </div>
+
+                <div class="patient-name">
+                    {{ paciente.nom_pac|default('Sin nombre') }}
+                    {{ paciente.papell|default('') }}
+                    {{ paciente.sapell|default('') }}
+                </div>
+
+                <div class="bed-number">
+                    Expediente {{ paciente.Id_exp|default('Sin expediente') }}
+                </div>
+
+                <span class="status-badge">
+                    ACTIVO
+                </span>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+
+    <div class="mt-auto text-center text-white-50 py-4">
+        <small>
+            <i class="fas fa-shield-alt me-2"></i>
+            INEO v2.0 - Sistema de Gestión Hospitalaria
+        </small>
+    </div>
+
+</div>
+
+<script src="{{ url_for('static', filename='js/jquery-3.6.0.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+
+</body>
+</html>

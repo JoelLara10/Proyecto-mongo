@@ -1,5 +1,5 @@
 {
-    "timestamp": "2026-05-25T19:11:05.223448",
+    "timestamp": "2026-06-27T17:52:45.752382",
     "business_understanding": {
         "objective_1": "Analizar ingresos por tipo de servicio y especialidad",
         "objective_2": "Segmentar pacientes por comportamiento de consumo",
@@ -9,7 +9,7 @@
     },
     "data_understanding": {
         "cuenta_paciente": {
-            "total_registros": 91,
+            "total_registros": 5224,
             "tipos_servicio": [
                 "LABORATORIO",
                 "GABINETE"
@@ -18,39 +18,39 @@
                 "min": 50,
                 "max": 450
             },
-            "ingreso_total": 31855.0
+            "ingreso_total": 994452.8000000003
         },
         "pacientes": {
-            "total_pacientes": 14,
-            "total_expedientes": 14
+            "total_pacientes": 200,
+            "total_expedientes": 200
         },
         "atenciones": {
-            "total_atenciones": 14,
+            "total_atenciones": 920,
             "areas": [
-                "Hospitalizado",
                 "Ambulatorio",
-                "Urgencias",
-                "Hospitalización",
-                "UCI"
+                "Hospitalizado",
+                "UCI",
+                "Consultorio Externo",
+                "Urgencias"
             ],
-            "especialidades": 6
+            "especialidades": 8
         }
     },
     "descriptive_analytics": {
         "ingresos_por_tipo": [
             {
                 "tipo": "LABORATORIO",
-                "total_transacciones": 50,
-                "ingreso_total": 5070.0,
-                "ticket_promedio": 101.4,
-                "max_ingreso": 150.0,
-                "min_ingreso": 50.0
+                "total_transacciones": 2120,
+                "ingreso_total": 192172.79999999993,
+                "ticket_promedio": 90.64754716981129,
+                "max_ingreso": 299.0,
+                "min_ingreso": 4.5
             },
             {
                 "tipo": "GABINETE",
-                "total_transacciones": 24,
-                "ingreso_total": 6220.0,
-                "ticket_promedio": 259.1666666666667,
+                "total_transacciones": 3104,
+                "ingreso_total": 802280.0,
+                "ticket_promedio": 258.46649484536084,
                 "max_ingreso": 450.0,
                 "min_ingreso": 150.0
             }
@@ -58,80 +58,134 @@
         "ingresos_por_estado": [
             {
                 "estado": "PENDIENTE",
-                "ingreso_total": 11290.0,
-                "cantidad": 74
+                "ingreso_total": 326664.10000000003,
+                "cantidad": 1702
+            },
+            {
+                "estado": "PAGADO",
+                "ingreso_total": 334754.30000000005,
+                "cantidad": 1766
+            },
+            {
+                "estado": "FACTURADO",
+                "ingreso_total": 333034.4,
+                "cantidad": 1756
             }
         ],
         "top_servicios": [
             {
                 "tipo": "GABINETE",
-                "total": 6220.0
+                "total": 802280.0
             },
             {
                 "tipo": "LABORATORIO",
-                "total": 5070.0
+                "total": 192172.79999999993
             }
         ],
         "estadisticas_generales": {
-            "ingreso_promedio": 152.56756756756758,
-            "desviacion_ingreso": 94.20264968513813,
-            "ingreso_total": 11290.0,
-            "total_transacciones": 74
+            "ingreso_promedio": 190.36232771822364,
+            "desviacion_ingreso": 110.80659364804332,
+            "ingreso_total": 994452.8000000003,
+            "total_transacciones": 5224
         }
     },
     "diagnostic_analytics": {
         "correlacion_cantidad_subtotal": null,
         "analisis_por_especialidad": [
             {
-                "especialidad": "Medicina general",
-                "ingreso_total": 7080.0,
-                "transacciones": 51,
-                "promedio": 138.8235294117647
+                "especialidad": "Traumatología",
+                "ingreso_total": 136436.3,
+                "transacciones": 724,
+                "promedio": 188.44792817679556
+            },
+            {
+                "especialidad": "Medicina General",
+                "ingreso_total": 136336.39999999997,
+                "transacciones": 726,
+                "promedio": 187.7911845730027
+            },
+            {
+                "especialidad": "Ginecología",
+                "ingreso_total": 128042.4,
+                "transacciones": 659,
+                "promedio": 194.2980273141123
+            },
+            {
+                "especialidad": "Neurología",
+                "ingreso_total": 125099.50000000001,
+                "transacciones": 631,
+                "promedio": 198.2559429477021
             },
             {
                 "especialidad": "Cardiología",
-                "ingreso_total": 2910.0,
-                "transacciones": 15,
-                "promedio": 194.0
-            },
-            {
-                "especialidad": "Pediatría",
-                "ingreso_total": 1300.0,
-                "transacciones": 8,
-                "promedio": 162.5
+                "ingreso_total": 123462.60000000002,
+                "transacciones": 630,
+                "promedio": 195.97238095238097
             }
         ],
         "analisis_por_area": [
             {
                 "area": "Hospitalizado",
-                "ingreso_total": 4710.0,
-                "transacciones": 27
+                "ingreso_total": 215914.99999999997,
+                "transacciones": 1126
             },
             {
                 "area": "Urgencias",
-                "ingreso_total": 2910.0,
-                "transacciones": 15
+                "ingreso_total": 208344.30000000002,
+                "transacciones": 1106
+            },
+            {
+                "area": "UCI",
+                "ingreso_total": 180821.69999999998,
+                "transacciones": 939
             },
             {
                 "area": "Ambulatorio",
-                "ingreso_total": 3670.0,
-                "transacciones": 32
+                "ingreso_total": 201983.89999999997,
+                "transacciones": 1069
+            },
+            {
+                "area": "Consultorio Externo",
+                "ingreso_total": 187387.89999999997,
+                "transacciones": 984
             }
         ],
         "distribucion_montos": {
-            "menos_100": 20,
-            "entre_100_500": 54,
+            "menos_100": 1325,
+            "entre_100_500": 3899,
             "entre_500_1000": 0,
             "mas_1000": 0
         }
     },
     "predictive_modeling": {
-        "linear_regression_r2": 1.0,
-        "random_forest_r2": 0.5842,
-        "gbt_r2": 1.0,
+        "linear_regression_r2": 0.9301,
+        "linear_regression_mae": 10.9261,
+        "linear_regression_rmse": 29.7207,
+        "random_forest_r2": 0.562,
+        "random_forest_mae": 56.7305,
+        "random_forest_rmse": 74.4158,
+        "gbt_r2": 0.9911,
+        "gbt_mae": 3.0195,
+        "gbt_rmse": 10.5994,
         "feature_importance": {
             "cantidad": 0.0,
             "precio": 1.0
+        },
+        "logistic_regression": {
+            "accuracy": 0.9494,
+            "precision": 0.9542,
+            "recall": 0.9494,
+            "f1": 0.9493,
+            "umbral_clasificacion": 177.0,
+            "clase_positiva": "Subtotal >= 177.0 (Alto)",
+            "clase_negativa": "Subtotal < 177.0 (Bajo)",
+            "confusion_matrix": {
+                "tp": 473,
+                "fp": 0,
+                "fn": 51,
+                "tn": 483
+            },
+            "total_test": 1007
         }
     },
     "segmentation_analysis": {
@@ -139,52 +193,52 @@
         "centros": [
             [
                 0.0,
-                1.5168865984100772,
-                1.5168865984100772
+                1.8722877878797526,
+                1.8334300664107077
             ],
             [
                 0.0,
-                0.8005790380497625,
-                0.8005790380497625
+                3.417395092310316,
+                3.283210187918238
             ],
             [
                 0.0,
-                3.582701772487888,
-                3.582701772487888
+                0.8437876410197008,
+                0.7153031524249381
             ]
         ],
         "distribucion": [
             {
-                "prediction": 1,
-                "count": 24
+                "prediction": 0,
+                "count": 2280
             },
             {
-                "prediction": 0,
-                "count": 38
+                "prediction": 1,
+                "count": 1047
             },
             {
                 "prediction": 2,
-                "count": 12
+                "count": 1897
             }
         ],
         "cluster_statistics": [
             {
-                "prediction": 1,
-                "promedio_cantidad": 1.0,
-                "promedio_precio": 75.41666666666667,
-                "promedio_subtotal": 75.41666666666667
-            },
-            {
                 "prediction": 0,
                 "promedio_cantidad": 1.0,
-                "promedio_precio": 142.89473684210526,
-                "promedio_subtotal": 142.89473684210526
+                "promedio_precio": 199.31578947368422,
+                "promedio_subtotal": 203.1561403508772
+            },
+            {
+                "prediction": 1,
+                "promedio_cantidad": 1.0,
+                "promedio_precio": 363.8013371537727,
+                "promedio_subtotal": 363.8013371537727
             },
             {
                 "prediction": 2,
                 "promedio_cantidad": 1.0,
-                "promedio_precio": 337.5,
-                "promedio_subtotal": 337.5
+                "promedio_precio": 89.82604111755403,
+                "promedio_subtotal": 79.2603057459146
             }
         ]
     },
@@ -193,40 +247,40 @@
             "predictivo": "Excelente"
         },
         "insights": [
-            "El mejor modelo predictivo es Linear Regression R2 con R² de 1.0000.",
-            "El servicio con mayor ingreso es GABINETE con $6,220.00.",
-            "El servicio LABORATORIO es el segundo con $5,070.00.",
-            "El ingreso promedio por transacción es $152.57.",
-            "Total de transacciones analizadas: 74.",
-            "Distribución de transacciones: <$100: 20, $100-500: 54, $500-1000: 0, >$1000: 0",
+            "El mejor modelo predictivo es Gbt con R² de 0.9911.",
+            "El servicio con mayor ingreso es GABINETE con $802,280.00.",
+            "El servicio LABORATORIO es el segundo con $192,172.80.",
+            "El ingreso promedio por transacción es $190.36.",
+            "Total de transacciones analizadas: 5224.",
+            "Distribución de transacciones: <$100: 1325, $100-500: 3899, $500-1000: 0, >$1000: 0",
             "Se identificaron 3 segmentos en el análisis de clustering.",
-            "El segmento 1 tiene 24 transacciones.",
-            "El segmento 0 tiene 38 transacciones.",
-            "El segmento 2 tiene 12 transacciones."
+            "El segmento 0 tiene 2280 transacciones.",
+            "El segmento 1 tiene 1047 transacciones.",
+            "El segmento 2 tiene 1897 transacciones."
         ],
         "recomendaciones": [
             "Los servicios de GABINETE son los más rentables. Invierta en equipamiento para este servicio.",
-            "El ticket promedio de GABINETE ($259.17) es mayor al de LABORATORIO ($101.40). Enfoque recursos en GABINETE para maximizar ingresos.",
+            "El ticket promedio de GABINETE ($258.47) es mayor al de LABORATORIO ($90.65). Enfoque recursos en GABINETE para maximizar ingresos.",
             "Los modelos predictivos tienen excelente rendimiento. Úselos para planificar ingresos futuros."
         ],
-        "mejor_modelo": "linear_regression_r2",
-        "mejor_puntaje": 1.0
+        "mejor_modelo": "gbt",
+        "mejor_puntaje": 0.9911
     },
     "insights_summary": [
-        "El mejor modelo predictivo es Linear Regression R2 con R² de 1.0000.",
-        "El servicio con mayor ingreso es GABINETE con $6,220.00.",
-        "El servicio LABORATORIO es el segundo con $5,070.00.",
-        "El ingreso promedio por transacción es $152.57.",
-        "Total de transacciones analizadas: 74.",
-        "Distribución de transacciones: <$100: 20, $100-500: 54, $500-1000: 0, >$1000: 0",
+        "El mejor modelo predictivo es Gbt con R² de 0.9911.",
+        "El servicio con mayor ingreso es GABINETE con $802,280.00.",
+        "El servicio LABORATORIO es el segundo con $192,172.80.",
+        "El ingreso promedio por transacción es $190.36.",
+        "Total de transacciones analizadas: 5224.",
+        "Distribución de transacciones: <$100: 1325, $100-500: 3899, $500-1000: 0, >$1000: 0",
         "Se identificaron 3 segmentos en el análisis de clustering.",
-        "El segmento 1 tiene 24 transacciones.",
-        "El segmento 0 tiene 38 transacciones.",
-        "El segmento 2 tiene 12 transacciones."
+        "El segmento 0 tiene 2280 transacciones.",
+        "El segmento 1 tiene 1047 transacciones.",
+        "El segmento 2 tiene 1897 transacciones."
     ],
     "recommendations": [
         "Los servicios de GABINETE son los más rentables. Invierta en equipamiento para este servicio.",
-        "El ticket promedio de GABINETE ($259.17) es mayor al de LABORATORIO ($101.40). Enfoque recursos en GABINETE para maximizar ingresos.",
+        "El ticket promedio de GABINETE ($258.47) es mayor al de LABORATORIO ($90.65). Enfoque recursos en GABINETE para maximizar ingresos.",
         "Los modelos predictivos tienen excelente rendimiento. Úselos para planificar ingresos futuros."
     ]
 }

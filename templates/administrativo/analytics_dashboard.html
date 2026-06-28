@@ -313,70 +313,60 @@
 
   <div class="section-card">
     <div class="row">
-      <div class="col-md-8">
+      <div class="col-12 mb-4">
+        <h6 class="fw-bold mb-3"><i class="fas fa-table me-2"></i>Métricas de Regresión</h6>
         <div class="table-responsive">
-          <table class="table">
-            <thead>
-              <tr><th>Modelo</th><th>R² Score</th><th>Evaluación</th></tr>
+          <table class="table table-bordered align-middle">
+            <thead class="table-dark">
+              <tr>
+                <th>Modelo</th>
+                <th>R² Score</th>
+                <th>MAE (Error Absoluto)</th>
+                <th>RMSE (Error Cuadrático)</th>
+                <th>Evaluación</th>
+              </tr>
             </thead>
             <tbody>
               {% if predictive %}
+              {% set models = [
+                ('Linear Regression', predictive.linear_regression_r2, predictive.linear_regression_mae, predictive.linear_regression_rmse),
+                ('Random Forest',     predictive.random_forest_r2,     predictive.random_forest_mae,     predictive.random_forest_rmse),
+                ('GBT',               predictive.gbt_r2,               predictive.gbt_mae,               predictive.gbt_rmse)
+              ] %}
+              {% for nombre, r2, mae, rmse in models %}
               <tr>
-                <td><strong>Linear Regression</strong></td>
-                <td>{{ "%.4f"|format(predictive.linear_regression_r2|float) if predictive.linear_regression_r2 else 'N/A' }}</td>
+                <td><strong>{{ nombre }}</strong></td>
+                <td>{{ "%.4f"|format(r2|float) if r2 else 'N/A' }}</td>
+                <td>{{ "%.2f"|format(mae|float) if mae else 'N/A' }}</td>
+                <td>{{ "%.2f"|format(rmse|float) if rmse else 'N/A' }}</td>
                 <td>
-                  {% if predictive.linear_regression_r2|float >= 0.9 %}
-                  <span class="badge bg-success">Excelente</span>
-                  {% elif predictive.linear_regression_r2|float >= 0.7 %}
-                  <span class="badge bg-info">Bueno</span>
-                  {% elif predictive.linear_regression_r2|float >= 0.5 %}
-                  <span class="badge bg-warning">Regular</span>
-                  {% else %}
-                  <span class="badge bg-danger">Mejorable</span>
-                  {% endif %}
+                  {% if r2 %}
+                    {% if r2|float >= 0.9 %}<span class="badge bg-success">Excelente</span>
+                    {% elif r2|float >= 0.7 %}<span class="badge bg-info">Bueno</span>
+                    {% elif r2|float >= 0.5 %}<span class="badge bg-warning">Regular</span>
+                    {% else %}<span class="badge bg-danger">Mejorable</span>{% endif %}
+                  {% else %}<span class="badge bg-secondary">N/A</span>{% endif %}
                 </td>
               </tr>
-              <tr>
-                <td><strong>Random Forest</strong></td>
-                <td>{{ "%.4f"|format(predictive.random_forest_r2|float) if predictive.random_forest_r2 else 'N/A' }}</td>
-                <td>
-                  {% if predictive.random_forest_r2|float >= 0.9 %}
-                  <span class="badge bg-success">Excelente</span>
-                  {% elif predictive.random_forest_r2|float >= 0.7 %}
-                  <span class="badge bg-info">Bueno</span>
-                  {% elif predictive.random_forest_r2|float >= 0.5 %}
-                  <span class="badge bg-warning">Regular</span>
-                  {% else %}
-                  <span class="badge bg-danger">Mejorable</span>
-                  {% endif %}
-                </td>
-              </tr>
-              <tr>
-                <td><strong>GBT</strong></td>
-                <td>{{ "%.4f"|format(predictive.gbt_r2|float) if predictive.gbt_r2 else 'N/A' }}</td>
-                <td>
-                  {% if predictive.gbt_r2|float >= 0.9 %}
-                  <span class="badge bg-success">Excelente</span>
-                  {% elif predictive.gbt_r2|float >= 0.7 %}
-                  <span class="badge bg-info">Bueno</span>
-                  {% elif predictive.gbt_r2|float >= 0.5 %}
-                  <span class="badge bg-warning">Regular</span>
-                  {% else %}
-                  <span class="badge bg-danger">Mejorable</span>
-                  {% endif %}
-                </td>
-              </tr>
+              {% endfor %}
               {% else %}
-              <tr><td colspan="3" class="text-center text-muted">No hay datos de modelos predictivos</td></tr>
+              <tr><td colspan="5" class="text-center text-muted">No hay datos de modelos predictivos</td></tr>
               {% endif %}
             </tbody>
           </table>
         </div>
+        <small class="text-muted">
+          <strong>R²</strong>: ajuste del modelo (1.0 = perfecto) &nbsp;|&nbsp;
+          <strong>MAE</strong>: error absoluto medio (en $) &nbsp;|&nbsp;
+          <strong>RMSE</strong>: raíz del error cuadrático medio (penaliza errores grandes)
+        </small>
       </div>
-      <div class="col-md-4">
+
+      <!-- Feature Importance -->
+      <div class="col-md-5 mb-4">
         <div class="text-center p-3 bg-light rounded">
           <i class="fas fa-chart-line fa-3x mb-2" style="color: #667eea;"></i>
-          <h6>Importancia de Features</h6>
+          <h6>Importancia de Features (Random Forest)</h6>
           <div class="mt-2">
             <small>Cantidad: {{ "%.2f"|format(predictive.feature_importance.cantidad|float * 100) if predictive and predictive.feature_importance else 'N/A' }}%</small>
             <div class="progress mb-2">
@@ -388,6 +378,118 @@
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- Regresión Logística -->
+      {% set lr = predictive.logistic_regression if predictive else None %}
+      <div class="col-md-7 mb-4">
+        <h6 class="fw-bold mb-3"><i class="fas fa-project-diagram me-2"></i>Regresión Logística (Clasificación Binaria)</h6>
+        {% if lr %}
+        <p class="small text-muted mb-2">
+          Clasifica cada transacción como <strong>Alto</strong> o <strong>Bajo</strong> según si el subtotal supera la mediana
+          (<strong>${{ lr.umbral_clasificacion }}</strong>).
+        </p>
+        <div class="row g-2 mb-3">
+          <div class="col-6 col-md-3">
+            <div class="metric-card" style="background: linear-gradient(135deg, #48bb78, #38a169);">
+              <small>Accuracy</small>
+              <h3>{{ "%.2f"|format(lr.accuracy|float * 100) if lr.accuracy else 'N/A' }}%</h3>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="metric-card" style="background: linear-gradient(135deg, #4299e1, #2b6cb0);">
+              <small>Precisión</small>
+              <h3>{{ "%.2f"|format(lr.precision|float * 100) if lr.precision else 'N/A' }}%</h3>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="metric-card" style="background: linear-gradient(135deg, #ed8936, #c05621);">
+              <small>Recall</small>
+              <h3>{{ "%.2f"|format(lr.recall|float * 100) if lr.recall else 'N/A' }}%</h3>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="metric-card" style="background: linear-gradient(135deg, #9f7aea, #6b46c1);">
+              <small>F1 Score</small>
+              <h3>{{ "%.2f"|format(lr.f1|float * 100) if lr.f1 else 'N/A' }}%</h3>
+            </div>
+          </div>
+        </div>
+        {% else %}
+        <p class="text-muted">Ejecuta "Actualizar con Spark" para generar la regresión logística.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- MATRIZ DE CONFUSIÓN -->
+    <div class="row">
+      <div class="col-12">
+        <h6 class="fw-bold mb-3"><i class="fas fa-th me-2"></i>Matriz de Confusión — Regresión Logística</h6>
+        {% if lr and lr.confusion_matrix %}
+        {% set cm = lr.confusion_matrix %}
+        <div class="table-responsive" style="max-width: 520px;">
+          <table class="table table-bordered text-center mb-1" style="font-size: 0.95rem;">
+            <thead>
+              <tr>
+                <th rowspan="2" colspan="2" class="align-middle bg-light">Matriz de Confusión</th>
+                <th colspan="2" class="bg-primary text-white">Predicción</th>
+              </tr>
+              <tr>
+                <th class="bg-primary text-white">Alto (1)</th>
+                <th class="bg-primary text-white">Bajo (0)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th rowspan="2" class="align-middle bg-secondary text-white" style="writing-mode: vertical-rl; transform: rotate(180deg); width: 40px;">Real</th>
+                <th class="bg-secondary text-white">Alto (1)</th>
+                <td class="table-success fw-bold fs-5">{{ cm.tp }}</td>
+                <td class="table-danger fw-bold fs-5">{{ cm.fn }}</td>
+              </tr>
+              <tr>
+                <th class="bg-secondary text-white">Bajo (0)</th>
+                <td class="table-warning fw-bold fs-5">{{ cm.fp }}</td>
+                <td class="table-success fw-bold fs-5">{{ cm.tn }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="row g-2 mt-1" style="max-width: 520px;">
+          <div class="col-6">
+            <div class="p-2 rounded text-center" style="background:#c6f6d5;">
+              <small class="d-block text-success fw-bold">✅ VP (Verdaderos Positivos)</small>
+              <strong>{{ cm.tp }}</strong> — correctamente clasificados como Alto
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="p-2 rounded text-center" style="background:#fed7d7;">
+              <small class="d-block text-danger fw-bold">❌ FN (Falsos Negativos)</small>
+              <strong>{{ cm.fn }}</strong> — reales Alto, predichos como Bajo
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="p-2 rounded text-center" style="background:#fefcbf;">
+              <small class="d-block text-warning fw-bold">⚠️ FP (Falsos Positivos)</small>
+              <strong>{{ cm.fp }}</strong> — reales Bajo, predichos como Alto
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="p-2 rounded text-center" style="background:#c6f6d5;">
+              <small class="d-block text-success fw-bold">✅ VN (Verdaderos Negativos)</small>
+              <strong>{{ cm.tn }}</strong> — correctamente clasificados como Bajo
+            </div>
+          </div>
+        </div>
+        <p class="text-muted small mt-2">
+          Total de muestras en prueba: <strong>{{ lr.total_test }}</strong> &nbsp;|&nbsp;
+          Umbral de clasificación: <strong>${{ lr.umbral_clasificacion }}</strong>
+        </p>
+        {% else %}
+        <div class="text-center py-4 text-muted">
+          <i class="fas fa-th fa-2x mb-2"></i>
+          <p>Ejecuta "Actualizar con Spark" para generar la matriz de confusión.</p>
+        </div>
+        {% endif %}
       </div>
     </div>
   </div>

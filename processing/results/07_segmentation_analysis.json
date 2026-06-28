@@ -3,52 +3,52 @@
     "centros": [
         [
             0.0,
-            1.5168865984100772,
-            1.5168865984100772
+            1.8722877878797526,
+            1.8334300664107077
         ],
         [
             0.0,
-            0.8005790380497625,
-            0.8005790380497625
+            3.417395092310316,
+            3.283210187918238
         ],
         [
             0.0,
-            3.582701772487888,
-            3.582701772487888
+            0.8437876410197008,
+            0.7153031524249381
         ]
     ],
     "distribucion": [
         {
-            "prediction": 1,
-            "count": 24
+            "prediction": 0,
+            "count": 2280
         },
         {
-            "prediction": 0,
-            "count": 38
+            "prediction": 1,
+            "count": 1047
         },
         {
             "prediction": 2,
-            "count": 12
+            "count": 1897
         }
     ],
     "cluster_statistics": [
         {
-            "prediction": 1,
-            "promedio_cantidad": 1.0,
-            "promedio_precio": 75.41666666666667,
-            "promedio_subtotal": 75.41666666666667
-        },
-        {
             "prediction": 0,
             "promedio_cantidad": 1.0,
-            "promedio_precio": 142.89473684210526,
-            "promedio_subtotal": 142.89473684210526
+            "promedio_precio": 199.31578947368422,
+            "promedio_subtotal": 203.1561403508772
+        },
+        {
+            "prediction": 1,
+            "promedio_cantidad": 1.0,
+            "promedio_precio": 363.8013371537727,
+            "promedio_subtotal": 363.8013371537727
         },
         {
             "prediction": 2,
             "promedio_cantidad": 1.0,
-            "promedio_precio": 337.5,
-            "promedio_subtotal": 337.5
+            "promedio_precio": 89.82604111755403,
+            "promedio_subtotal": 79.2603057459146
         }
     ]
 }

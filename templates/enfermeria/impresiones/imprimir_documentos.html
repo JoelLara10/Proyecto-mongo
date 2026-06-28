@@ -1,0 +1,23 @@
+{% extends 'enfermeria/header_enfermeria.html' %}
+{% block content %}
+<section class="content-header">
+  <div class="container-fluid"><div class="row mb-4"><div class="col-12"><div style="background:rgba(255,255,255,.1);backdrop-filter:blur(10px);border-radius:15px;padding:1.2rem;"><h1 class="text-white mb-0"><i class="fas fa-print me-3"></i>Imprimir documentos de enfermería</h1></div></div></div></div>
+</section>
+<section class="content"><div class="container-fluid">
+  <div class="patient-info-card mb-4"><div class="patient-info-content"><div class="patient-avatar"><i class="fas fa-user-circle"></i></div><div><h5 class="patient-name">{{ paciente.papell }} {{ paciente.sapell }} {{ paciente.nom_pac }}</h5><div class="patient-meta"><span><i class="fas fa-id-card me-1"></i>Exp: {{ paciente.Id_exp }}</span><span><i class="fas fa-calendar-alt me-1"></i>Edad: {{ paciente.edad }} años</span></div></div></div></div>
+  <div class="main-card">
+    <div class="card-header-custom"><h5 class="mb-0"><i class="fas fa-file-medical me-2"></i>Documentos disponibles</h5></div>
+    <div class="card-body-custom">
+      <div class="row g-3">
+        <div class="col-md-4"><a class="btn btn-outline-primary w-100 p-3" href="{{ url_for('enfermeria_signos_vitales', id_atencion=id_atencion) }}"><i class="fas fa-heartbeat me-2"></i>Signos Vitales</a></div>
+        <div class="col-md-4"><a class="btn btn-outline-success w-100 p-3" href="{{ url_for('enfermeria_valoracion', id_atencion=id_atencion) }}"><i class="fas fa-notes-medical me-2"></i>Valoración</a></div>
+        <div class="col-md-4"><a class="btn btn-outline-warning w-100 p-3" href="{{ url_for('enfermeria_medicamentos', id_atencion=id_atencion) }}"><i class="fas fa-pills me-2"></i>Medicamentos</a></div>
+        <div class="col-md-4"><a class="btn btn-outline-info w-100 p-3" href="{{ url_for('enfermeria_balance_hidrico', id_atencion=id_atencion) }}"><i class="fas fa-tint me-2"></i>Balance Hídrico</a></div>
+        <div class="col-md-4"><a class="btn btn-outline-secondary w-100 p-3" href="{{ url_for('enfermeria_hoja', id_atencion=id_atencion) }}"><i class="fas fa-clipboard-list me-2"></i>Hoja de Enfermería</a></div>
+        <div class="col-md-4"><a class="btn btn-outline-danger w-100 p-3" href="{{ url_for('enfermeria_cuidados', id_atencion=id_atencion) }}"><i class="fas fa-hands-helping me-2"></i>Cuidados</a></div>
+      </div>
+      <div class="text-end mt-4"><button onclick="window.print()" class="btn btn-primary-custom"><i class="fas fa-print me-2"></i>Imprimir pantalla</button></div>
+    </div>
+  </div>
+</div></section>
+{% endblock %}

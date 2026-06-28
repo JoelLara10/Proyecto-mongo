@@ -3,22 +3,22 @@
         "predictivo": "Excelente"
     },
     "insights": [
-        "El mejor modelo predictivo es Linear Regression R2 con R² de 1.0000.",
-        "El servicio con mayor ingreso es GABINETE con $6,220.00.",
-        "El servicio LABORATORIO es el segundo con $5,070.00.",
-        "El ingreso promedio por transacción es $152.57.",
-        "Total de transacciones analizadas: 74.",
-        "Distribución de transacciones: <$100: 20, $100-500: 54, $500-1000: 0, >$1000: 0",
+        "El mejor modelo predictivo es Gbt con R² de 0.9911.",
+        "El servicio con mayor ingreso es GABINETE con $802,280.00.",
+        "El servicio LABORATORIO es el segundo con $192,172.80.",
+        "El ingreso promedio por transacción es $190.36.",
+        "Total de transacciones analizadas: 5224.",
+        "Distribución de transacciones: <$100: 1325, $100-500: 3899, $500-1000: 0, >$1000: 0",
         "Se identificaron 3 segmentos en el análisis de clustering.",
-        "El segmento 1 tiene 24 transacciones.",
-        "El segmento 0 tiene 38 transacciones.",
-        "El segmento 2 tiene 12 transacciones."
+        "El segmento 0 tiene 2280 transacciones.",
+        "El segmento 1 tiene 1047 transacciones.",
+        "El segmento 2 tiene 1897 transacciones."
     ],
     "recomendaciones": [
         "Los servicios de GABINETE son los más rentables. Invierta en equipamiento para este servicio.",
-        "El ticket promedio de GABINETE ($259.17) es mayor al de LABORATORIO ($101.40). Enfoque recursos en GABINETE para maximizar ingresos.",
+        "El ticket promedio de GABINETE ($258.47) es mayor al de LABORATORIO ($90.65). Enfoque recursos en GABINETE para maximizar ingresos.",
         "Los modelos predictivos tienen excelente rendimiento. Úselos para planificar ingresos futuros."
     ],
-    "mejor_modelo": "linear_regression_r2",
-    "mejor_puntaje": 1.0
+    "mejor_modelo": "gbt",
+    "mejor_puntaje": 0.9911
 }

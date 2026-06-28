@@ -6,7 +6,7 @@
         },
         {
             "patron": "Anomalías en Signos Vitales",
-            "descripcion": "139 registros con valores anómalos detectados"
+            "descripcion": "144 registros con valores anómalos detectados"
         }
     ],
     "correlaciones_clinicas": [
@@ -25,6 +25,6 @@
         "🟡 Pacientes de alta frecuencia (59): Crear programas de manejo crónico",
         "🟡 Pacientes de alta frecuencia (78): Crear programas de manejo crónico"
     ],
-    "fecha_analisis": "2026-06-08T21:38:45.382896",
+    "fecha_analisis": "2026-06-27T20:29:59.745853",
     "total_recomendaciones": 7
 }

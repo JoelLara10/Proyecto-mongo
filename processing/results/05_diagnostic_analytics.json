@@ -2,44 +2,66 @@
     "correlacion_cantidad_subtotal": null,
     "analisis_por_especialidad": [
         {
-            "especialidad": "Medicina general",
-            "ingreso_total": 7080.0,
-            "transacciones": 51,
-            "promedio": 138.8235294117647
+            "especialidad": "Traumatología",
+            "ingreso_total": 136436.3,
+            "transacciones": 724,
+            "promedio": 188.44792817679556
+        },
+        {
+            "especialidad": "Medicina General",
+            "ingreso_total": 136336.39999999997,
+            "transacciones": 726,
+            "promedio": 187.7911845730027
+        },
+        {
+            "especialidad": "Ginecología",
+            "ingreso_total": 128042.4,
+            "transacciones": 659,
+            "promedio": 194.2980273141123
+        },
+        {
+            "especialidad": "Neurología",
+            "ingreso_total": 125099.50000000001,
+            "transacciones": 631,
+            "promedio": 198.2559429477021
         },
         {
             "especialidad": "Cardiología",
-            "ingreso_total": 2910.0,
-            "transacciones": 15,
-            "promedio": 194.0
-        },
-        {
-            "especialidad": "Pediatría",
-            "ingreso_total": 1300.0,
-            "transacciones": 8,
-            "promedio": 162.5
+            "ingreso_total": 123462.60000000002,
+            "transacciones": 630,
+            "promedio": 195.97238095238097
         }
     ],
     "analisis_por_area": [
         {
             "area": "Hospitalizado",
-            "ingreso_total": 4710.0,
-            "transacciones": 27
+            "ingreso_total": 215914.99999999997,
+            "transacciones": 1126
         },
         {
             "area": "Urgencias",
-            "ingreso_total": 2910.0,
-            "transacciones": 15
+            "ingreso_total": 208344.30000000002,
+            "transacciones": 1106
+        },
+        {
+            "area": "UCI",
+            "ingreso_total": 180821.69999999998,
+            "transacciones": 939
         },
         {
             "area": "Ambulatorio",
-            "ingreso_total": 3670.0,
-            "transacciones": 32
+            "ingreso_total": 201983.89999999997,
+            "transacciones": 1069
+        },
+        {
+            "area": "Consultorio Externo",
+            "ingreso_total": 187387.89999999997,
+            "transacciones": 984
         }
     ],
     "distribucion_montos": {
-        "menos_100": 20,
-        "entre_100_500": 54,
+        "menos_100": 1325,
+        "entre_100_500": 3899,
         "entre_500_1000": 0,
         "mas_1000": 0
     }

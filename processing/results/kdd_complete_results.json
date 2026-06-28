@@ -1,38 +1,48 @@
 {
     "patterns": {
         "servicios_frecuentes": {
-            "LABORATORIO": 50,
-            "GABINETE": 24
+            "GABINETE": 3104,
+            "LABORATORIO": 2120
         },
         "ingresos_por_rango": {
-            "Alto": 3270.0,
-            "Bajo": 1410.0,
-            "Medio": 6610.0
+            "Alto": 380900.0,
+            "Bajo": 85632.0,
+            "Medio": 527920.8
         },
         "ingresos_por_mes": {
-            "4": 9030.0,
-            "5": 2260.0
+            "1": 88884.8,
+            "2": 64925.0,
+            "3": 79920.4,
+            "4": 81735.4,
+            "5": 83798.0,
+            "6": 102963.6,
+            "7": 73788.6,
+            "8": 81850.3,
+            "9": 78061.5,
+            "10": 97791.4,
+            "11": 84040.2,
+            "12": 76693.6
         },
         "estadisticas_por_tipo": {
             "subtotal_sum": {
-                "GABINETE": 6220.0,
-                "LABORATORIO": 5070.0
+                "GABINETE": 802280.0,
+                "LABORATORIO": 192172.8
             },
             "subtotal_mean": {
-                "GABINETE": 259.1666666666667,
-                "LABORATORIO": 101.4
+                "GABINETE": 258.46649484536084,
+                "LABORATORIO": 90.64754716981132
             },
             "subtotal_count": {
-                "GABINETE": 24,
-                "LABORATORIO": 50
+                "GABINETE": 3104,
+                "LABORATORIO": 2120
             },
             "precio_mean": {
-                "GABINETE": 259.1666666666667,
-                "LABORATORIO": 101.4
+                "GABINETE": 258.46649484536084,
+                "LABORATORIO": 95.97169811320755
             },
             "precio_std": {
-                "GABINETE": 93.47944050485887,
-                "LABORATORIO": 29.692986872117714
+                "GABINETE": 87.90815768762411,
+                "LABORATORIO": 30.343310928696003
             }
         },
         "correlaciones": {
@@ -44,24 +54,34 @@
             "precio": {
                 "cantidad": NaN,
                 "precio": 1.0,
-                "subtotal": 1.0
+                "subtotal": 0.9604599381537718
             },
             "subtotal": {
                 "cantidad": NaN,
-                "precio": 1.0,
+                "precio": 0.9604599381537718,
                 "subtotal": 1.0
             }
         }
     },
     "interpretation": {
         "hallazgos_clave": [
-            "Los servicios de LABORATORIO son los más solicitados con 50 transacciones",
-            "Los servicios de GABINETE son los más solicitados con 24 transacciones",
-            "Los servicios de precio Alto generan $3,270.00",
-            "Los servicios de precio Bajo generan $1,410.00",
-            "Los servicios de precio Medio generan $6,610.00",
-            "En el mes 4 se generaron $9,030.00",
-            "En el mes 5 se generaron $2,260.00"
+            "Los servicios de GABINETE son los más solicitados con 3104 transacciones",
+            "Los servicios de LABORATORIO son los más solicitados con 2120 transacciones",
+            "Los servicios de precio Alto generan $380,900.00",
+            "Los servicios de precio Bajo generan $85,632.00",
+            "Los servicios de precio Medio generan $527,920.80",
+            "En el mes 1 se generaron $88,884.80",
+            "En el mes 2 se generaron $64,925.00",
+            "En el mes 3 se generaron $79,920.40",
+            "En el mes 4 se generaron $81,735.40",
+            "En el mes 5 se generaron $83,798.00",
+            "En el mes 6 se generaron $102,963.60",
+            "En el mes 7 se generaron $73,788.60",
+            "En el mes 8 se generaron $81,850.30",
+            "En el mes 9 se generaron $78,061.50",
+            "En el mes 10 se generaron $97,791.40",
+            "En el mes 11 se generaron $84,040.20",
+            "En el mes 12 se generaron $76,693.60"
         ],
         "recomendaciones_kdd": [
             "Enfocar recursos en servicios de laboratorio (mayor volumen)",
@@ -72,8 +92,8 @@
         "resumen_ejecutivo_kdd": {
             "total_patrones_encontrados": 5,
             "principales_servicios": [
-                "LABORATORIO",
-                "GABINETE"
+                "GABINETE",
+                "LABORATORIO"
             ],
             "rango_mas_rentable": "Medio"
         }

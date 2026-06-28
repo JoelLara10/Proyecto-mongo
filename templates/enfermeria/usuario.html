@@ -1,0 +1,112 @@
+{% extends 'enfermeria/header_enfermeria.html' %}
+
+{% block content %}
+
+<div class="main-title">
+    <i class="fas fa-user"></i>
+    Detalle del Usuario
+</div>
+
+<div class="main-card">
+
+    <div class="card-header-custom">
+        <i class="fas fa-id-card me-2"></i>
+        Información del Usuario
+    </div>
+
+    <div class="card-body-custom">
+
+        <div class="row align-items-center">
+
+            <div class="col-md-6 d-flex align-items-center gap-3">
+
+                <div class="bed-icon">
+                    <i class="fas fa-user"></i>
+                </div>
+
+                <div>
+                    <h3>
+                        {{ usuario.pnombre|default('') }}
+                        {{ usuario.papell|default('') }}
+                        {{ usuario.sapell|default('') }}
+                    </h3>
+
+                    <span class="status-badge occupied">
+                        {{ usuario.role|capitalize }}
+                    </span>
+
+                    <p class="mt-2 mb-0">
+                        Usuario: {{ usuario.username }}
+                    </p>
+                </div>
+
+            </div>
+
+            <div class="col-md-6">
+
+                <div class="main-card">
+                    <div class="card-header-custom">
+                        <i class="fas fa-bolt me-2"></i>
+                        Acciones rápidas
+                    </div>
+
+                    <div class="card-body-custom">
+
+                        <div class="row g-2">
+
+                            <div class="col-md-6">
+                                <a href="{{ url_for('enfermeria_signos_vitales') }}" class="btn btn-outline-primary w-100">
+                                    <i class="fas fa-heartbeat me-2"></i>
+                                    Signos Vitales
+                                </a>
+                            </div>
+
+                            <div class="col-md-6">
+                                <a href="{{ url_for('enfermeria_valoracion') }}" class="btn btn-outline-success w-100">
+                                    <i class="fas fa-clipboard-check me-2"></i>
+                                    Valoración
+                                </a>
+                            </div>
+
+                            <div class="col-md-6">
+                                <a href="{{ url_for('enfermeria_medicamentos') }}" class="btn btn-outline-warning w-100">
+                                    <i class="fas fa-pills me-2"></i>
+                                    Medicamentos
+                                </a>
+                            </div>
+
+                            <div class="col-md-6">
+                                <a href="{{ url_for('enfermeria_balance_hidrico') }}" class="btn btn-outline-info w-100">
+                                    <i class="fas fa-droplet me-2"></i>
+                                    Balance Hídrico
+                                </a>
+                            </div>
+
+                            <div class="col-md-6">
+                                <a href="{{ url_for('enfermeria_hoja') }}" class="btn btn-outline-secondary w-100">
+                                    <i class="fas fa-file-medical me-2"></i>
+                                    Hoja Enfermería
+                                </a>
+                            </div>
+
+                            <div class="col-md-6">
+                                <a href="{{ url_for('enfermeria_cuidados') }}" class="btn btn-outline-danger w-100">
+                                    <i class="fas fa-hand-holding-medical me-2"></i>
+                                    Cuidados
+                                </a>
+                            </div>
+
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

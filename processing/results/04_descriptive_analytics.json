@@ -2,17 +2,17 @@
     "ingresos_por_tipo": [
         {
             "tipo": "LABORATORIO",
-            "total_transacciones": 50,
-            "ingreso_total": 5070.0,
-            "ticket_promedio": 101.4,
-            "max_ingreso": 150.0,
-            "min_ingreso": 50.0
+            "total_transacciones": 2120,
+            "ingreso_total": 192172.79999999993,
+            "ticket_promedio": 90.64754716981129,
+            "max_ingreso": 299.0,
+            "min_ingreso": 4.5
         },
         {
             "tipo": "GABINETE",
-            "total_transacciones": 24,
-            "ingreso_total": 6220.0,
-            "ticket_promedio": 259.1666666666667,
+            "total_transacciones": 3104,
+            "ingreso_total": 802280.0,
+            "ticket_promedio": 258.46649484536084,
             "max_ingreso": 450.0,
             "min_ingreso": 150.0
         }
@@ -20,24 +20,34 @@
     "ingresos_por_estado": [
         {
             "estado": "PENDIENTE",
-            "ingreso_total": 11290.0,
-            "cantidad": 74
+            "ingreso_total": 326664.10000000003,
+            "cantidad": 1702
+        },
+        {
+            "estado": "PAGADO",
+            "ingreso_total": 334754.30000000005,
+            "cantidad": 1766
+        },
+        {
+            "estado": "FACTURADO",
+            "ingreso_total": 333034.4,
+            "cantidad": 1756
         }
     ],
     "top_servicios": [
         {
             "tipo": "GABINETE",
-            "total": 6220.0
+            "total": 802280.0
         },
         {
             "tipo": "LABORATORIO",
-            "total": 5070.0
+            "total": 192172.79999999993
         }
     ],
     "estadisticas_generales": {
-        "ingreso_promedio": 152.56756756756758,
-        "desviacion_ingreso": 94.20264968513813,
-        "ingreso_total": 11290.0,
-        "total_transacciones": 74
+        "ingreso_promedio": 190.36232771822364,
+        "desviacion_ingreso": 110.80659364804332,
+        "ingreso_total": 994452.8000000003,
+        "total_transacciones": 5224
     }
 }

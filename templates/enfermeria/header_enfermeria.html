@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>INEO | Módulo Enfermería</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='css/bootstrap-icons.css') }}" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/all.min.css') }}">
+  <link href="{{ url_for('static', filename='css/fonts.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='css/adminlte.min.css') }}" rel="stylesheet">
+
+  <style>
+    * { font-family: 'Inter', sans-serif; }
+
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+    }
+
+    .main-sidebar {
+      background: rgba(30, 60, 114, 0.95);
+      backdrop-filter: blur(10px);
+      border-right: 1px solid rgba(255,255,255,.1);
+      box-shadow: 4px 0 30px rgba(0,0,0,.2);
+    }
+
+    .brand-link {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-bottom: 1px solid rgba(255,255,255,.2);
+      padding: 1rem !important;
+    }
+
+    .brand-text {
+      color: white !important;
+      font-weight: 700;
+      font-size: 1.5rem;
+      text-shadow: 0 2px 10px rgba(0,0,0,.2);
+    }
+
+    .nav-sidebar .nav-link {
+      color: rgba(255,255,255,.85) !important;
+      padding: .8rem 1rem;
+      margin: .2rem .5rem;
+      border-radius: 12px;
+      transition: all .3s ease;
+    }
+
+    .nav-sidebar .nav-link:hover {
+      background: rgba(255,255,255,.12);
+      color: white !important;
+      transform: translateX(5px);
+    }
+
+    .nav-sidebar .nav-link.active {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white !important;
+      box-shadow: 0 4px 15px rgba(102,126,234,.4);
+    }
+
+    .nav-sidebar .nav-link i {
+      margin-right: .8rem;
+      font-size: 1.1rem;
+    }
+
+    .navbar {
+      background: rgba(255,255,255,.95);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255,255,255,.2);
+      box-shadow: 0 4px 30px rgba(0,0,0,.1);
+      padding: .8rem 1rem;
+    }
+
+    .navbar-nav .nav-link {
+      color: #2d3748 !important;
+      font-weight: 500;
+    }
+
+    .dropdown-menu {
+      border: none;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.2);
+      background: rgba(255,255,255,.95);
+      backdrop-filter: blur(10px);
+    }
+
+    .content-wrapper {
+      background: transparent;
+      min-height: calc(100vh - 57px);
+      padding: 20px;
+      animation: fadeIn .5s ease forwards;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .main-card {
+      background: rgba(255,255,255,.95);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      border: none;
+      box-shadow: 0 10px 30px rgba(0,0,0,.2);
+      overflow: hidden;
+    }
+
+    .card-header-custom {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 1rem 1.5rem;
+    }
+
+    .card-body-custom {
+      padding: 1.5rem;
+    }
+
+    .section-title {
+      font-weight: 700;
+      color: #2d3748;
+      border-left: 5px solid #667eea;
+      padding-left: 1rem;
+      margin: 1.2rem 0 1rem;
+    }
+
+    .form-control,
+    .form-select {
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+      padding: .7rem .9rem;
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+      border-color: #667eea;
+      box-shadow: 0 0 0 .2rem rgba(102,126,234,.15);
+    }
+
+    .btn-primary-custom {
+      background: linear-gradient(135deg,#667eea 0%,#764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      padding: .7rem 1.4rem;
+      font-weight: 600;
+    }
+
+    .btn-primary-custom:hover {
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(102,126,234,.35);
+    }
+
+    .btn-secondary-custom {
+      background: #e2e8f0;
+      color: #2d3748;
+      border: none;
+      border-radius: 12px;
+      padding: .7rem 1.4rem;
+      font-weight: 600;
+    }
+    .main-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: white;
+    margin: 1.5rem 0 1rem;
+    text-shadow: 0 2px 10px rgba(0,0,0,.2);
+    display: flex;
+    align-items: center;
+}
+
+.main-title i {
+    margin-right: 1rem;
+    font-size: 2.5rem;
+    background: rgba(255,255,255,.2);
+    padding: .5rem;
+    border-radius: 15px;
+}
+
+.patient-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.bed-card {
+    background: rgba(255,255,255,.95);
+    border-radius: 15px;
+    padding: 1rem;
+    transition: all .3s ease;
+    box-shadow: 0 4px 15px rgba(0,0,0,.1);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.bed-card:hover {
+    transform: translateY(-5px) scale(1.02);
+    box-shadow: 0 15px 30px rgba(102,126,234,.2);
+}
+
+.bed-icon {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto .8rem;
+    background: linear-gradient(135deg,#f56565 0%,#ed8936 100%);
+    color: white;
+    font-size: 2rem;
+}
+
+.bed-number {
+    font-weight: 700;
+    font-size: 1.2rem;
+    color: #2d3748;
+    margin-bottom: .3rem;
+}
+
+.patient-name {
+    font-size: .9rem;
+    color: #718096;
+    margin-bottom: .5rem;
+}
+
+.status-badge {
+    font-size: .75rem;
+    padding: .2rem .8rem;
+    border-radius: 20px;
+    font-weight: 600;
+    display: inline-block;
+    background: #f56565;
+    color: white;
+}
+
+.badge-count {
+    background: linear-gradient(135deg,#667eea 0%,#764ba2 100%);
+    color: white;
+    padding: .3rem 1rem;
+    border-radius: 20px;
+    font-size: .9rem;
+}
+.ml-0{
+    margin-left: 0 !important;
+}
+  </style>
+</head>
+
+<body class="hold-transition sidebar-mini layout-fixed">
+
+<div class="wrapper">
+
+  <nav class="main-header navbar navbar-expand">
+    <ul class="navbar-nav">
+      <li class="nav-item">
+        <a class="nav-link" data-widget="pushmenu" href="#">
+          <i class="fas fa-bars"></i>
+        </a>
+      </li>
+    </ul>
+
+    <ul class="navbar-nav ml-auto">
+      <li class="nav-item dropdown">
+        <a class="nav-link" data-toggle="dropdown" href="#">
+          <i class="fas fa-user-nurse me-1" style="color:#667eea;"></i>
+          <span class="fw-medium">{{ session['username'] }}</span>
+          <span class="badge ms-2" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); color:white;">
+            {{ session['role']|capitalize }}
+          </span>
+        </a>
+
+        <div class="dropdown-menu dropdown-menu-right">
+          <a href="{{ url_for('logout') }}" class="dropdown-item text-danger">
+            <i class="fas fa-sign-out-alt me-2"></i>
+            Cerrar sesión
+          </a>
+        </div>
+      </li>
+    </ul>
+  </nav>
+  {% if request.endpoint != 'enfermeria' %}
+  <aside class="main-sidebar sidebar-dark-primary elevation-4">
+
+    <a href="{{ url_for('dashboard') }}" class="brand-link">
+      <span class="brand-text font-weight-bold">INEO</span>
+      <span class="brand-text font-weight-light float-right">v2.0</span>
+    </a>
+
+    <div class="sidebar">
+
+      <div class="user-panel mt-3 pb-3 mb-3 d-flex">
+        <div class="info">
+          <a href="#" class="d-block text-white">
+            <i class="fas fa-user-nurse me-2"></i>
+            Enf. {{ session['username'] }}
+          </a>
+        </div>
+      </div>
+
+      <nav class="mt-2">
+        <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu">
+
+          <li class="nav-item">
+            <a href="{{ url_for('enfermeria') }}"
+               class="nav-link {% if request.endpoint == 'enfermeria' %}active{% endif %}">
+              <i class="nav-icon fas fa-home"></i>
+              <p>Panel Enfermería</p>
+            </a>
+          </li>
+
+          <li class="nav-item">
+            <a href="{{ url_for('enfermeria_signos_vitales') }}"
+               class="nav-link {% if request.endpoint == 'enfermeria_signos_vitales' %}active{% endif %}">
+              <i class="nav-icon fas fa-heartbeat"></i>
+              <p>Signos Vitales</p>
+            </a>
+          </li>
+
+          <li class="nav-item">
+            <a href="{{ url_for('enfermeria_valoracion') }}"
+               class="nav-link {% if request.endpoint == 'enfermeria_valoracion' %}active{% endif %}">
+              <i class="nav-icon fas fa-notes-medical"></i>
+              <p>Valoración</p>
+            </a>
+          </li>
+
+          <li class="nav-item">
+            <a href="{{ url_for('enfermeria_medicamentos') }}"
+               class="nav-link {% if request.endpoint == 'enfermeria_medicamentos' %}active{% endif %}">
+              <i class="nav-icon fas fa-pills"></i>
+              <p>Medicamentos</p>
+            </a>
+          </li>
+
+          <li class="nav-item">
+            <a href="{{ url_for('enfermeria_balance_hidrico') }}"
+               class="nav-link {% if request.endpoint == 'enfermeria_balance_hidrico' %}active{% endif %}">
+              <i class="nav-icon fas fa-tint"></i>
+              <p>Balance Hídrico</p>
+            </a>
+          </li>
+
+          <li class="nav-item">
+            <a href="{{ url_for('enfermeria_hoja') }}"
+               class="nav-link {% if request.endpoint == 'enfermeria_hoja' %}active{% endif %}">
+              <i class="nav-icon fas fa-clipboard-list"></i>
+              <p>Hoja Enfermería</p>
+            </a>
+          </li>
+
+          <li class="nav-item">
+            <a href="{{ url_for('enfermeria_cuidados') }}"
+               class="nav-link {% if request.endpoint == 'enfermeria_cuidados' %}active{% endif %}">
+              <i class="nav-icon fas fa-hands-helping"></i>
+              <p>Cuidados</p>
+            </a>
+          </li>
+
+          <li class="nav-item mt-4">
+            <a href="{{ url_for('logout') }}" class="nav-link text-danger">
+              <i class="nav-icon fas fa-sign-out-alt"></i>
+              <p>Cerrar sesión</p>
+            </a>
+          </li>
+
+        </ul>
+      </nav>
+
+    </div>
+  </aside>
+  {% endif %}
+
+  <div class="content-wrapper {% if request.endpoint == 'enfermeria' %}ml-0{% endif %}">
+    {% block content %}{% endblock %}
+  </div>
+
+</div>
+
+<script src="{{ url_for('static', filename='js/jquery-3.6.0.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/adminlte.min.js') }}"></script>
+
+</body>
+</html>

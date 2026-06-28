@@ -7,6 +7,9 @@ from pyspark.sql.functions import (
 from pyspark.sql.window import Window
 from pyspark.ml.feature import VectorAssembler, StandardScaler
 from pyspark.ml.clustering import KMeans
+from pyspark.ml.classification import LogisticRegression
+from pyspark.ml.regression import LinearRegression, RandomForestRegressor, GBTRegressor
+from pyspark.ml.evaluation import RegressionEvaluator, ClusteringEvaluator, MulticlassClassificationEvaluator
 import matplotlib.pyplot as plt
 import matplotlib
 matplotlib.use('Agg')
@@ -15,6 +18,7 @@ import pandas as pd
 from datetime import datetime
 import json
 from pathlib import Path
+import math
 
 # Carpeta de resultados - usar la misma ruta que en app.py
 RESULTS_DIR = Path(__file__).resolve().parent.parent / "processing" / "results"
@@ -548,6 +552,210 @@ class ClinicalAnalytics:
             print(f"⚠️ Error convirtiendo a pandas: {e}")
             return []
 
+    # ==================== 3.5 MODELOS PREDICTIVOS CLÍNICOS ====================
+    def clinical_predictive_models(self):
+        """Modelos ML: 3 regresiones (LR, RF, GBT) + clasificación con matriz confusión"""
+        print("\n🤖 3.5. MODELOS PREDICTIVOS CLÍNICOS (Riesgo de Recaída)")
+        
+        df_pacientes = self.data.get("pacientes")
+        df_atencion = self.data.get("atencion")
+        
+        if df_pacientes is None or df_atencion is None or df_atencion.count() < 20:
+            print("  ⚠️ Datos insuficientes para modelos predictivos clínicos")
+            return None
+        
+        predictive_clinical = {
+            'regression_models': {},
+            'risk_classification': None
+        }
+        
+        try:
+            # ==================== PREPARACIÓN DE DATOS ====================
+            # Crear dataset enriquecido: edad + número de atenciones
+            def _safe_metric(val):
+                """Convierte métrica a float redondeado, retorna None si es NaN"""
+                return builtins.round(float(val), 4) if not math.isnan(val) else None
+            
+            pacientes_ml = df_pacientes.withColumn(
+                "edad", floor(months_between(current_date(), to_date(col("fecnac"))) / 12)
+            )
+            
+            atenciones_por_pac = df_atencion.groupBy("Id_exp").agg(
+                count("*").alias("num_atenciones"),
+                count(when(col("status") == "CERRADA", 1)).alias("atenciones_cerradas")
+            )
+            
+            df_ml = pacientes_ml.join(atenciones_por_pac, "Id_exp", "left") \
+                .select("Id_exp", "edad", "num_atenciones", "atenciones_cerradas") \
+                .na.drop() \
+                .filter((col("edad") > 0) & (col("num_atenciones") > 0))
+            
+            if df_ml.count() < 10:
+                print("  ⚠️ Muestra muy pequeña para modelos predictivos")
+                return None
+            
+            print("  📈 Entrenando modelos de regresión...")
+            
+            # Features engineering
+            assembler = VectorAssembler(
+                inputCols=["edad", "atenciones_cerradas"],
+                outputCol="features_unscaled"
+            )
+            df_features = assembler.transform(df_ml)
+            
+            scaler = StandardScaler(
+                inputCol="features_unscaled",
+                outputCol="features",
+                withStd=True,
+                withMean=True
+            )
+            scaler_model = scaler.fit(df_features)
+            df_scaled = scaler_model.transform(df_features)
+            
+            train_reg, test_reg = df_scaled.randomSplit([0.8, 0.2], seed=42)
+            
+            # Evaluadores para regresión
+            eval_r2 = RegressionEvaluator(labelCol="num_atenciones", predictionCol="prediction", metricName="r2")
+            eval_mae = RegressionEvaluator(labelCol="num_atenciones", predictionCol="prediction", metricName="mae")
+            eval_rmse = RegressionEvaluator(labelCol="num_atenciones", predictionCol="prediction", metricName="rmse")
+            
+            # ==================== MODELO 1: REGRESIÓN LINEAL ====================
+            print("  🔷 Entrenando Regresión Lineal...")
+            lr = LinearRegression(featuresCol="features", labelCol="num_atenciones", regParam=0.1)
+            lr_model = lr.fit(train_reg)
+            lr_pred = lr_model.transform(test_reg)
+            
+            predictive_clinical['regression_models']['linear_regression'] = {
+                'r2': _safe_metric(eval_r2.evaluate(lr_pred)),
+                'mae': _safe_metric(eval_mae.evaluate(lr_pred)),
+                'rmse': _safe_metric(eval_rmse.evaluate(lr_pred))
+            }
+            print(f"    ✅ LR: R²={predictive_clinical['regression_models']['linear_regression']['r2']:.4f}, "
+                  f"MAE={predictive_clinical['regression_models']['linear_regression']['mae']:.4f}, "
+                  f"RMSE={predictive_clinical['regression_models']['linear_regression']['rmse']:.4f}")
+            
+            # ==================== MODELO 2: BOSQUE ALEATORIO ====================
+            print("  🔷 Entrenando Bosque Aleatorio...")
+            rf = RandomForestRegressor(featuresCol="features", labelCol="num_atenciones", numTrees=50, seed=42)
+            rf_model = rf.fit(train_reg)
+            rf_pred = rf_model.transform(test_reg)
+            
+            predictive_clinical['regression_models']['random_forest'] = {
+                'r2': _safe_metric(eval_r2.evaluate(rf_pred)),
+                'mae': _safe_metric(eval_mae.evaluate(rf_pred)),
+                'rmse': _safe_metric(eval_rmse.evaluate(rf_pred))
+            }
+            print(f"    ✅ RF: R²={predictive_clinical['regression_models']['random_forest']['r2']:.4f}, "
+                  f"MAE={predictive_clinical['regression_models']['random_forest']['mae']:.4f}, "
+                  f"RMSE={predictive_clinical['regression_models']['random_forest']['rmse']:.4f}")
+            
+            # ==================== MODELO 3: GRADIENT BOOSTING ====================
+            print("  🔷 Entrenando Árbol Potenciado (GBT)...")
+            gbt = GBTRegressor(featuresCol="features", labelCol="num_atenciones", maxIter=50, seed=42)
+            gbt_model = gbt.fit(train_reg)
+            gbt_pred = gbt_model.transform(test_reg)
+            
+            predictive_clinical['regression_models']['gradient_boosting'] = {
+                'r2': _safe_metric(eval_r2.evaluate(gbt_pred)),
+                'mae': _safe_metric(eval_mae.evaluate(gbt_pred)),
+                'rmse': _safe_metric(eval_rmse.evaluate(gbt_pred))
+            }
+            print(f"    ✅ GBT: R²={predictive_clinical['regression_models']['gradient_boosting']['r2']:.4f}, "
+                  f"MAE={predictive_clinical['regression_models']['gradient_boosting']['mae']:.4f}, "
+                  f"RMSE={predictive_clinical['regression_models']['gradient_boosting']['rmse']:.4f}")
+            
+            # ==================== CLASIFICACIÓN: Riesgo Alto/Bajo ====================
+            print("  🔴 Entrenando Clasificación Logística...")
+            
+            # Crear label: "riesgo_alto" si num_atenciones >= mediana
+            mediana_row = df_ml.approxQuantile("num_atenciones", [0.5], 0.01)
+            mediana_atenc = float(mediana_row[0]) if mediana_row else 2.0
+            
+            df_clasificacion = df_ml.withColumn(
+                "label",
+                when(col("num_atenciones") >= mediana_atenc, 1.0).otherwise(0.0)
+            )
+            
+            # Features: edad + atenciones cerradas (reutilizar escalador)
+            df_clf = assembler.transform(df_clasificacion)
+            df_clf = scaler_model.transform(df_clf)
+            
+            train_clf, test_clf = df_clf.randomSplit([0.8, 0.2], seed=42)
+            
+            # Regresión Logística: predecir riesgo de recaída
+            log_reg = LogisticRegression(
+                featuresCol="features",
+                labelCol="label",
+                maxIter=20,
+                regParam=0.1
+            )
+            log_model = log_reg.fit(train_clf)
+            log_pred = log_model.transform(test_clf)
+            
+            # Métricas de clasificación
+            eval_clf = MulticlassClassificationEvaluator(
+                labelCol="label",
+                predictionCol="prediction"
+            )
+            
+            clf_accuracy = eval_clf.setMetricName("accuracy").evaluate(log_pred)
+            clf_accuracy = builtins.round(float(clf_accuracy), 4) if not math.isnan(clf_accuracy) else None
+            
+            clf_precision = eval_clf.setMetricName("weightedPrecision").evaluate(log_pred)
+            clf_precision = builtins.round(float(clf_precision), 4) if not math.isnan(clf_precision) else None
+            
+            clf_recall = eval_clf.setMetricName("weightedRecall").evaluate(log_pred)
+            clf_recall = builtins.round(float(clf_recall), 4) if not math.isnan(clf_recall) else None
+            
+            clf_f1 = eval_clf.setMetricName("f1").evaluate(log_pred)
+            clf_f1 = builtins.round(float(clf_f1), 4) if not math.isnan(clf_f1) else None
+            
+            # Matriz de confusión
+            cm_data = (
+                log_pred
+                .select("label", "prediction")
+                .groupBy("label", "prediction")
+                .count()
+                .collect()
+            )
+            
+            cm = {"tp": 0, "fp": 0, "fn": 0, "tn": 0}
+            for row in cm_data:
+                real, pred, cnt = int(row["label"]), int(row["prediction"]), int(row["count"])
+                if real == 1 and pred == 1:
+                    cm["tp"] = cnt
+                elif real == 0 and pred == 1:
+                    cm["fp"] = cnt
+                elif real == 1 and pred == 0:
+                    cm["fn"] = cnt
+                elif real == 0 and pred == 0:
+                    cm["tn"] = cnt
+            
+            predictive_clinical['risk_classification'] = {
+                'accuracy': clf_accuracy,
+                'precision': clf_precision,
+                'recall': clf_recall,
+                'f1_score': clf_f1,
+                'umbral_riesgo': builtins.round(mediana_atenc, 2),
+                'riesgo_alto': f"Atenciones >= {builtins.round(mediana_atenc, 0)}",
+                'riesgo_bajo': f"Atenciones < {builtins.round(mediana_atenc, 0)}",
+                'confusion_matrix': cm,
+                'total_test': int(test_clf.count())
+            }
+            
+            print(f"  ✅ Clasificación: accuracy={clf_accuracy}, F1={clf_f1}")
+            print(f"  ✅ Matriz confusión: TP={cm['tp']}, FP={cm['fp']}, FN={cm['fn']}, TN={cm['tn']}")
+            
+        except Exception as e:
+            print(f"  ⚠️ Error en modelos clínicos: {e}")
+            import traceback
+            traceback.print_exc()
+        
+        self.results['clinical_predictive'] = predictive_clinical
+        self._save_json(predictive_clinical, "clinical_03_predictive_models.json")
+        
+        return predictive_clinical
+
     # ==================== 4. SEGMENTACIÓN DE PACIENTES ====================
     def segment_patients(self):
         print("\n📊 4. SEGMENTACIÓN DE PACIENTES")
@@ -898,6 +1106,7 @@ class ClinicalAnalytics:
         self.predict_readmissions()
         self.analyze_occupancy()
         self.detect_anomalies()
+        self.clinical_predictive_models()  # ← NUEVO: Modelos ML de riesgo
         self.segment_patients()
         self.clinical_intelligence()
         self.generate_clinical_visualizations()

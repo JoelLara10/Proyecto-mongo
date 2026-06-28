@@ -6,7 +6,7 @@ from pyspark.ml.feature import VectorAssembler, StandardScaler, StringIndexer
 from pyspark.ml.regression import LinearRegression, RandomForestRegressor, GBTRegressor
 from pyspark.ml.clustering import KMeans
 from pyspark.ml.classification import LogisticRegression
-from pyspark.ml.evaluation import RegressionEvaluator, ClusteringEvaluator, MulticlassClassificationEvaluator
+from pyspark.ml.evaluation import RegressionEvaluator, ClusteringEvaluator, MulticlassClassificationEvaluator, BinaryClassificationEvaluator
 from pyspark.ml import Pipeline
 import matplotlib.pyplot as plt
 import builtins
@@ -318,9 +318,9 @@ class CRISPDMAnalytics:
         return diagnostic
     
     def predictive_modeling(self):
-        """Modelos Predictivos - Regresión y Clasificación"""
+        """Modelos Predictivos - Regresión y Clasificación con métricas completas"""
         print("\n🤖 Modelos Predictivos...")
-        
+
         df = self.data.get('financial_clean')
         if df is None or df.count() < 10:
             print("  ⚠️ Datos insuficientes para modelos predictivos")
@@ -347,64 +347,49 @@ class CRISPDMAnalytics:
         train, test = df_scaled.randomSplit([0.8, 0.2], seed=42)
 
         predictive = {}
-        evaluator = RegressionEvaluator(
-            labelCol="subtotal",
-            predictionCol="prediction",
-            metricName="r2"
-        )
+
+        eval_r2   = RegressionEvaluator(labelCol="subtotal", predictionCol="prediction", metricName="r2")
+        eval_mae  = RegressionEvaluator(labelCol="subtotal", predictionCol="prediction", metricName="mae")
+        eval_rmse = RegressionEvaluator(labelCol="subtotal", predictionCol="prediction", metricName="rmse")
+
+        def _safe_metric(val):
+            return builtins.round(float(val), 4) if not math.isnan(val) else None
 
         # ==========================
         # Modelo 1: Regresión Lineal
         # ==========================
         print("  📈 Entrenando Regresión Lineal...")
-        lr = LinearRegression(
-            featuresCol="features",
-            labelCol="subtotal",
-            regParam=0.1
-        )
+        lr = LinearRegression(featuresCol="features", labelCol="subtotal", regParam=0.1)
         lr_model = lr.fit(train)
         lr_pred = lr_model.transform(test)
 
-        lr_r2 = evaluator.evaluate(lr_pred)
-        predictive['linear_regression_r2'] = (
-            builtins.round(lr_r2, 4) if not math.isnan(lr_r2) else None
-        )
+        predictive['linear_regression_r2']   = _safe_metric(eval_r2.evaluate(lr_pred))
+        predictive['linear_regression_mae']  = _safe_metric(eval_mae.evaluate(lr_pred))
+        predictive['linear_regression_rmse'] = _safe_metric(eval_rmse.evaluate(lr_pred))
 
         # ==========================
         # Modelo 2: Random Forest
         # ==========================
         print("  🌲 Entrenando Random Forest...")
-        rf = RandomForestRegressor(
-            featuresCol="features",
-            labelCol="subtotal",
-            numTrees=50,
-            seed=42
-        )
+        rf = RandomForestRegressor(featuresCol="features", labelCol="subtotal", numTrees=50, seed=42)
         rf_model = rf.fit(train)
         rf_pred = rf_model.transform(test)
 
-        rf_r2 = evaluator.evaluate(rf_pred)
-        predictive['random_forest_r2'] = (
-            builtins.round(rf_r2, 4) if not math.isnan(rf_r2) else None
-        )
+        predictive['random_forest_r2']   = _safe_metric(eval_r2.evaluate(rf_pred))
+        predictive['random_forest_mae']  = _safe_metric(eval_mae.evaluate(rf_pred))
+        predictive['random_forest_rmse'] = _safe_metric(eval_rmse.evaluate(rf_pred))
 
         # ==========================
         # Modelo 3: GBT
         # ==========================
-        print("  🚀 Entrenando GBT...")
-        gbt = GBTRegressor(
-            featuresCol="features",
-            labelCol="subtotal",
-            maxIter=50,
-            seed=42
-        )
+        print("  🚀 Entrenando GBT (Árbol de decisión potenciado)...")
+        gbt = GBTRegressor(featuresCol="features", labelCol="subtotal", maxIter=50, seed=42)
         gbt_model = gbt.fit(train)
         gbt_pred = gbt_model.transform(test)
 
-        gbt_r2 = evaluator.evaluate(gbt_pred)
-        predictive['gbt_r2'] = (
-            builtins.round(gbt_r2, 4) if not math.isnan(gbt_r2) else None
-        )
+        predictive['gbt_r2']   = _safe_metric(eval_r2.evaluate(gbt_pred))
+        predictive['gbt_mae']  = _safe_metric(eval_mae.evaluate(gbt_pred))
+        predictive['gbt_rmse'] = _safe_metric(eval_rmse.evaluate(gbt_pred))
 
         # ==========================
         # Importancia de features
@@ -412,14 +397,85 @@ class CRISPDMAnalytics:
         if hasattr(rf_model, "featureImportances"):
             predictive['feature_importance'] = {
                 'cantidad': float(rf_model.featureImportances[0]),
-                'precio': float(rf_model.featureImportances[1])
+                'precio':   float(rf_model.featureImportances[1])
             }
+
+        # =========================================================
+        # Modelo 4: Regresión Logística (Clasificación) + Matriz de Confusión
+        # Etiqueta: subtotal > mediana → "Alto" (1), sino "Bajo" (0)
+        # =========================================================
+        print("  🔵 Entrenando Regresión Logística (clasificación binaria)...")
+        try:
+            mediana_row = df.approxQuantile("subtotal", [0.5], 0.01)
+            mediana = float(mediana_row[0]) if mediana_row else 0.0
+
+            df_clf = df_scaled.withColumn(
+                "label",
+                when(col("subtotal") >= mediana, 1.0).otherwise(0.0)
+            )
+
+            train_clf, test_clf = df_clf.randomSplit([0.8, 0.2], seed=42)
+
+            log_reg = LogisticRegression(featuresCol="features", labelCol="label", maxIter=20, regParam=0.1)
+            log_model = log_reg.fit(train_clf)
+            log_pred = log_model.transform(test_clf)
+
+            # Métricas de clasificación
+            eval_clf = MulticlassClassificationEvaluator(labelCol="label", predictionCol="prediction")
+            clf_accuracy  = _safe_metric(eval_clf.setMetricName("accuracy").evaluate(log_pred))
+            clf_precision = _safe_metric(eval_clf.setMetricName("weightedPrecision").evaluate(log_pred))
+            clf_recall    = _safe_metric(eval_clf.setMetricName("weightedRecall").evaluate(log_pred))
+            clf_f1        = _safe_metric(eval_clf.setMetricName("f1").evaluate(log_pred))
+
+            # Construir matriz de confusión desde las predicciones
+            cm_data = (
+                log_pred
+                .select("label", "prediction")
+                .groupBy("label", "prediction")
+                .count()
+                .collect()
+            )
+
+            # Inicializar con ceros para las 4 celdas: TP, FP, FN, TN
+            cm = {"tp": 0, "fp": 0, "fn": 0, "tn": 0}
+            for row in cm_data:
+                real, pred, cnt = int(row["label"]), int(row["prediction"]), int(row["count"])
+                if real == 1 and pred == 1:
+                    cm["tp"] = cnt
+                elif real == 0 and pred == 1:
+                    cm["fp"] = cnt
+                elif real == 1 and pred == 0:
+                    cm["fn"] = cnt
+                elif real == 0 and pred == 0:
+                    cm["tn"] = cnt
+
+            predictive['logistic_regression'] = {
+                'accuracy':           clf_accuracy,
+                'precision':          clf_precision,
+                'recall':             clf_recall,
+                'f1':                 clf_f1,
+                'umbral_clasificacion': builtins.round(mediana, 2),
+                'clase_positiva':      f"Subtotal >= {builtins.round(mediana, 2)} (Alto)",
+                'clase_negativa':      f"Subtotal < {builtins.round(mediana, 2)} (Bajo)",
+                'confusion_matrix':   cm,
+                'total_test':         int(test_clf.count())
+            }
+            print(f"  ✅ Regresión logística: accuracy={clf_accuracy}, F1={clf_f1}")
+            print(f"  ✅ Matriz de confusión: TP={cm['tp']}, FP={cm['fp']}, FN={cm['fn']}, TN={cm['tn']}")
+        except Exception as e:
+            print(f"  ⚠️ Error en regresión logística: {e}")
+            predictive['logistic_regression'] = None
 
         self.results['predictive'] = predictive
         self._save_json(predictive, "06_predictive_models.json")
 
-        # Mejor modelo
-        valid_scores = {k: v for k, v in predictive.items() if isinstance(v, float)}
+        # Mejor modelo por R²
+        r2_scores = {
+            'Linear Regression': predictive.get('linear_regression_r2'),
+            'Random Forest':     predictive.get('random_forest_r2'),
+            'GBT':               predictive.get('gbt_r2')
+        }
+        valid_scores = {k: v for k, v in r2_scores.items() if isinstance(v, float)}
         if valid_scores:
             best_model = builtins.max(valid_scores, key=valid_scores.get)
             print(f"  ✅ Mejor modelo: {best_model} (R²={valid_scores[best_model]:.4f})")
@@ -498,10 +554,12 @@ class CRISPDMAnalytics:
         # 1. EVALUAR MODELOS PREDICTIVOS (ya lo tenías)
         # =========================================================
         if predictive:
-            valid_models = {
-                k: v for k, v in predictive.items()
-                if isinstance(v, (int, float))
+            r2_scores = {
+                'linear_regression': predictive.get('linear_regression_r2'),
+                'random_forest':     predictive.get('random_forest_r2'),
+                'gbt':               predictive.get('gbt_r2')
             }
+            valid_models = {k: v for k, v in r2_scores.items() if isinstance(v, float)}
 
             if valid_models:
                 best_model = builtins.max(valid_models, key=valid_models.get)

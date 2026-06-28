@@ -1,37 +1,47 @@
 {
     "servicios_frecuentes": {
-        "LABORATORIO": 50,
-        "GABINETE": 24
+        "GABINETE": 3104,
+        "LABORATORIO": 2120
     },
     "ingresos_por_rango": {
-        "Alto": 3270.0,
-        "Bajo": 1410.0,
-        "Medio": 6610.0
+        "Alto": 380900.0,
+        "Bajo": 85632.0,
+        "Medio": 527920.8
     },
     "ingresos_por_mes": {
-        "4": 9030.0,
-        "5": 2260.0
+        "1": 88884.8,
+        "2": 64925.0,
+        "3": 79920.4,
+        "4": 81735.4,
+        "5": 83798.0,
+        "6": 102963.6,
+        "7": 73788.6,
+        "8": 81850.3,
+        "9": 78061.5,
+        "10": 97791.4,
+        "11": 84040.2,
+        "12": 76693.6
     },
     "estadisticas_por_tipo": {
         "subtotal_sum": {
-            "GABINETE": 6220.0,
-            "LABORATORIO": 5070.0
+            "GABINETE": 802280.0,
+            "LABORATORIO": 192172.8
         },
         "subtotal_mean": {
-            "GABINETE": 259.1666666666667,
-            "LABORATORIO": 101.4
+            "GABINETE": 258.46649484536084,
+            "LABORATORIO": 90.64754716981132
         },
         "subtotal_count": {
-            "GABINETE": 24,
-            "LABORATORIO": 50
+            "GABINETE": 3104,
+            "LABORATORIO": 2120
         },
         "precio_mean": {
-            "GABINETE": 259.1666666666667,
-            "LABORATORIO": 101.4
+            "GABINETE": 258.46649484536084,
+            "LABORATORIO": 95.97169811320755
         },
         "precio_std": {
-            "GABINETE": 93.47944050485887,
-            "LABORATORIO": 29.692986872117714
+            "GABINETE": 87.90815768762411,
+            "LABORATORIO": 30.343310928696003
         }
     },
     "correlaciones": {
@@ -43,11 +53,11 @@
         "precio": {
             "cantidad": NaN,
             "precio": 1.0,
-            "subtotal": 1.0
+            "subtotal": 0.9604599381537718
         },
         "subtotal": {
             "cantidad": NaN,
-            "precio": 1.0,
+            "precio": 0.9604599381537718,
             "subtotal": 1.0
         }
     }

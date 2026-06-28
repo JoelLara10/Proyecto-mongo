@@ -1,0 +1,35 @@
+{
+    "regression_models": {
+        "linear_regression": {
+            "r2": -0.0115,
+            "mae": 2.2811,
+            "rmse": 2.5117
+        },
+        "random_forest": {
+            "r2": -0.0088,
+            "mae": 2.2611,
+            "rmse": 2.5084
+        },
+        "gradient_boosting": {
+            "r2": -0.1487,
+            "mae": 2.2419,
+            "rmse": 2.6767
+        }
+    },
+    "risk_classification": {
+        "accuracy": 0.5484,
+        "precision": 0.3007,
+        "recall": 0.5484,
+        "f1_score": 0.3884,
+        "umbral_riesgo": 4.0,
+        "riesgo_alto": "Atenciones >= 4.0",
+        "riesgo_bajo": "Atenciones < 4.0",
+        "confusion_matrix": {
+            "tp": 17,
+            "fp": 14,
+            "fn": 0,
+            "tn": 0
+        },
+        "total_test": 31
+    }
+}
