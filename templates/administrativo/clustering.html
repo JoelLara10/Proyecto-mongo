@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Análisis No Supervisado - INEO Hospital</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='css/bootstrap-icons.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='css/all.min.css') }}" rel="stylesheet">
+  <style>
+    body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; }
+    .navbar { background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); box-shadow: 0 4px 30px rgba(0,0,0,0.1); }
+    .section-card { background: rgba(255,255,255,0.95); border-radius: 20px; padding: 1.5rem; margin-bottom: 2rem; box-shadow: 0 15px 40px rgba(0,0,0,0.15); }
+    .section-title { color: white; font-weight: 600; font-size: 1.5rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem; }
+    .metric-card { border-radius: 15px; padding: 1rem; color: white; text-align: center; margin-bottom: 1rem; }
+    .metric-card h3 { font-size: 2rem; font-weight: bold; margin: 0; }
+    .btn-primary-custom { background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; border-radius: 10px; padding: 0.6rem 1.5rem; font-weight: 600; }
+    .btn-primary-custom:hover { color: white; opacity: 0.9; }
+    .btn-primary-custom:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn-outline-custom { background: transparent; border: 2px solid rgba(255,255,255,0.8); color: white; border-radius: 10px; padding: 0.5rem 1.2rem; font-weight: 500; }
+    .btn-outline-custom:hover { background: rgba(255,255,255,0.2); color: white; }
+    .loading-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.7); z-index: 9999; display: none; justify-content: center; align-items: center; flex-direction: column; }
+    .loading-overlay.show { display: flex; }
+    .loading-spinner { width: 60px; height: 60px; border: 4px solid #f3f3f3; border-top: 4px solid #667eea; border-radius: 50%; animation: spin 1s linear infinite; }
+    @keyframes spin { 0%{transform:rotate(0deg)} 100%{transform:rotate(360deg)} }
+    .loading-text { color: white; margin-top: 1rem; font-weight: 500; }
+    .tab-btn { border: none; background: transparent; padding: 0.7rem 1.2rem; font-weight: 500; color: #6c757d; border-bottom: 3px solid transparent; transition: all 0.3s; }
+    .tab-btn.active { color: #667eea; border-bottom-color: #667eea; }
+    .cluster-card { border-radius: 15px; overflow: hidden; height: 100%; }
+    .cluster-header { padding: 1rem; color: white; font-weight: 600; }
+    .cluster-body { padding: 1rem; background: white; }
+    .stat-item { display: flex; justify-content: space-between; padding: 0.3rem 0; border-bottom: 1px solid #f0f0f0; }
+    .stat-item:last-child { border-bottom: none; }
+    .stat-label { color: #6c757d; font-size: 0.9rem; }
+    .stat-value { font-weight: 600; }
+    .alert-custom { background: rgba(255,255,255,0.95); border: none; border-radius: 15px; margin-bottom: 1.5rem; }
+    .btn-float { position: fixed; bottom: 30px; right: 30px; z-index: 999; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; border-radius: 50px; padding: 12px 20px; font-weight: 600; box-shadow: 0 10px 25px rgba(102,126,234,0.4); }
+    .btn-float:hover { color: white; opacity: 0.9; }
+  </style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-spinner"></div>
+  <p class="loading-text" id="loadingText">Ejecutando análisis...</p>
+</div>
+
+<nav class="navbar navbar-expand-lg">
+  <div class="container-fluid px-4">
+    <a href="{{ url_for('administrativo') }}" class="btn btn-outline-custom me-3">
+      <i class="bi bi-arrow-left me-2"></i>Administrativo
+    </a>
+    <span class="navbar-brand fw-bold fs-4">
+      <i class="fas fa-brain me-2" style="color:#667eea"></i>Análisis No Supervisado
+    </span>
+    <div class="ms-auto">
+      <span class="me-3 fw-semibold"><i class="bi bi-person-circle"></i> {{ session['username'] }}</span>
+      <a href="{{ url_for('logout') }}" class="btn btn-outline-custom"><i class="bi bi-box-arrow-right"></i> Salir</a>
+    </div>
+  </div>
+</nav>
+
+<div class="container mt-4">
+
+  {% if error %}
+  <div class="alert alert-danger alert-dismissible fade show">
+    <i class="fas fa-exclamation-triangle me-2"></i>{{ error }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+  {% endif %}
+
+  <!-- Barra de estado y botón -->
+  <div class="alert-custom d-flex justify-content-between align-items-center p-3">
+    <div>
+      <i class="fas fa-database me-2" style="color:#667eea"></i>
+      <strong>Estado:</strong>
+      <span id="statusText">
+        {% if has_data %}
+          <span class="text-success">✅ Análisis completado</span>
+        {% else %}
+          <span class="text-warning">⏳ Sin datos</span>
+        {% endif %}
+      </span>
+    </div>
+    <button onclick="runAnalysis()" id="runBtn" class="btn btn-primary-custom">
+      <i class="fas fa-play me-2"></i>
+      <span id="btnText">{% if has_data %}Actualizar Datos{% else %}Ejecutar Análisis{% endif %}</span>
+    </button>
+  </div>
+
+  <!-- Resumen -->
+  <div class="section-title"><i class="fas fa-chart-simple"></i> Resumen del Análisis</div>
+  <div class="section-card">
+    <div class="row g-4">
+      <div class="col-md-3">
+        <div class="metric-card" style="background:linear-gradient(135deg,#4299e1,#2b6cb0)">
+          <i class="fas fa-users fa-2x mb-2"></i>
+          <h3 id="totalPatients">{{ total_pacientes if total_pacientes else 0 }}</h3>
+          <small>Total Pacientes</small>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="metric-card" style="background:linear-gradient(135deg,#9f7aea,#6b46c1)">
+          <i class="fas fa-layer-group fa-2x mb-2"></i>
+          <h3 id="numClusters">{{ kmeans.selected_k if kmeans else '-' }}</h3>
+          <small>Clusters (K-Means)</small>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="metric-card" style="background:linear-gradient(135deg,#48bb78,#38a169)">
+          <i class="fas fa-chart-line fa-2x mb-2"></i>
+          <h3 id="silhouetteScore">
+            {% if kmeans and kmeans.selected_model %}{{ "%.4f"|format(kmeans.selected_model.silhouette_score) }}{% else %}-{% endif %}
+          </h3>
+          <small>Índice de Silueta</small>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="metric-card" style="background:linear-gradient(135deg,#ed8936,#c05621)">
+          <i class="fas fa-chart-pie fa-2x mb-2"></i>
+          <h3 id="pcaComponents">{{ pca.num_components if pca else '-' }}</h3>
+          <small>Componentes PCA</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="section-title"><i class="fas fa-chart-bar"></i> Visualización de Resultados</div>
+  <div class="section-card">
+    <ul class="nav nav-tabs" style="border-bottom:2px solid #e9ecef">
+      <li class="nav-item">
+        <button class="tab-btn active" data-target="tab-elbow">
+          <i class="fas fa-chart-line me-2"></i>Codo & Silueta
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="tab-btn" data-target="tab-pca">
+          <i class="fas fa-chart-pie me-2"></i>PCA
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="tab-btn" data-target="tab-clusters">
+          <i class="fas fa-layer-group me-2"></i>Clusters
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="tab-btn" data-target="tab-images">
+          <i class="fas fa-image me-2"></i>Visualizaciones
+        </button>
+      </li>
+    </ul>
+
+    <!-- Tab: Codo & Silueta -->
+    <div id="tab-elbow" class="tab-pane-custom pt-3">
+      <div class="row">
+        <div class="col-md-6">
+          <h6 class="fw-bold mb-3">Método del Codo (Inercia)</h6>
+          <div class="bg-light rounded p-3" style="height:300px"><canvas id="elbowChart"></canvas></div>
+          <p class="text-muted small mt-2">El punto de codo indica el número óptimo de clusters.</p>
+        </div>
+        <div class="col-md-6">
+          <h6 class="fw-bold mb-3">Índice de Silueta</h6>
+          <div class="bg-light rounded p-3" style="height:300px"><canvas id="silhouetteChart"></canvas></div>
+          <p class="text-muted small mt-2">Valores cercanos a 1 indican buena separación entre clusters.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab: PCA -->
+    <div id="tab-pca" class="tab-pane-custom pt-3" style="display:none">
+      <div class="row">
+        <div class="col-md-7">
+          <h6 class="fw-bold mb-3">Varianza Explicada por Componente</h6>
+          <div class="bg-light rounded p-3" style="height:350px"><canvas id="pcaChart"></canvas></div>
+        </div>
+        <div class="col-md-5">
+          <h6 class="fw-bold mb-3">Detalle de Componentes</h6>
+          <div id="pcaDetails" class="bg-light rounded p-3">
+            <p class="text-muted text-center">Cargando datos...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab: Clusters -->
+    <div id="tab-clusters" class="tab-pane-custom pt-3" style="display:none">
+      <h6 class="fw-bold mb-3">Perfiles de Clusters</h6>
+      <div id="clustersGrid" class="row">
+        {% if kmeans and kmeans.clusters %}
+          {% set colors = ['667eea','48bb78','ed8936','f56565','9f7aea','4299e1','38a169','dd6b20','805ad5','2b6cb0'] %}
+          {% set colorsDark = ['764ba2','38a169','dd6b20','c82333','6b46c1','2b6cb0','2f855a','c05621','6b46c1','2b6cb0'] %}
+          {% for cluster in kmeans.clusters %}
+          <div class="col-md-4 mb-3">
+            <div class="cluster-card card">
+              <div class="cluster-header" style="background:linear-gradient(135deg,#{{ colors[loop.index0 % 10] }},#{{ colorsDark[loop.index0 % 10] }})">
+                <div class="d-flex justify-content-between align-items-center">
+                  <span><i class="fas fa-circle me-2"></i>Cluster {{ cluster.cluster }}</span>
+                  <span class="badge bg-light text-dark">{{ cluster.total_pacientes }} pacientes</span>
+                </div>
+              </div>
+              <div class="cluster-body">
+                <div class="stat-item"><span class="stat-label">Edad promedio</span><span class="stat-value">{{ cluster.edad_promedio }} años</span></div>
+                <div class="stat-item"><span class="stat-label">Atenciones</span><span class="stat-value">{{ cluster.atenciones_promedio }}</span></div>
+                <div class="stat-item"><span class="stat-label">Exámenes</span><span class="stat-value">{{ cluster.examenes_promedio }}</span></div>
+                <div class="stat-item"><span class="stat-label">Diagnósticos</span><span class="stat-value">{{ cluster.diagnosticos_promedio }}</span></div>
+                <div class="stat-item"><span class="stat-label">Monto total</span><span class="stat-value">${{ "{:,}".format(cluster.monto_promedio|int) }}</span></div>
+                <div class="mt-3 pt-2 border-top">
+                  <span class="badge bg-info text-dark w-100 py-2"><i class="fas fa-tag me-1"></i>{{ cluster.perfil }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="col-12 text-center py-5 text-muted">
+            <i class="fas fa-layer-group fa-3x mb-3"></i>
+            <p>No hay datos de clusters. Ejecuta el análisis primero.</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Tab: Visualizaciones -->
+    <div id="tab-images" class="tab-pane-custom pt-3" style="display:none">
+      <h6 class="fw-bold mb-3">Visualizaciones Generadas</h6>
+      <div class="row">
+        {% if has_data %}
+          {% for filename, title in [
+            ('01_elbow_silhouette_analysis.png', 'Método del Codo & Índice de Silueta'),
+            ('02_pca_explained_variance.png',    'Varianza Explicada - PCA'),
+            ('03_cluster_distribution.png',      'Distribución de Pacientes por Cluster')
+          ] %}
+          <div class="col-md-4 mb-3">
+            <div class="card h-100">
+              <img src="{{ url_for('serve_unsupervised_viz', filename=filename) }}"
+                   alt="{{ title }}"
+                   class="card-img-top"
+                   style="object-fit:contain; background:#f8f9fa; max-height:250px"
+                   onerror="this.closest('.col-md-4').style.display='none'">
+              <div class="card-footer text-center small text-muted">{{ title }}</div>
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="col-12 text-center py-5 text-muted">
+            <i class="fas fa-image fa-3x mb-3"></i>
+            <p>No hay imágenes disponibles. Ejecuta el análisis primero.</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+  </div><!-- /section-card -->
+
+  <div class="text-center text-white-50 py-4">
+    <small><i class="fas fa-brain me-2"></i>Powered by Apache Spark & MongoDB | Análisis No Supervisado</small>
+  </div>
+</div>
+
+<a href="{{ url_for('administrativo') }}" class="btn btn-float">
+  <i class="fas fa-arrow-left me-2"></i>Volver al Dashboard
+</a>
+
+<script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  let elbowChart = null, silhouetteChart = null, pcaChart = null;
+
+  // Tabs
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-pane-custom').forEach(p => p.style.display = 'none');
+      this.classList.add('active');
+      document.getElementById(this.dataset.target).style.display = 'block';
+    });
+  });
+
+  function showLoading(text) {
+    document.getElementById('loadingOverlay').classList.add('show');
+    document.getElementById('loadingText').textContent = text || 'Ejecutando análisis...';
+  }
+  function hideLoading() {
+    document.getElementById('loadingOverlay').classList.remove('show');
+  }
+
+  async function runAnalysis() {
+    const btn = document.getElementById('runBtn');
+    const btnText = document.getElementById('btnText');
+    btn.disabled = true;
+    btnText.textContent = '⏳ Ejecutando...';
+    showLoading('Ejecutando análisis no supervisado... (puede tardar 1-2 minutos)');
+
+    try {
+      const response = await fetch('/admin/unsupervised-analysis', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }
+      });
+      const data = await response.json();
+      hideLoading();
+      btn.disabled = false;
+
+      if (data.success) {
+        document.getElementById('statusText').innerHTML = '<span class="text-success">✅ Análisis completado</span>';
+        btnText.textContent = 'Actualizar Datos';
+        loadData();
+        // Recargar para mostrar imágenes actualizadas
+        setTimeout(() => location.reload(), 2000);
+      } else {
+        btnText.textContent = 'Ejecutar Análisis';
+        alert('Error: ' + (data.message || 'Error desconocido'));
+      }
+    } catch (error) {
+      hideLoading();
+      btn.disabled = false;
+      btnText.textContent = 'Ejecutar Análisis';
+      alert('Error de conexión: ' + error.message);
+    }
+  }
+
+  async function loadData() {
+    try {
+      const [kmeansRes, pcaRes] = await Promise.all([
+        fetch('/admin/unsupervised-kmeans'),
+        fetch('/admin/unsupervised-pca')
+      ]);
+
+      if (kmeansRes.ok) {
+        const kmeansData = await kmeansRes.json();
+        if (kmeansData.success && kmeansData.data) {
+          const k = kmeansData.data;
+          if (k.elbow_data?.length)       renderElbowChart(k.elbow_data);
+          if (k.silhouette_scores?.length) renderSilhouetteChart(k.silhouette_scores);
+          if (k.clusters?.length)          renderClusters(k.clusters);
+        }
+      }
+
+      if (pcaRes.ok) {
+        const pcaData = await pcaRes.json();
+        if (pcaData.success && pcaData.data) {
+          renderPCAChart(pcaData.data);
+          renderPCADetails(pcaData.data);
+        }
+      }
+    } catch (e) {
+      console.error('Error cargando datos:', e);
+    }
+  }
+
+  function renderElbowChart(data) {
+    const ctx = document.getElementById('elbowChart');
+    if (!ctx) return;
+    if (elbowChart) elbowChart.destroy();
+    elbowChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: data.map(d => d.k),
+        datasets: [{ label: 'Inercia (WSSSE)', data: data.map(d => d.inertia),
+          borderColor: '#667eea', backgroundColor: 'rgba(102,126,234,0.1)',
+          fill: true, tension: 0.3, pointBackgroundColor: '#667eea', pointRadius: 6 }]
+      },
+      options: { responsive: true, maintainAspectRatio: false,
+        scales: { y: { beginAtZero: true }, x: { title: { display: true, text: 'k' } } } }
+    });
+  }
+
+  function renderSilhouetteChart(data) {
+    const ctx = document.getElementById('silhouetteChart');
+    if (!ctx) return;
+    if (silhouetteChart) silhouetteChart.destroy();
+    const vals = data.map(d => d.silhouette_score);
+    silhouetteChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: data.map(d => d.k),
+        datasets: [{ label: 'Índice de Silueta', data: vals,
+          backgroundColor: vals.map(v => v > 0.6 ? '#48bb78' : v > 0.4 ? '#ed8936' : '#f56565'),
+          borderRadius: 6 }]
+      },
+      options: { responsive: true, maintainAspectRatio: false,
+        scales: { y: { beginAtZero: true, max: 1 }, x: { title: { display: true, text: 'k' } } } }
+    });
+  }
+
+  function renderPCAChart(data) {
+    const ctx = document.getElementById('pcaChart');
+    if (!ctx) return;
+    if (pcaChart) pcaChart.destroy();
+    const ev = data.explained_variance || [];
+    const cv = data.cumulative_variance || [];
+    if (!ev.length) return;
+    const labels = ev.map((_, i) => `PC${i+1}`);
+    pcaChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          { label: 'Varianza Explicada', data: ev.map(v => v*100), backgroundColor: 'rgba(102,126,234,0.7)', borderRadius: 4 },
+          { label: 'Varianza Acumulada', data: cv.map(v => v*100), type: 'line',
+            borderColor: '#f56565', backgroundColor: 'rgba(245,101,101,0.1)',
+            fill: true, tension: 0.3, pointBackgroundColor: '#f56565', pointRadius: 5 }
+        ]
+      },
+      options: { responsive: true, maintainAspectRatio: false,
+        scales: { y: { beginAtZero: true, max: 100, title: { display: true, text: '%' } } } }
+    });
+  }
+
+  function renderPCADetails(data) {
+    const container = document.getElementById('pcaDetails');
+    if (!container) return;
+    const ev = data.explained_variance || [];
+    const cv = data.cumulative_variance || [];
+    const fn = data.feature_names || [];
+    let html = `<div class="bg-primary bg-opacity-10 rounded p-2 mb-2">
+      <small class="text-primary fw-bold">Total varianza: ${((data.total_explained_variance||0)*100).toFixed(2)}%</small></div>
+      <div class="mb-2"><small class="text-muted">Features:</small><div class="d-flex flex-wrap gap-1 mt-1">
+      ${fn.map(f=>`<span class="badge bg-secondary">${f}</span>`).join('')}</div></div>`;
+    ev.forEach((v,i) => {
+      html += `<div class="d-flex justify-content-between border-bottom py-1">
+        <span class="small">PC${i+1}</span>
+        <span class="small fw-bold">${(v*100).toFixed(2)}%</span>
+        <span class="small text-muted">(acum. ${((cv[i]||0)*100).toFixed(2)}%)</span></div>`;
+    });
+    container.innerHTML = html;
+  }
+
+  function renderClusters(clusters) {
+    const container = document.getElementById('clustersGrid');
+    if (!container) return;
+    const colors = ['667eea','48bb78','ed8936','f56565','9f7aea','4299e1','38a169','dd6b20','805ad5','2b6cb0'];
+    const dark   = ['764ba2','38a169','dd6b20','c82333','6b46c1','2b6cb0','2f855a','c05621','6b46c1','2b6cb0'];
+    container.innerHTML = clusters.map((c, i) => `
+      <div class="col-md-4 mb-3">
+        <div class="cluster-card card">
+          <div class="cluster-header" style="background:linear-gradient(135deg,#${colors[i%10]},#${dark[i%10]})">
+            <div class="d-flex justify-content-between align-items-center">
+              <span><i class="fas fa-circle me-2"></i>Cluster ${c.cluster}</span>
+              <span class="badge bg-light text-dark">${c.total_pacientes} pacientes</span>
+            </div>
+          </div>
+          <div class="cluster-body">
+            <div class="stat-item"><span class="stat-label">Edad promedio</span><span class="stat-value">${c.edad_promedio||0} años</span></div>
+            <div class="stat-item"><span class="stat-label">Atenciones</span><span class="stat-value">${c.atenciones_promedio||0}</span></div>
+            <div class="stat-item"><span class="stat-label">Exámenes</span><span class="stat-value">${c.examenes_promedio||0}</span></div>
+            <div class="stat-item"><span class="stat-label">Diagnósticos</span><span class="stat-value">${c.diagnosticos_promedio||0}</span></div>
+            <div class="stat-item"><span class="stat-label">Monto total</span><span class="stat-value">$${(c.monto_promedio||0).toLocaleString()}</span></div>
+            <div class="mt-3 pt-2 border-top">
+              <span class="badge bg-info text-dark w-100 py-2"><i class="fas fa-tag me-1"></i>${c.perfil||'Sin perfil'}</span>
+            </div>
+          </div>
+        </div>
+      </div>`).join('');
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    {% if has_data %}loadData();{% endif %}
+  });
+</script>
+</body>
+</html>

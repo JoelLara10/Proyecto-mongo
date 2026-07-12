@@ -1,0 +1,24 @@
+{
+    "num_features": 5,
+    "num_components": 3,
+    "feature_names": [
+        "edad",
+        "num_atenciones",
+        "num_examenes",
+        "monto_total",
+        "num_diagnosticos"
+    ],
+    "explained_variance": [
+        0.6130200745898732,
+        0.20260258710777154,
+        0.12855484396529046
+    ],
+    "cumulative_variance": [
+        0.6130200745898732,
+        0.8156226616976447,
+        0.9441775056629352
+    ],
+    "total_explained_variance": 0.9441775056629351,
+    "method": "PCA con StandardScaler",
+    "total_patients": 200
+}

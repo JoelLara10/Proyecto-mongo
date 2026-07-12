@@ -48,6 +48,7 @@ from bson.objectid import ObjectId
 from bson.decimal128 import Decimal128
 from pymongo.errors import PyMongoError
 from estudios import contar_solicitudes_pendientes 
+from config.spark_config import get_spark_session
 # ===============================
 # Inicializar Flask
 # ===============================
@@ -4778,6 +4779,347 @@ def enfermeria_cuidados():
     return render_template(
         'enfermeria/forms/cuidados_enfermeria.html'
     )
+    
+    
+import threading
+import subprocess
+import sys
+
+# Variable global para rastrear si el análisis está corriendo
+_analysis_running = False
+_analysis_start_time = None
+_analysis_log = []
+
+# Agregar filtro personalizado para formatear números
+@app.template_filter('format_number')
+def format_number(value):
+    """Formatea un número con separadores de miles"""
+    if value is None:
+        return '0'
+    try:
+        return f"{int(value):,}".replace(',', ',')
+    except (ValueError, TypeError):
+        return str(value)
+
+# También puedes agregar el filtro 'toLocaleString' como alias
+app.jinja_env.filters['toLocaleString'] = format_number
+
+
+
+@app.route('/admin/unsupervised-analysis', methods=['POST'])
+def run_unsupervised_analysis():
+    """
+    Inicia el análisis no supervisado en un proceso en segundo plano.
+    Responde inmediatamente sin esperar que termine.
+    """
+    global _analysis_running, _analysis_start_time, _analysis_log
+    
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'No autorizado'}), 401
+    
+    # Si ya está corriendo, no iniciar otro
+    if _analysis_running:
+        return jsonify({
+            'success': False,
+            'message': 'El análisis ya está en ejecución. Espera a que termine.',
+            'running': True
+        }), 200
+    
+    try:
+        # Buscar el script
+        posibles_ubicaciones = [
+            BASE_DIR / "processing" / "unsupervised_analytics.py",
+            PROCESSING_DIR / "unsupervised_analytics.py",
+            BASE_DIR / "unsupervised_analytics.py"
+        ]
+        
+        script_path = None
+        for ubicacion in posibles_ubicaciones:
+            if ubicacion.exists():
+                script_path = ubicacion
+                break
+        
+        if script_path is None:
+            return jsonify({'success': False, 'message': 'Script no encontrado'}), 404
+        
+        # Limpiar log anterior
+        _analysis_log = []
+        _analysis_start_time = datetime.now()
+        _analysis_running = True
+        
+        # Iniciar el análisis en un hilo separado
+        def run_analysis_thread():
+            global _analysis_running, _analysis_log
+            
+            try:
+                _analysis_log.append(f"🚀 Iniciando análisis: {_analysis_start_time.isoformat()}")
+                _analysis_log.append(f"📄 Script: {script_path}")
+                
+                # Ejecutar el script
+                env = _os.environ.copy()
+                env['PYTHONIOENCODING'] = 'utf-8'
+                
+                result = subprocess.run(
+                    [sys.executable, str(script_path)],
+                    capture_output=True,
+                    text=True,
+                    encoding='utf-8',
+                    env=env,
+                    cwd=BASE_DIR,
+                    timeout=600  # 10 minutos máximo
+                )
+                
+                if result.returncode == 0:
+                    _analysis_log.append("✅ Análisis completado exitosamente")
+                    if result.stdout:
+                        _analysis_log.append(f"📤 Output: {result.stdout[:1000]}")
+                else:
+                    _analysis_log.append(f"❌ Error en análisis (código {result.returncode})")
+                    if result.stderr:
+                        _analysis_log.append(f"📤 Error: {result.stderr[:1000]}")
+                    
+            except subprocess.TimeoutExpired:
+                _analysis_log.append("⏱️ El análisis tardó más de 10 minutos")
+            except Exception as e:
+                _analysis_log.append(f"❌ Error: {str(e)}")
+            finally:
+                _analysis_running = False
+                _analysis_log.append(f"🏁 Análisis finalizado: {datetime.now().isoformat()}")
+        
+        # Iniciar el hilo
+        thread = threading.Thread(target=run_analysis_thread, daemon=True)
+        thread.start()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Análisis iniciado en segundo plano. Recarga en unos momentos.',
+            'running': True,
+            'start_time': _analysis_start_time.isoformat()
+        }), 200
+        
+    except Exception as e:
+        _analysis_running = False
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'}), 500
+
+
+@app.route('/admin/unsupervised-status', methods=['GET'])
+def unsupervised_status():
+    """Verificar el estado del análisis en segundo plano"""
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'No autorizado'}), 401
+    
+    global _analysis_running, _analysis_start_time, _analysis_log
+    
+    # Verificar si ya hay resultados
+    results_path = RESULTS_DIR / "unsupervised_00_complete_results.json"
+    has_results = results_path.exists()
+    
+    if has_results:
+        try:
+            with open(results_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            has_error = 'error' in data
+        except:
+            has_error = True
+    else:
+        has_error = False
+    
+    return jsonify({
+        'success': True,
+        'running': _analysis_running,
+        'has_results': has_results,
+        'has_error': has_error,
+        'start_time': _analysis_start_time.isoformat() if _analysis_start_time else None,
+        'log': _analysis_log[-10:] if _analysis_log else []  # Últimos 10 mensajes
+    })
+
+
+@app.route('/admin/unsupervised-analysis', methods=['GET'])
+def get_unsupervised_analysis():
+    """Obtener el estado actual del análisis"""
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'No autorizado'}), 401
+    
+    # Verificar si hay resultados
+    results_path = RESULTS_DIR / "unsupervised_00_complete_results.json"
+    
+    if results_path.exists():
+        try:
+            with open(results_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            
+            if 'error' in data:
+                return jsonify({
+                    'success': False,
+                    'has_data': False,
+                    'message': f'Error en análisis: {data["error"]}'
+                })
+            
+            return jsonify({
+                'success': True,
+                'has_data': True,
+                'timestamp': data.get('timestamp'),
+                'total_pacientes': data.get('total_pacientes', 0)
+            })
+        except Exception as e:
+            return jsonify({'success': False, 'message': str(e)}), 500
+    else:
+        return jsonify({
+            'success': False,
+            'has_data': False,
+            'message': 'No hay resultados. Inicia el análisis con el botón.'
+        })
+
+@app.route('/admin/unsupervised-summary', methods=['GET'])
+def unsupervised_summary():
+    """Obtener resumen del análisis no supervisado"""
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'No autorizado'}), 401
+    
+    results_path = RESULTS_DIR / "unsupervised_00_complete_results.json"
+    
+    if results_path.exists():
+        try:
+            with open(results_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            
+            if 'error' in data:
+                return jsonify({'success': False, 'message': data['error']}), 500
+            
+            summary = {
+                "total_pacientes": data.get('total_pacientes', 0),
+                "pca": {
+                    "componentes": data.get('pca', {}).get('num_components', 0),
+                    "varianza_explicada": data.get('pca', {}).get('explained_variance', [])
+                },
+                "kmeans": {
+                    "clusters": data.get('kmeans', {}).get('selected_k', 0),
+                    "inercia": data.get('kmeans', {}).get('selected_model', {}).get('inertia', 0),
+                    "silueta": data.get('kmeans', {}).get('selected_model', {}).get('silhouette_score', 0)
+                }
+            }
+            return jsonify({'success': True, 'data': summary})
+        except Exception as e:
+            return jsonify({'success': False, 'message': str(e)}), 500
+    else:
+        return jsonify({'success': False, 'message': 'No hay resultados'}), 404
+
+
+@app.route('/admin/unsupervised-kmeans', methods=['GET'])
+def unsupervised_kmeans():
+    """Obtener resultados de K-Means"""
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'No autorizado'}), 401
+    
+    results_path = RESULTS_DIR / "unsupervised_02_kmeans_results.json"
+    
+    if results_path.exists():
+        try:
+            with open(results_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            return jsonify({'success': True, 'data': data})
+        except Exception as e:
+            return jsonify({'success': False, 'message': str(e)}), 500
+    else:
+        return jsonify({'success': False, 'message': 'No hay resultados de K-Means'}), 404
+
+
+@app.route('/admin/unsupervised-pca', methods=['GET'])
+def unsupervised_pca():
+    """Obtener resultados de PCA"""
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'No autorizado'}), 401
+    
+    results_path = RESULTS_DIR / "unsupervised_01_pca_results.json"
+    
+    if results_path.exists():
+        try:
+            with open(results_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            return jsonify({'success': True, 'data': data})
+        except Exception as e:
+            return jsonify({'success': False, 'message': str(e)}), 500
+    else:
+        return jsonify({'success': False, 'message': 'No hay resultados de PCA'}), 404
+
+
+@app.route('/admin/unsupervised-images', methods=['GET'])
+def unsupervised_images():
+    """Obtener imágenes generadas"""
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'No autorizado'}), 401
+    
+    viz_dir = RESULTS_DIR / "unsupervised_visualizations"
+    
+    if not viz_dir.exists():
+        return jsonify({'success': False, 'message': 'No hay imágenes disponibles'}), 404
+    
+    try:
+        import base64
+        images = []
+        for img_path in sorted(viz_dir.glob("*.png")):
+            with open(img_path, "rb") as f:
+                img_data = base64.b64encode(f.read()).decode('utf-8')
+            images.append({
+                "name": img_path.name,
+                "data": f"data:image/png;base64,{img_data}"
+            })
+        
+        return jsonify({'success': True, 'images': images})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/admin/unsupervised-clustering')
+def clustering_page():
+    """Página de análisis no supervisado"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    results_path = RESULTS_DIR / "unsupervised_00_complete_results.json"
+    
+    clustering_data = {
+        'pca': {},
+        'kmeans': {},
+        'total_pacientes': 0,
+        'error': None,
+        'has_data': False
+    }
+    
+    if results_path.exists():
+        try:
+            with open(results_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                if 'error' in data:
+                    clustering_data['error'] = data['error']
+                else:
+                    clustering_data['pca'] = data.get('pca', {})
+                    clustering_data['kmeans'] = data.get('kmeans', {})
+                    clustering_data['total_pacientes'] = data.get('total_pacientes', 0)
+                    clustering_data['has_data'] = True
+        except Exception as e:
+            clustering_data['error'] = f"Error al leer archivo: {str(e)}"
+    else:
+        clustering_data['error'] = "No se encontraron resultados. Ejecuta el análisis primero."
+    
+    return render_template('administrativo/clustering.html', **clustering_data)
+
+
+@app.route('/admin/unsupervised-viz/<filename>')
+def serve_unsupervised_viz(filename):
+    """Sirve imágenes de visualizaciones no supervisadas"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    viz_dir = RESULTS_DIR / "unsupervised_visualizations"
+    if viz_dir.exists():
+        file_path = viz_dir / filename
+        if file_path.exists():
+            return send_from_directory(str(viz_dir), filename)
+        else:
+            archivos = list(viz_dir.glob("*.png"))
+            return f"Archivo {filename} no encontrado. Archivos disponibles: {[f.name for f in archivos]}", 404
+    
+    return f"Directorio de visualizaciones no encontrado en {viz_dir}", 404
 
 # ===================== API PARA APP MÓVIL =====================
 from flask_cors import CORS

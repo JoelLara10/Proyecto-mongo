@@ -1,0 +1,161 @@
+{
+    "method": "K-Means Clustering",
+    "num_clusters_evaluated": 9,
+    "features_used": [
+        "edad",
+        "num_atenciones",
+        "num_examenes",
+        "monto_total",
+        "num_diagnosticos"
+    ],
+    "elbow_data": [
+        {
+            "k": 2,
+            "inertia": 582.8485
+        },
+        {
+            "k": 3,
+            "inertia": 496.4854
+        },
+        {
+            "k": 4,
+            "inertia": 418.2595
+        },
+        {
+            "k": 5,
+            "inertia": 359.4922
+        },
+        {
+            "k": 6,
+            "inertia": 284.2474
+        },
+        {
+            "k": 7,
+            "inertia": 249.9696
+        },
+        {
+            "k": 8,
+            "inertia": 244.5949
+        },
+        {
+            "k": 9,
+            "inertia": 215.4822
+        },
+        {
+            "k": 10,
+            "inertia": 209.6852
+        }
+    ],
+    "silhouette_scores": [
+        {
+            "k": 2,
+            "silhouette_score": 0.5369
+        },
+        {
+            "k": 3,
+            "silhouette_score": 0.5451
+        },
+        {
+            "k": 4,
+            "silhouette_score": 0.3797
+        },
+        {
+            "k": 5,
+            "silhouette_score": 0.3938
+        },
+        {
+            "k": 6,
+            "silhouette_score": 0.4335
+        },
+        {
+            "k": 7,
+            "silhouette_score": 0.4182
+        },
+        {
+            "k": 8,
+            "silhouette_score": 0.3798
+        },
+        {
+            "k": 9,
+            "silhouette_score": 0.3867
+        },
+        {
+            "k": 10,
+            "silhouette_score": 0.3945
+        }
+    ],
+    "best_k_by_silhouette": {
+        "k": 3,
+        "score": 0.5451
+    },
+    "best_k_by_elbow": 6,
+    "selected_k": 6,
+    "selected_model": {
+        "k": 6,
+        "inertia": 284.2474,
+        "silhouette_score": 0.4335
+    },
+    "clusters": [
+        {
+            "cluster": 0,
+            "total_pacientes": 41,
+            "edad_promedio": 36.49,
+            "atenciones_promedio": 5.63,
+            "examenes_promedio": 32.29,
+            "monto_promedio": 6167.88,
+            "diagnosticos_promedio": 1.46,
+            "perfil": "Joven | Alta Frecuencia | Complejidad Media | Bajo Gasto"
+        },
+        {
+            "cluster": 1,
+            "total_pacientes": 1,
+            "edad_promedio": 21.0,
+            "atenciones_promedio": 6.0,
+            "examenes_promedio": 146.0,
+            "monto_promedio": 25434.6,
+            "diagnosticos_promedio": 4.0,
+            "perfil": "Joven | Alta Frecuencia | Alta Complejidad | Bajo Gasto"
+        },
+        {
+            "cluster": 2,
+            "total_pacientes": 53,
+            "edad_promedio": 71.28,
+            "atenciones_promedio": 3.09,
+            "examenes_promedio": 17.89,
+            "monto_promedio": 3297.18,
+            "diagnosticos_promedio": 0.74,
+            "perfil": "Adulto Mayor | Frecuencia Media | Complejidad Baja | Bajo Gasto"
+        },
+        {
+            "cluster": 3,
+            "total_pacientes": 46,
+            "edad_promedio": 36.2,
+            "atenciones_promedio": 2.24,
+            "examenes_promedio": 11.52,
+            "monto_promedio": 2252.7,
+            "diagnosticos_promedio": 0.76,
+            "perfil": "Joven | Frecuencia Media | Complejidad Baja | Bajo Gasto"
+        },
+        {
+            "cluster": 4,
+            "total_pacientes": 35,
+            "edad_promedio": 71.2,
+            "atenciones_promedio": 6.86,
+            "examenes_promedio": 39.17,
+            "monto_promedio": 7397.78,
+            "diagnosticos_promedio": 1.43,
+            "perfil": "Adulto Mayor | Alta Frecuencia | Complejidad Media | Bajo Gasto"
+        },
+        {
+            "cluster": 5,
+            "total_pacientes": 24,
+            "edad_promedio": 45.25,
+            "atenciones_promedio": 7.33,
+            "examenes_promedio": 41.71,
+            "monto_promedio": 8092.82,
+            "diagnosticos_promedio": 3.5,
+            "perfil": "Adulto | Alta Frecuencia | Alta Complejidad | Bajo Gasto"
+        }
+    ],
+    "total_patients_clustered": 200
+}
