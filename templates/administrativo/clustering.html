@@ -76,7 +76,7 @@
       <strong>Estado:</strong>
       <span id="statusText">
         {% if has_data %}
-          <span class="text-success">✅ Análisis completado</span>
+          <span class="text-success"> Análisis completado</span>
         {% else %}
           <span class="text-warning">⏳ Sin datos</span>
         {% endif %}
@@ -147,6 +147,11 @@
       <li class="nav-item">
         <button class="tab-btn" data-target="tab-images">
           <i class="fas fa-image me-2"></i>Visualizaciones
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="tab-btn" data-target="tab-training">
+          <i class="fas fa-flask me-2"></i>Entrenamiento Prueba y Error
         </button>
       </li>
     </ul>
@@ -251,6 +256,98 @@
       </div>
     </div>
 
+    <!-- Tab: Entrenamiento Prueba y Error -->
+    <div id="tab-training" class="tab-pane-custom pt-3" style="display:none">
+      <div class="row g-3 mb-3">
+        <div class="col-md-3">
+          <div class="metric-card" style="background:linear-gradient(135deg,#2b6cb0,#667eea)">
+            <h3 id="trainingBestPca">-</h3>
+            <small>Mejor PCA</small>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="metric-card" style="background:linear-gradient(135deg,#38a169,#48bb78)">
+            <h3 id="trainingBestK">-</h3>
+            <small>Mejor K</small>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="metric-card" style="background:linear-gradient(135deg,#ed8936,#dd6b20)">
+            <h3 id="trainingBestSilhouette">-</h3>
+            <small>Silueta</small>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="metric-card" style="background:linear-gradient(135deg,#9f7aea,#6b46c1)">
+            <h3 id="trainingBestVariance">-</h3>
+            <small>Varianza</small>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <div class="row">
+          <div class="col-12">
+            <h6 class="fw-bold mb-3">Resumen del ciclo</h6>
+            <div id="trialGeneralSummary" class="alert alert-info">
+              Cargando resultados...
+            </div>
+          </div>
+        </div>
+
+        <div class="row g-3">
+          <div class="col-md-6">
+            <h6 class="fw-bold mb-3">Fase 1. Entrenamiento</h6>
+            <div id="phase1Container" class="bg-light rounded p-3">
+              <p class="text-muted mb-0">Sin datos.</p>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <h6 class="fw-bold mb-3">Fase 2. Evaluación</h6>
+            <div id="phase2Container" class="bg-light rounded p-3">
+              <p class="text-muted mb-0">Sin datos.</p>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <h6 class="fw-bold mb-3">Fase 3. Análisis del Error</h6>
+            <div id="phase3Container" class="bg-light rounded p-3">
+              <p class="text-muted mb-0">Sin datos.</p>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <h6 class="fw-bold mb-3">Fase 4. Optimización</h6>
+            <div id="phase4Container" class="bg-light rounded p-3">
+              <p class="text-muted mb-0">Sin datos.</p>
+            </div>
+          </div>
+          <div class="col-12">
+            <h6 class="fw-bold mb-3">Fase 5. Interpretación</h6>
+            <div id="phase5Container" class="bg-light rounded p-3">
+              <p class="text-muted mb-0">Sin datos.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Comparación de intentos (sin fórmula) -->
+      <div class="section-card mt-3">
+        <div class="row">
+          <div class="col-12">
+            <h6 class="fw-bold mb-3">Comparación de intentos</h6>
+            <div class="bg-light rounded p-3" style="height:360px;">
+              <canvas id="trialScoreChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-card mt-3">
+        <h6 class="fw-bold mb-3">Mejor configuración encontrada</h6>
+        <div id="bestTrialBox" class="bg-light rounded p-3">
+          <p class="text-muted mb-0">Sin datos.</p>
+        </div>
+      </div>
+    </div>
   </div><!-- /section-card -->
 
   <div class="text-center text-white-50 py-4">
@@ -265,7 +362,7 @@
 <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-  let elbowChart = null, silhouetteChart = null, pcaChart = null;
+  let elbowChart = null, silhouetteChart = null, pcaChart = null, trialScoreChart = null;
 
   // Tabs
   document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -302,10 +399,10 @@
       btn.disabled = false;
 
       if (data.success) {
-        document.getElementById('statusText').innerHTML = '<span class="text-success">✅ Análisis completado</span>';
+        document.getElementById('statusText').innerHTML = '<span class="text-success"> Análisis completado</span>';
         btnText.textContent = 'Actualizar Datos';
         loadData();
-        // Recargar para mostrar imágenes actualizadas
+        loadTrainingData();
         setTimeout(() => location.reload(), 2000);
       } else {
         btnText.textContent = 'Ejecutar Análisis';
@@ -454,8 +551,239 @@
       </div>`).join('');
   }
 
+  // ========== CICLO DE PRUEBA Y ERROR ==========
+  async function loadTrainingData() {
+    try {
+      const response = await fetch('/admin/unsupervised-training-data');
+      if (!response.ok) {
+        document.getElementById('trialGeneralSummary').innerHTML = `
+          <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            No se pudieron cargar los datos. Asegúrate de que el análisis principal se haya ejecutado.
+          </div>
+        `;
+        return;
+      }
+      const data = await response.json();
+      if (data.success && data.data) {
+        renderTrialErrorData(data.data);
+      } else {
+        document.getElementById('trialGeneralSummary').innerHTML = `
+          <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            ${data.message || 'No hay datos disponibles.'}
+          </div>
+        `;
+      }
+    } catch (e) {
+      console.error('Error cargando datos de entrenamiento:', e);
+      document.getElementById('trialGeneralSummary').innerHTML = `
+        <div class="alert alert-danger">
+          <i class="fas fa-exclamation-circle me-2"></i>
+          Error: ${e.message}
+        </div>
+      `;
+    }
+  }
+
+  function renderTrialErrorData(data) {
+    const phases = data.phases || {};
+    const best = data.best_model || {};
+    const allTrials = data.all_trials || [];
+
+    document.getElementById('trainingBestPca').textContent = best.pca_components ?? '-';
+    document.getElementById('trainingBestK').textContent = best.k ?? '-';
+    document.getElementById('trainingBestSilhouette').textContent =
+      best.silhouette !== undefined ? Number(best.silhouette).toFixed(4) : '-';
+    document.getElementById('trainingBestVariance').textContent =
+      best.explained_variance !== undefined ? Number(best.explained_variance).toFixed(2) : '-';
+
+    document.getElementById('trialGeneralSummary').innerHTML = `
+      <strong>Resumen:</strong> ${phases.fase_3_analisis_error?.summary || 'Sin resumen disponible.'}
+      <br><strong>Mejor modelo:</strong> PCA=${best.pca_components ?? '-'} | K=${best.k ?? '-'}
+      <br><strong>Interpretación:</strong> ${phases.fase_5_interpretacion?.summary || 'Sin interpretación disponible.'}
+    `;
+
+    renderPhase1(phases.fase_1_entrenamiento);
+    renderPhase2(phases.fase_2_evaluacion);
+    renderPhase3(phases.fase_3_analisis_error);
+    renderPhase4(phases.fase_4_optimizacion);
+    renderPhase5(phases.fase_5_interpretacion, []);
+    renderTrialScoreChart(allTrials, best);
+    renderBestTrialBox(best);
+  }
+
+  function renderPhase1(phase) {
+    const container = document.getElementById('phase1Container');
+    if (!container || !phase || !phase.details || phase.details.length === 0) {
+      container.innerHTML = '<p class="text-muted mb-0">Sin datos.</p>';
+      return;
+    }
+    const details = phase.details.slice(0, 15).map(item => `
+      <div class="border-bottom py-2">
+        <div class="d-flex justify-content-between">
+          <span class="fw-semibold">PCA=${item.pca_components} | K=${item.k}</span>
+          <span class="badge bg-primary">Entrenado</span>
+        </div>
+        <div class="small text-muted">Inicialización: ${item.init_mode || 'k-means||'}</div>
+        <div class="small text-muted">Varianza explicada: ${(Number(item.total_explained_variance) * 100).toFixed(2)}%</div>
+      </div>
+    `).join('');
+    container.innerHTML = details;
+  }
+
+  function renderPhase2(phase) {
+    const container = document.getElementById('phase2Container');
+    if (!container || !phase || !phase.details || phase.details.length === 0) {
+      container.innerHTML = '<p class="text-muted mb-0">Sin datos.</p>';
+      return;
+    }
+    const details = phase.details.slice(0, 15).map(item => `
+      <div class="border-bottom py-2">
+        <div class="d-flex justify-content-between">
+          <span class="fw-semibold">PCA=${item.pca_components} | K=${item.k}</span>
+          <span class="badge bg-success">Evaluado</span>
+        </div>
+        <div class="small text-muted">
+          Inercia: ${Number(item.inertia).toFixed(4)} |
+          Silueta: ${Number(item.silhouette).toFixed(4)} |
+          Varianza: ${Number(item.explained_variance).toFixed(2)}%
+        </div>
+      </div>
+    `).join('');
+    container.innerHTML = details;
+  }
+
+  function renderPhase3(phase) {
+    const container = document.getElementById('phase3Container');
+    if (!container || !phase) {
+      container.innerHTML = '<p class="text-muted mb-0">Sin datos.</p>';
+      return;
+    }
+    const issues = phase.issues || [];
+    const recs = phase.recommendations || [];
+
+    container.innerHTML = `
+      <div class="small text-muted mb-2">${phase.summary || ''}</div>
+      ${issues.map(issue => `
+        <div class="border-bottom py-2">
+          <div class="fw-semibold">${issue.issue}</div>
+          <div class="small text-muted">${issue.description}</div>
+          <div class="small">Casos detectados: ${issue.count}</div>
+        </div>
+      `).join('')}
+      <div class="mt-3">
+        <strong>Recomendaciones</strong>
+        <ul class="small mb-0 mt-2">
+          ${recs.map(r => `<li>${r}</li>`).join('')}
+        </ul>
+      </div>
+    `;
+  }
+
+  function renderPhase4(phase) {
+    const container = document.getElementById('phase4Container');
+    if (!container || !phase) {
+      container.innerHTML = '<p class="text-muted mb-0">Sin datos.</p>';
+      return;
+    }
+    const best = phase.best_configuration || {};
+    const top = phase.top_configurations || [];
+
+    container.innerHTML = `
+      <div class="small text-muted mb-3">${phase.message || ''}</div>
+      <div class="bg-white rounded p-2 mb-3 border">
+        <div><strong>Mejor combinación:</strong></div>
+        <div class="small">PCA=${best.pca_components ?? '-'} | K=${best.k ?? '-'}</div>
+        <div class="small">Score=${best.score ?? '-'}</div>
+      </div>
+      <div class="small"><strong>Top configuraciones</strong></div>
+      <div class="small text-muted">
+        ${top.map(t => `PCA=${t.pca_components}, K=${t.k}, Score=${t.score}`).join('<br>')}
+      </div>
+    `;
+  }
+
+  function renderPhase5(phase, clusters) {
+    const container = document.getElementById('phase5Container');
+    if (!container || !phase) {
+      container.innerHTML = '<p class="text-muted mb-0">Sin datos.</p>';
+      return;
+    }
+    const business = phase.business_meaning || [];
+    container.innerHTML = `
+      <div class="small text-muted mb-2">${phase.summary || ''}</div>
+      <div class="mb-3">${phase.best_configuration_summary || ''}</div>
+      <div class="mb-3">${phase.optimized_message || ''}</div>
+      <div class="row g-2">
+        ${business.map(text => `
+          <div class="col-md-6">
+            <div class="bg-white border rounded p-2 small">${text}</div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  function renderTrialScoreChart(allTrials, best) {
+    const ctx = document.getElementById('trialScoreChart');
+    if (!ctx || !allTrials.length) return;
+    if (trialScoreChart) trialScoreChart.destroy();
+
+    const labels = allTrials.map(t => `P${t.n_components}-K${t.k}`);
+    const scores = allTrials.map(t => t.silhouette);
+
+    trialScoreChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Silueta',
+          data: scores,
+          backgroundColor: scores.map(v => v === best.silhouette ? '#38a169' : '#667eea'),
+          borderRadius: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: { beginAtZero: true },
+          x: { ticks: { maxRotation: 60, minRotation: 60 } }
+        }
+      }
+    });
+  }
+
+  function renderBestTrialBox(best) {
+    const container = document.getElementById('bestTrialBox');
+    if (!container || !best) {
+      container.innerHTML = '<p class="text-muted mb-0">Sin datos.</p>';
+      return;
+    }
+    container.innerHTML = `
+      <div class="row g-2">
+        <div class="col-md-3"><strong>PCA:</strong> ${best.pca_components ?? '-'}</div>
+        <div class="col-md-3"><strong>K:</strong> ${best.k ?? '-'}</div>
+        <div class="col-md-3"><strong>Silueta:</strong> ${best.silhouette ?? '-'}</div>
+        <div class="col-md-3"><strong>Varianza:</strong> ${best.explained_variance ?? '-'}%</div>
+      </div>
+      <div class="mt-2 small text-muted">
+        Inercia: ${best.inertia ?? '-'} |
+        Score: ${best.score ?? '-'} |
+        Desbalance: ${best.imbalance_ratio ?? '-'}
+      </div>
+    `;
+  }
+
+  // Cargar datos del ciclo al mostrar la pestaña
+  document.querySelector('[data-target="tab-training"]').addEventListener('click', function() {
+    loadTrainingData();
+  });
+
+  // Carga inicial de datos
   document.addEventListener('DOMContentLoaded', function() {
-    {% if has_data %}loadData();{% endif %}
+    {% if has_data %}loadData(); loadTrainingData();{% endif %}
   });
 </script>
 </body>

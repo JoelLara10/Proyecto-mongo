@@ -1,0 +1,13 @@
+{
+    "small_clusters": [
+        {
+            "cluster": 1,
+            "size": 1,
+            "percentage": 0.5
+        }
+    ],
+    "low_silhouette": false,
+    "low_variance_explained": false,
+    "imbalanced_clusters": false,
+    "details": {}
+}

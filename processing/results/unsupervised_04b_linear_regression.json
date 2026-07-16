@@ -1,0 +1,14 @@
+{
+    "variable_x": "edad",
+    "variable_y": "monto_total",
+    "w": 0.0,
+    "b": 0.0,
+    "mse": 0.0,
+    "r2": 0.0,
+    "mse_naive": 0.0,
+    "mejora_porcentaje": 0.0,
+    "mejora_significativa": false,
+    "num_puntos": 0,
+    "error": true,
+    "mensaje": "No hay datos disponibles para calcular la regresión."
+}

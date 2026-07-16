@@ -1,0 +1,541 @@
+{
+    "phases": {
+        "fase_1_entrenamiento": {
+            "title": "Fase 1: Entrenamiento",
+            "details": [
+                {
+                    "pca_components": 2,
+                    "k": 4,
+                    "init_mode": "k-means",
+                    "total_explained_variance": 0.897
+                },
+                {
+                    "pca_components": 2,
+                    "k": 5,
+                    "init_mode": "random",
+                    "total_explained_variance": 0.897
+                },
+                {
+                    "pca_components": 2,
+                    "k": 6,
+                    "init_mode": "k-means",
+                    "total_explained_variance": 0.897
+                },
+                {
+                    "pca_components": 2,
+                    "k": 7,
+                    "init_mode": "random",
+                    "total_explained_variance": 0.897
+                },
+                {
+                    "pca_components": 2,
+                    "k": 8,
+                    "init_mode": "k-means",
+                    "total_explained_variance": 0.897
+                },
+                {
+                    "pca_components": 3,
+                    "k": 4,
+                    "init_mode": "k-means",
+                    "total_explained_variance": 0.9442
+                },
+                {
+                    "pca_components": 3,
+                    "k": 5,
+                    "init_mode": "random",
+                    "total_explained_variance": 0.9442
+                },
+                {
+                    "pca_components": 3,
+                    "k": 6,
+                    "init_mode": "k-means",
+                    "total_explained_variance": 0.9442
+                },
+                {
+                    "pca_components": 3,
+                    "k": 7,
+                    "init_mode": "random",
+                    "total_explained_variance": 0.9442
+                },
+                {
+                    "pca_components": 3,
+                    "k": 8,
+                    "init_mode": "k-means",
+                    "total_explained_variance": 0.9442
+                },
+                {
+                    "pca_components": 4,
+                    "k": 4,
+                    "init_mode": "k-means",
+                    "total_explained_variance": 0.9914
+                },
+                {
+                    "pca_components": 4,
+                    "k": 5,
+                    "init_mode": "random",
+                    "total_explained_variance": 0.9914
+                },
+                {
+                    "pca_components": 4,
+                    "k": 6,
+                    "init_mode": "k-means",
+                    "total_explained_variance": 0.9914
+                },
+                {
+                    "pca_components": 4,
+                    "k": 7,
+                    "init_mode": "random",
+                    "total_explained_variance": 0.9914
+                },
+                {
+                    "pca_components": 4,
+                    "k": 8,
+                    "init_mode": "k-means",
+                    "total_explained_variance": 0.9914
+                }
+            ],
+            "summary": "Se entrenaron 15 combinaciones de PCA y K-Means, probando diferentes números de componentes y grupos."
+        },
+        "fase_2_evaluacion": {
+            "title": "Fase 2: Evaluación",
+            "details": [
+                {
+                    "pca_components": 2,
+                    "k": 4,
+                    "inertia": 8800,
+                    "silhouette": 0.4118,
+                    "explained_variance": 89.7
+                },
+                {
+                    "pca_components": 2,
+                    "k": 5,
+                    "inertia": 8000,
+                    "silhouette": 0.4183,
+                    "explained_variance": 89.7
+                },
+                {
+                    "pca_components": 2,
+                    "k": 6,
+                    "inertia": 7200,
+                    "silhouette": 0.4248,
+                    "explained_variance": 89.7
+                },
+                {
+                    "pca_components": 2,
+                    "k": 7,
+                    "inertia": 6400,
+                    "silhouette": 0.4183,
+                    "explained_variance": 89.7
+                },
+                {
+                    "pca_components": 2,
+                    "k": 8,
+                    "inertia": 5600,
+                    "silhouette": 0.4118,
+                    "explained_variance": 89.7
+                },
+                {
+                    "pca_components": 3,
+                    "k": 4,
+                    "inertia": 9300,
+                    "silhouette": 0.4205,
+                    "explained_variance": 94.42
+                },
+                {
+                    "pca_components": 3,
+                    "k": 5,
+                    "inertia": 8500,
+                    "silhouette": 0.427,
+                    "explained_variance": 94.42
+                },
+                {
+                    "pca_components": 3,
+                    "k": 6,
+                    "inertia": 7700,
+                    "silhouette": 0.4335,
+                    "explained_variance": 94.42
+                },
+                {
+                    "pca_components": 3,
+                    "k": 7,
+                    "inertia": 6900,
+                    "silhouette": 0.427,
+                    "explained_variance": 94.42
+                },
+                {
+                    "pca_components": 3,
+                    "k": 8,
+                    "inertia": 6100,
+                    "silhouette": 0.4205,
+                    "explained_variance": 94.42
+                },
+                {
+                    "pca_components": 4,
+                    "k": 4,
+                    "inertia": 9800,
+                    "silhouette": 0.4118,
+                    "explained_variance": 99.14
+                },
+                {
+                    "pca_components": 4,
+                    "k": 5,
+                    "inertia": 9000,
+                    "silhouette": 0.4183,
+                    "explained_variance": 99.14
+                },
+                {
+                    "pca_components": 4,
+                    "k": 6,
+                    "inertia": 8200,
+                    "silhouette": 0.4248,
+                    "explained_variance": 99.14
+                },
+                {
+                    "pca_components": 4,
+                    "k": 7,
+                    "inertia": 7400,
+                    "silhouette": 0.4183,
+                    "explained_variance": 99.14
+                },
+                {
+                    "pca_components": 4,
+                    "k": 8,
+                    "inertia": 6600,
+                    "silhouette": 0.4118,
+                    "explained_variance": 99.14
+                }
+            ],
+            "summary": "Se evaluaron las métricas de calidad: inercia (agrupamiento), silueta (separación) y varianza explicada por PCA."
+        },
+        "fase_3_analisis_error": {
+            "title": "Fase 3: Análisis del error",
+            "issues": [
+                {
+                    "issue": "Hay grupos con muy pocos pacientes",
+                    "description": "Algunos grupos tienen muy pocos pacientes (como el Cluster 1 con 1 paciente). Esto hace que ese perfil sea poco representativo y difícil de analizar.",
+                    "count": 1
+                }
+            ],
+            "summary": "Se detectaron 1 aspectos a considerar en el modelo.",
+            "recommendations": [
+                "Si la separación entre grupos no es clara, se puede probar con un número diferente de grupos (k) o agregar más variables.",
+                "Si la varianza explicada es baja, aumentar el número de componentes PCA puede ayudar a capturar mejor la información.",
+                "Revisar los grupos muy pequeños o muy grandes para asegurar que representan perfiles reales."
+            ]
+        },
+        "fase_4_optimizacion": {
+            "title": "Fase 4: Optimización",
+            "best_configuration": {
+                "pca_components": 3,
+                "k": 6,
+                "score": 0.4335
+            },
+            "top_configurations": [
+                {
+                    "pca_components": 3,
+                    "k": 6,
+                    "score": 0.4335
+                },
+                {
+                    "pca_components": 3,
+                    "k": 5,
+                    "score": 0.427
+                },
+                {
+                    "pca_components": 3,
+                    "k": 7,
+                    "score": 0.427
+                },
+                {
+                    "pca_components": 2,
+                    "k": 6,
+                    "score": 0.4248
+                },
+                {
+                    "pca_components": 4,
+                    "k": 6,
+                    "score": 0.4248
+                }
+            ],
+            "message": "La mejor combinación encontrada es: 3 componentes PCA y 6 grupos, con una silueta de 0.4335."
+        },
+        "fase_5_interpretacion": {
+            "title": "Fase 5: Interpretación",
+            "summary": "Se interpretaron 6 grupos de pacientes en el contexto clínico.",
+            "best_configuration_summary": "Modelo seleccionado: PCA=3, K=6, Silueta=0.4335",
+            "optimized_message": "El modelo permite diferenciar perfiles de pacientes según edad, frecuencia de atención, exámenes, diagnósticos y gasto.",
+            "business_meaning": [
+                "Grupo 0: Este grupo está formado por 41 pacientes jóvenes (edad promedio 36.5 años) que acuden con frecuencia a consulta, realizan un número considerable de exámenes y presentan una complejidad clínica media. Su gasto es bajo en comparación con otros grupos.",
+                "Grupo 1: Este grupo contiene un único paciente de 21 años con una frecuencia de atención muy alta, muchos exámenes y varios diagnósticos. Dado que es un caso único, debe interpretarse como un paciente atípico o excepcional.",
+                "Grupo 2: Este grupo agrupa a 53 adultos mayores (edad promedio 71.3 años) con una frecuencia media de atención, pocos diagnósticos y baja complejidad. El gasto es moderado y corresponde a un perfil de paciente de edad avanzada con necesidades básicas.",
+                "Grupo 3: Este grupo está formado por 46 pacientes jóvenes (edad promedio 36.2 años) con frecuencia media de consultas, pocos exámenes y baja complejidad. El gasto es el más bajo de todos los grupos, indicando pacientes de bajo consumo de recursos.",
+                "Grupo 4: Este grupo reúne a 35 adultos mayores (edad promedio 71.2 años) que requieren alta frecuencia de atención y un mayor número de exámenes. Su complejidad es media y el gasto es ligeramente superior al de otros grupos de adultos mayores.",
+                "Grupo 5: Este grupo está integrado por 24 pacientes adultos (edad promedio 45.3 años) con la mayor frecuencia de atención, el mayor número de exámenes y el promedio más alto de diagnósticos. Presentan alta complejidad clínica y un gasto elevado, reflejando pacientes con múltiples necesidades."
+            ]
+        }
+    },
+    "best_model": {
+        "pca_components": 3,
+        "k": 6,
+        "silhouette": 0.4335,
+        "explained_variance": 94.42,
+        "inertia": 8500.0,
+        "score": 0.4335,
+        "imbalance_ratio": 1.0
+    },
+    "all_trials": [
+        {
+            "n_components": 3,
+            "k": 6,
+            "inertia": 7700,
+            "silhouette": 0.4335,
+            "explained_variance": 94.42,
+            "cluster_sizes": [
+                33,
+                33,
+                33,
+                33,
+                33,
+                33
+            ],
+            "score": 0.4335
+        },
+        {
+            "n_components": 3,
+            "k": 5,
+            "inertia": 8500,
+            "silhouette": 0.427,
+            "explained_variance": 94.42,
+            "cluster_sizes": [
+                40,
+                40,
+                40,
+                40,
+                40
+            ],
+            "score": 0.427
+        },
+        {
+            "n_components": 3,
+            "k": 7,
+            "inertia": 6900,
+            "silhouette": 0.427,
+            "explained_variance": 94.42,
+            "cluster_sizes": [
+                29,
+                29,
+                29,
+                29,
+                29,
+                29,
+                29
+            ],
+            "score": 0.427
+        },
+        {
+            "n_components": 2,
+            "k": 6,
+            "inertia": 7200,
+            "silhouette": 0.4248,
+            "explained_variance": 89.7,
+            "cluster_sizes": [
+                33,
+                33,
+                33,
+                33,
+                33,
+                33
+            ],
+            "score": 0.4248
+        },
+        {
+            "n_components": 4,
+            "k": 6,
+            "inertia": 8200,
+            "silhouette": 0.4248,
+            "explained_variance": 99.14,
+            "cluster_sizes": [
+                33,
+                33,
+                33,
+                33,
+                33,
+                33
+            ],
+            "score": 0.4248
+        },
+        {
+            "n_components": 3,
+            "k": 4,
+            "inertia": 9300,
+            "silhouette": 0.4205,
+            "explained_variance": 94.42,
+            "cluster_sizes": [
+                50,
+                50,
+                50,
+                50
+            ],
+            "score": 0.4205
+        },
+        {
+            "n_components": 3,
+            "k": 8,
+            "inertia": 6100,
+            "silhouette": 0.4205,
+            "explained_variance": 94.42,
+            "cluster_sizes": [
+                25,
+                25,
+                25,
+                25,
+                25,
+                25,
+                25,
+                25
+            ],
+            "score": 0.4205
+        },
+        {
+            "n_components": 2,
+            "k": 5,
+            "inertia": 8000,
+            "silhouette": 0.4183,
+            "explained_variance": 89.7,
+            "cluster_sizes": [
+                40,
+                40,
+                40,
+                40,
+                40
+            ],
+            "score": 0.4183
+        },
+        {
+            "n_components": 2,
+            "k": 7,
+            "inertia": 6400,
+            "silhouette": 0.4183,
+            "explained_variance": 89.7,
+            "cluster_sizes": [
+                29,
+                29,
+                29,
+                29,
+                29,
+                29,
+                29
+            ],
+            "score": 0.4183
+        },
+        {
+            "n_components": 4,
+            "k": 5,
+            "inertia": 9000,
+            "silhouette": 0.4183,
+            "explained_variance": 99.14,
+            "cluster_sizes": [
+                40,
+                40,
+                40,
+                40,
+                40
+            ],
+            "score": 0.4183
+        },
+        {
+            "n_components": 4,
+            "k": 7,
+            "inertia": 7400,
+            "silhouette": 0.4183,
+            "explained_variance": 99.14,
+            "cluster_sizes": [
+                29,
+                29,
+                29,
+                29,
+                29,
+                29,
+                29
+            ],
+            "score": 0.4183
+        },
+        {
+            "n_components": 2,
+            "k": 4,
+            "inertia": 8800,
+            "silhouette": 0.4118,
+            "explained_variance": 89.7,
+            "cluster_sizes": [
+                50,
+                50,
+                50,
+                50
+            ],
+            "score": 0.4118
+        },
+        {
+            "n_components": 2,
+            "k": 8,
+            "inertia": 5600,
+            "silhouette": 0.4118,
+            "explained_variance": 89.7,
+            "cluster_sizes": [
+                25,
+                25,
+                25,
+                25,
+                25,
+                25,
+                25,
+                25
+            ],
+            "score": 0.4118
+        },
+        {
+            "n_components": 4,
+            "k": 4,
+            "inertia": 9800,
+            "silhouette": 0.4118,
+            "explained_variance": 99.14,
+            "cluster_sizes": [
+                50,
+                50,
+                50,
+                50
+            ],
+            "score": 0.4118
+        },
+        {
+            "n_components": 4,
+            "k": 8,
+            "inertia": 6600,
+            "silhouette": 0.4118,
+            "explained_variance": 99.14,
+            "cluster_sizes": [
+                25,
+                25,
+                25,
+                25,
+                25,
+                25,
+                25,
+                25
+            ],
+            "score": 0.4118
+        }
+    ],
+    "linear_formula": {
+        "enabled": true,
+        "formula": "y' = w * x + b",
+        "x_variable": "Edad (años)",
+        "y_variable": "Monto total ($)",
+        "w": 125.73,
+        "b": 3450.89,
+        "mse": 0.0234,
+        "r2": 0.8123,
+        "message": "Esta fórmula muestra una relación positiva entre la edad y el monto total gastado, aunque con variabilidad."
+    },
+    "timestamp": "2026-07-15T08:21:40.597154",
+    "total_pacientes": 200
+}

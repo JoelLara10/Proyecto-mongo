@@ -1,0 +1,44 @@
+{
+    "pca_interpretation": "Para simplificar el análisis, se redujeron las 5 características originales (edad, número de consultas, número de exámenes, gasto total, número de diagnósticos) a 3 factores principales. Estos factores capturan aproximadamente el 94.4% de la información total. Los factores más importantes ayudan a diferenciar los grupos de pacientes.",
+    "cluster_interpretation": [
+        {
+            "cluster": 0,
+            "description": "El grupo 0 (20.5% de los pacientes) está formado por pacientes que son personas jóvenes (edad promedio 36.49 años), visitan el hospital con mucha frecuencia (5.63 consultas), tienen una complejidad media (1.46 diagnósticos, 32.29 exámenes), generan un gasto bajo ($6,168).",
+            "perfil": "Joven | Alta Frecuencia | Complejidad Media | Bajo Gasto"
+        },
+        {
+            "cluster": 1,
+            "description": "El grupo 1 (0.5% de los pacientes) está formado por pacientes que son personas jóvenes (edad promedio 21.0 años), visitan el hospital con mucha frecuencia (6.0 consultas), presentan una alta complejidad médica (4.0 diagnósticos y 146.0 exámenes), generan un gasto bajo ($25,435).",
+            "perfil": "Joven | Alta Frecuencia | Alta Complejidad | Bajo Gasto"
+        },
+        {
+            "cluster": 2,
+            "description": "El grupo 2 (26.5% de los pacientes) está formado por pacientes que son personas mayores (edad promedio 71.28 años), tienen una frecuencia de consulta media (3.09 atenciones), tienen una complejidad baja (0.74 diagnósticos, 17.89 exámenes), generan un gasto bajo ($3,297).",
+            "perfil": "Adulto Mayor | Frecuencia Media | Complejidad Baja | Bajo Gasto"
+        },
+        {
+            "cluster": 3,
+            "description": "El grupo 3 (23.0% de los pacientes) está formado por pacientes que son personas jóvenes (edad promedio 36.2 años), tienen una frecuencia de consulta media (2.24 atenciones), tienen una complejidad baja (0.76 diagnósticos, 11.52 exámenes), generan un gasto bajo ($2,253).",
+            "perfil": "Joven | Frecuencia Media | Complejidad Baja | Bajo Gasto"
+        },
+        {
+            "cluster": 4,
+            "description": "El grupo 4 (17.5% de los pacientes) está formado por pacientes que son personas mayores (edad promedio 71.2 años), visitan el hospital con mucha frecuencia (6.86 consultas), tienen una complejidad media (1.43 diagnósticos, 39.17 exámenes), generan un gasto bajo ($7,398).",
+            "perfil": "Adulto Mayor | Alta Frecuencia | Complejidad Media | Bajo Gasto"
+        },
+        {
+            "cluster": 5,
+            "description": "El grupo 5 (12.0% de los pacientes) está formado por pacientes que son adultos (edad promedio 45.25 años), visitan el hospital con mucha frecuencia (7.33 consultas), presentan una alta complejidad médica (3.5 diagnósticos y 41.71 exámenes), generan un gasto bajo ($8,093).",
+            "perfil": "Adulto | Alta Frecuencia | Alta Complejidad | Bajo Gasto"
+        }
+    ],
+    "business_recommendations": [
+        "Optimizar la gestión de citas y recursos para pacientes de alta frecuencia (grupo 0), ofreciendo horarios especiales o atención prioritaria.",
+        "Optimizar la gestión de citas y recursos para pacientes de alta frecuencia (grupo 1), ofreciendo horarios especiales o atención prioritaria.",
+        "Implementar un programa de seguimiento y cuidado para pacientes de la tercera edad (grupo 2), con visitas domiciliarias y monitoreo periódico.",
+        "Implementar un programa de seguimiento y cuidado para pacientes de la tercera edad (grupo 4), con visitas domiciliarias y monitoreo periódico.",
+        "Optimizar la gestión de citas y recursos para pacientes de alta frecuencia (grupo 4), ofreciendo horarios especiales o atención prioritaria."
+    ],
+    "linear_regression_interpretation": "No se pudo calcular la regresión lineal: No hay datos disponibles para calcular la regresión.. Se utilizan valores predeterminados (w=0, b=0).",
+    "summary": "Se han identificado 6 grupos de pacientes con una calidad de segmentación buena. Cada grupo tiene características distintas que permiten ofrecer una atención más personalizada y eficiente. Las recomendaciones ayudarán a mejorar la gestión hospitalaria y la experiencia del paciente."
+}

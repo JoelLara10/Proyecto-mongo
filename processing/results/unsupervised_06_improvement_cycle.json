@@ -1,0 +1,473 @@
+{
+    "timestamp": "2026-07-14T13:36:07.614372",
+    "error_analysis": {
+        "small_clusters": [
+            {
+                "cluster": 1,
+                "size": 1,
+                "percentage": 0.5
+            }
+        ],
+        "low_silhouette": false,
+        "low_variance_explained": false,
+        "imbalanced_clusters": false,
+        "details": {}
+    },
+    "optimization": {
+        "original_params": {
+            "pca_components": 3,
+            "k": 6,
+            "silhouette": 0.4335
+        },
+        "suggested_params": {
+            "pca_components": 3,
+            "k": 6,
+            "silhouette": 0.4335
+        },
+        "new_pca_results": {
+            "num_features": 5,
+            "num_components": 3,
+            "feature_names": [
+                "edad",
+                "num_atenciones",
+                "num_examenes",
+                "monto_total",
+                "num_diagnosticos"
+            ],
+            "explained_variance": [
+                0.6130200745898732,
+                0.20260258710777154,
+                0.12855484396529046
+            ],
+            "cumulative_variance": [
+                0.6130200745898732,
+                0.8156226616976447,
+                0.9441775056629352
+            ],
+            "total_explained_variance": 0.9441775056629351,
+            "method": "PCA con StandardScaler",
+            "total_patients": 200
+        },
+        "new_kmeans_results": {
+            "method": "K-Means Clustering",
+            "num_clusters_evaluated": 9,
+            "features_used": [
+                "edad",
+                "num_atenciones",
+                "num_examenes",
+                "monto_total",
+                "num_diagnosticos"
+            ],
+            "elbow_data": [
+                {
+                    "k": 2,
+                    "inertia": 582.8485
+                },
+                {
+                    "k": 3,
+                    "inertia": 496.4854
+                },
+                {
+                    "k": 4,
+                    "inertia": 418.2595
+                },
+                {
+                    "k": 5,
+                    "inertia": 359.4922
+                },
+                {
+                    "k": 6,
+                    "inertia": 284.2474
+                },
+                {
+                    "k": 7,
+                    "inertia": 249.9696
+                },
+                {
+                    "k": 8,
+                    "inertia": 244.5949
+                },
+                {
+                    "k": 9,
+                    "inertia": 215.4822
+                },
+                {
+                    "k": 10,
+                    "inertia": 209.6852
+                }
+            ],
+            "silhouette_scores": [
+                {
+                    "k": 2,
+                    "silhouette_score": 0.5369
+                },
+                {
+                    "k": 3,
+                    "silhouette_score": 0.5451
+                },
+                {
+                    "k": 4,
+                    "silhouette_score": 0.3797
+                },
+                {
+                    "k": 5,
+                    "silhouette_score": 0.3938
+                },
+                {
+                    "k": 6,
+                    "silhouette_score": 0.4335
+                },
+                {
+                    "k": 7,
+                    "silhouette_score": 0.4182
+                },
+                {
+                    "k": 8,
+                    "silhouette_score": 0.3798
+                },
+                {
+                    "k": 9,
+                    "silhouette_score": 0.3867
+                },
+                {
+                    "k": 10,
+                    "silhouette_score": 0.3945
+                }
+            ],
+            "best_k_by_silhouette": {
+                "k": 3,
+                "score": 0.5451
+            },
+            "best_k_by_elbow": 6,
+            "selected_k": 6,
+            "selected_model": {
+                "k": 6,
+                "inertia": 284.2474,
+                "silhouette_score": 0.4335
+            },
+            "clusters": [
+                {
+                    "cluster": 0,
+                    "total_pacientes": 41,
+                    "edad_promedio": 36.49,
+                    "atenciones_promedio": 5.63,
+                    "examenes_promedio": 32.29,
+                    "monto_promedio": 6167.88,
+                    "diagnosticos_promedio": 1.46,
+                    "perfil": "Joven | Alta Frecuencia | Complejidad Media | Bajo Gasto"
+                },
+                {
+                    "cluster": 1,
+                    "total_pacientes": 1,
+                    "edad_promedio": 21.0,
+                    "atenciones_promedio": 6.0,
+                    "examenes_promedio": 146.0,
+                    "monto_promedio": 25434.6,
+                    "diagnosticos_promedio": 4.0,
+                    "perfil": "Joven | Alta Frecuencia | Alta Complejidad | Bajo Gasto"
+                },
+                {
+                    "cluster": 2,
+                    "total_pacientes": 53,
+                    "edad_promedio": 71.28,
+                    "atenciones_promedio": 3.09,
+                    "examenes_promedio": 17.89,
+                    "monto_promedio": 3297.18,
+                    "diagnosticos_promedio": 0.74,
+                    "perfil": "Adulto Mayor | Frecuencia Media | Complejidad Baja | Bajo Gasto"
+                },
+                {
+                    "cluster": 3,
+                    "total_pacientes": 46,
+                    "edad_promedio": 36.2,
+                    "atenciones_promedio": 2.24,
+                    "examenes_promedio": 11.52,
+                    "monto_promedio": 2252.7,
+                    "diagnosticos_promedio": 0.76,
+                    "perfil": "Joven | Frecuencia Media | Complejidad Baja | Bajo Gasto"
+                },
+                {
+                    "cluster": 4,
+                    "total_pacientes": 35,
+                    "edad_promedio": 71.2,
+                    "atenciones_promedio": 6.86,
+                    "examenes_promedio": 39.17,
+                    "monto_promedio": 7397.78,
+                    "diagnosticos_promedio": 1.43,
+                    "perfil": "Adulto Mayor | Alta Frecuencia | Complejidad Media | Bajo Gasto"
+                },
+                {
+                    "cluster": 5,
+                    "total_pacientes": 24,
+                    "edad_promedio": 45.25,
+                    "atenciones_promedio": 7.33,
+                    "examenes_promedio": 41.71,
+                    "monto_promedio": 8092.82,
+                    "diagnosticos_promedio": 3.5,
+                    "perfil": "Adulto | Alta Frecuencia | Alta Complejidad | Bajo Gasto"
+                }
+            ],
+            "total_patients_clustered": 200
+        },
+        "improvement_detected": false,
+        "comparison": {},
+        "all_combinations": [],
+        "linear_regression": {
+            "variable_x": "edad",
+            "variable_y": "monto_total",
+            "w": 0.0,
+            "b": 0.0,
+            "mse": 0.0,
+            "r2": 0.0,
+            "mse_naive": 0.0,
+            "mejora_porcentaje": 0.0,
+            "mejora_significativa": false,
+            "num_puntos": 0,
+            "error": true,
+            "mensaje": "No hay datos disponibles para calcular la regresión."
+        }
+    },
+    "interpretation": {
+        "pca_interpretation": "Para simplificar el análisis, se redujeron las 5 características originales (edad, número de consultas, número de exámenes, gasto total, número de diagnósticos) a 3 factores principales. Estos factores capturan aproximadamente el 94.4% de la información total. Los factores más importantes ayudan a diferenciar los grupos de pacientes.",
+        "cluster_interpretation": [
+            {
+                "cluster": 0,
+                "description": "El grupo 0 (20.5% de los pacientes) está formado por pacientes que son personas jóvenes (edad promedio 36.49 años), visitan el hospital con mucha frecuencia (5.63 consultas), tienen una complejidad media (1.46 diagnósticos, 32.29 exámenes), generan un gasto bajo ($6,168).",
+                "perfil": "Joven | Alta Frecuencia | Complejidad Media | Bajo Gasto"
+            },
+            {
+                "cluster": 1,
+                "description": "El grupo 1 (0.5% de los pacientes) está formado por pacientes que son personas jóvenes (edad promedio 21.0 años), visitan el hospital con mucha frecuencia (6.0 consultas), presentan una alta complejidad médica (4.0 diagnósticos y 146.0 exámenes), generan un gasto bajo ($25,435).",
+                "perfil": "Joven | Alta Frecuencia | Alta Complejidad | Bajo Gasto"
+            },
+            {
+                "cluster": 2,
+                "description": "El grupo 2 (26.5% de los pacientes) está formado por pacientes que son personas mayores (edad promedio 71.28 años), tienen una frecuencia de consulta media (3.09 atenciones), tienen una complejidad baja (0.74 diagnósticos, 17.89 exámenes), generan un gasto bajo ($3,297).",
+                "perfil": "Adulto Mayor | Frecuencia Media | Complejidad Baja | Bajo Gasto"
+            },
+            {
+                "cluster": 3,
+                "description": "El grupo 3 (23.0% de los pacientes) está formado por pacientes que son personas jóvenes (edad promedio 36.2 años), tienen una frecuencia de consulta media (2.24 atenciones), tienen una complejidad baja (0.76 diagnósticos, 11.52 exámenes), generan un gasto bajo ($2,253).",
+                "perfil": "Joven | Frecuencia Media | Complejidad Baja | Bajo Gasto"
+            },
+            {
+                "cluster": 4,
+                "description": "El grupo 4 (17.5% de los pacientes) está formado por pacientes que son personas mayores (edad promedio 71.2 años), visitan el hospital con mucha frecuencia (6.86 consultas), tienen una complejidad media (1.43 diagnósticos, 39.17 exámenes), generan un gasto bajo ($7,398).",
+                "perfil": "Adulto Mayor | Alta Frecuencia | Complejidad Media | Bajo Gasto"
+            },
+            {
+                "cluster": 5,
+                "description": "El grupo 5 (12.0% de los pacientes) está formado por pacientes que son adultos (edad promedio 45.25 años), visitan el hospital con mucha frecuencia (7.33 consultas), presentan una alta complejidad médica (3.5 diagnósticos y 41.71 exámenes), generan un gasto bajo ($8,093).",
+                "perfil": "Adulto | Alta Frecuencia | Alta Complejidad | Bajo Gasto"
+            }
+        ],
+        "business_recommendations": [
+            "Optimizar la gestión de citas y recursos para pacientes de alta frecuencia (grupo 0), ofreciendo horarios especiales o atención prioritaria.",
+            "Optimizar la gestión de citas y recursos para pacientes de alta frecuencia (grupo 1), ofreciendo horarios especiales o atención prioritaria.",
+            "Implementar un programa de seguimiento y cuidado para pacientes de la tercera edad (grupo 2), con visitas domiciliarias y monitoreo periódico.",
+            "Implementar un programa de seguimiento y cuidado para pacientes de la tercera edad (grupo 4), con visitas domiciliarias y monitoreo periódico.",
+            "Optimizar la gestión de citas y recursos para pacientes de alta frecuencia (grupo 4), ofreciendo horarios especiales o atención prioritaria."
+        ],
+        "linear_regression_interpretation": "No se pudo calcular la regresión lineal: No hay datos disponibles para calcular la regresión.. Se utilizan valores predeterminados (w=0, b=0).",
+        "summary": "Se han identificado 6 grupos de pacientes con una calidad de segmentación buena. Cada grupo tiene características distintas que permiten ofrecer una atención más personalizada y eficiente. Las recomendaciones ayudarán a mejorar la gestión hospitalaria y la experiencia del paciente."
+    },
+    "final_pca": {
+        "num_features": 5,
+        "num_components": 3,
+        "feature_names": [
+            "edad",
+            "num_atenciones",
+            "num_examenes",
+            "monto_total",
+            "num_diagnosticos"
+        ],
+        "explained_variance": [
+            0.6130200745898732,
+            0.20260258710777154,
+            0.12855484396529046
+        ],
+        "cumulative_variance": [
+            0.6130200745898732,
+            0.8156226616976447,
+            0.9441775056629352
+        ],
+        "total_explained_variance": 0.9441775056629351,
+        "method": "PCA con StandardScaler",
+        "total_patients": 200
+    },
+    "final_kmeans": {
+        "method": "K-Means Clustering",
+        "num_clusters_evaluated": 9,
+        "features_used": [
+            "edad",
+            "num_atenciones",
+            "num_examenes",
+            "monto_total",
+            "num_diagnosticos"
+        ],
+        "elbow_data": [
+            {
+                "k": 2,
+                "inertia": 582.8485
+            },
+            {
+                "k": 3,
+                "inertia": 496.4854
+            },
+            {
+                "k": 4,
+                "inertia": 418.2595
+            },
+            {
+                "k": 5,
+                "inertia": 359.4922
+            },
+            {
+                "k": 6,
+                "inertia": 284.2474
+            },
+            {
+                "k": 7,
+                "inertia": 249.9696
+            },
+            {
+                "k": 8,
+                "inertia": 244.5949
+            },
+            {
+                "k": 9,
+                "inertia": 215.4822
+            },
+            {
+                "k": 10,
+                "inertia": 209.6852
+            }
+        ],
+        "silhouette_scores": [
+            {
+                "k": 2,
+                "silhouette_score": 0.5369
+            },
+            {
+                "k": 3,
+                "silhouette_score": 0.5451
+            },
+            {
+                "k": 4,
+                "silhouette_score": 0.3797
+            },
+            {
+                "k": 5,
+                "silhouette_score": 0.3938
+            },
+            {
+                "k": 6,
+                "silhouette_score": 0.4335
+            },
+            {
+                "k": 7,
+                "silhouette_score": 0.4182
+            },
+            {
+                "k": 8,
+                "silhouette_score": 0.3798
+            },
+            {
+                "k": 9,
+                "silhouette_score": 0.3867
+            },
+            {
+                "k": 10,
+                "silhouette_score": 0.3945
+            }
+        ],
+        "best_k_by_silhouette": {
+            "k": 3,
+            "score": 0.5451
+        },
+        "best_k_by_elbow": 6,
+        "selected_k": 6,
+        "selected_model": {
+            "k": 6,
+            "inertia": 284.2474,
+            "silhouette_score": 0.4335
+        },
+        "clusters": [
+            {
+                "cluster": 0,
+                "total_pacientes": 41,
+                "edad_promedio": 36.49,
+                "atenciones_promedio": 5.63,
+                "examenes_promedio": 32.29,
+                "monto_promedio": 6167.88,
+                "diagnosticos_promedio": 1.46,
+                "perfil": "Joven | Alta Frecuencia | Complejidad Media | Bajo Gasto"
+            },
+            {
+                "cluster": 1,
+                "total_pacientes": 1,
+                "edad_promedio": 21.0,
+                "atenciones_promedio": 6.0,
+                "examenes_promedio": 146.0,
+                "monto_promedio": 25434.6,
+                "diagnosticos_promedio": 4.0,
+                "perfil": "Joven | Alta Frecuencia | Alta Complejidad | Bajo Gasto"
+            },
+            {
+                "cluster": 2,
+                "total_pacientes": 53,
+                "edad_promedio": 71.28,
+                "atenciones_promedio": 3.09,
+                "examenes_promedio": 17.89,
+                "monto_promedio": 3297.18,
+                "diagnosticos_promedio": 0.74,
+                "perfil": "Adulto Mayor | Frecuencia Media | Complejidad Baja | Bajo Gasto"
+            },
+            {
+                "cluster": 3,
+                "total_pacientes": 46,
+                "edad_promedio": 36.2,
+                "atenciones_promedio": 2.24,
+                "examenes_promedio": 11.52,
+                "monto_promedio": 2252.7,
+                "diagnosticos_promedio": 0.76,
+                "perfil": "Joven | Frecuencia Media | Complejidad Baja | Bajo Gasto"
+            },
+            {
+                "cluster": 4,
+                "total_pacientes": 35,
+                "edad_promedio": 71.2,
+                "atenciones_promedio": 6.86,
+                "examenes_promedio": 39.17,
+                "monto_promedio": 7397.78,
+                "diagnosticos_promedio": 1.43,
+                "perfil": "Adulto Mayor | Alta Frecuencia | Complejidad Media | Bajo Gasto"
+            },
+            {
+                "cluster": 5,
+                "total_pacientes": 24,
+                "edad_promedio": 45.25,
+                "atenciones_promedio": 7.33,
+                "examenes_promedio": 41.71,
+                "monto_promedio": 8092.82,
+                "diagnosticos_promedio": 3.5,
+                "perfil": "Adulto | Alta Frecuencia | Alta Complejidad | Bajo Gasto"
+            }
+        ],
+        "total_patients_clustered": 200
+    },
+    "linear_regression": {
+        "variable_x": "edad",
+        "variable_y": "monto_total",
+        "w": 0.0,
+        "b": 0.0,
+        "mse": 0.0,
+        "r2": 0.0,
+        "mse_naive": 0.0,
+        "mejora_porcentaje": 0.0,
+        "mejora_significativa": false,
+        "num_puntos": 0,
+        "error": true,
+        "mensaje": "No hay datos disponibles para calcular la regresión."
+    }
+}
