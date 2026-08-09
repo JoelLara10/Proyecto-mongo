@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Graficas INEO - Analytics</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='css/bootstrap-icons.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='css/all.min.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='css/fonts.css') }}" rel="stylesheet">
+
+  <style>
+    * { font-family: "Inter", sans-serif; }
+
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+    }
+
+    .navbar {
+      background: rgba(255,255,255,0.95);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 4px 30px rgba(0,0,0,0.1);
+    }
+
+    .section-card {
+      background: rgba(255,255,255,0.95);
+      border-radius: 20px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+      transition: all 0.3s ease;
+    }
+
+    .section-card:hover {
+      transform: translateY(-3px);
+    }
+
+    .section-title {
+      color: white;
+      font-weight: 600;
+      font-size: 1.5rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+    }
+
+    .section-title i {
+      margin-right: 1rem;
+      background: rgba(255,255,255,0.2);
+      padding: 0.5rem;
+      border-radius: 15px;
+    }
+
+    .metric-card {
+      border-radius: 15px;
+      padding: 1rem;
+      color: white;
+      text-align: center;
+      margin-bottom: 1rem;
+      height: 100%;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.12);
+    }
+
+    .metric-card h3 {
+      font-size: 1.85rem;
+      font-weight: bold;
+      margin: 0;
+      overflow-wrap: anywhere;
+    }
+
+    .metric-primary { background: linear-gradient(135deg, #667eea, #764ba2); }
+    .metric-success { background: linear-gradient(135deg, #48bb78, #38a169); }
+    .metric-info { background: linear-gradient(135deg, #4299e1, #2b6cb0); }
+    .metric-purple { background: linear-gradient(135deg, #9f7aea, #6b46c1); }
+    .metric-warning { background: linear-gradient(135deg, #ed8936, #c05621); }
+    .metric-danger { background: linear-gradient(135deg, #f56565, #e53e3e); }
+
+    .alert-refresh {
+      background: rgba(255,255,255,0.95);
+      border: none;
+      border-radius: 15px;
+      margin-bottom: 1.5rem;
+    }
+
+    .btn-refresh {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      transition: all 0.3s ease;
+      font-weight: 600;
+    }
+
+    .btn-refresh:hover {
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(102,126,234,0.4);
+    }
+
+    .insight-card,
+    .role-card {
+      background: #f8f9fa;
+      border: 1px solid #e9ecef;
+      border-radius: 15px;
+      padding: 1rem;
+      height: 100%;
+    }
+
+    .insight-card i,
+    .role-card i {
+      color: #667eea;
+    }
+
+    .chart-card {
+      border: 1px solid #e9ecef;
+      border-radius: 15px;
+      overflow: hidden;
+      background: white;
+      height: 100%;
+    }
+
+    .chart-header {
+      padding: 1rem 1rem 0.75rem;
+      border-bottom: 1px solid #edf2f7;
+      background: #fbfbfd;
+    }
+
+    .chart-title {
+      font-weight: 700;
+      color: #2d3748;
+      margin-bottom: 0.25rem;
+    }
+
+    .chart-subtitle {
+      color: #718096;
+      font-size: 0.9rem;
+      margin: 0;
+    }
+
+    .chart-frame {
+      width: 100%;
+      min-height: 315px;
+      background: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .chart-svg {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .chart-reading {
+      padding: 0.9rem 1rem 1rem;
+      color: #4a5568;
+      font-size: 0.92rem;
+      border-top: 1px solid #edf2f7;
+    }
+
+    .stats-table td {
+      vertical-align: middle;
+      padding: 0.65rem 0.5rem;
+    }
+
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(5px);
+      z-index: 9999;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+    }
+
+    .loading-spinner {
+      width: 60px;
+      height: 60px;
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #667eea;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    .loading-text {
+      color: white;
+      margin-top: 1rem;
+      font-weight: 600;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    @media (max-width: 767px) {
+      .metric-card h3 { font-size: 1.35rem; }
+      .chart-frame { min-height: 240px; }
+    }
+  </style>
+</head>
+
+<body>
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-spinner"></div>
+  <p class="loading-text">Actualizando graficas...</p>
+</div>
+
+<nav class="navbar navbar-expand-lg">
+  <div class="container-fluid px-4">
+    <a href="{{ url_for('administrativo') }}" class="btn btn-outline-light me-3">
+      <i class="bi bi-arrow-left me-2"></i>Administrativo
+    </a>
+
+    <span class="navbar-brand fw-bold fs-4">
+      <i class="fas fa-chart-column me-2" style="color:#667eea"></i>
+      Graficas INEO
+    </span>
+
+    <div class="ms-auto">
+      <span class="me-3 fw-semibold">
+        <i class="bi bi-person-circle"></i> {{ session.get('username', 'Usuario') }}
+      </span>
+      <a href="{{ url_for('logout') }}" class="btn btn-outline-light">
+        <i class="bi bi-box-arrow-right"></i> Salir
+      </a>
+    </div>
+  </div>
+</nav>
+
+<main class="container mt-4">
+  {% if error %}
+  <div class="alert alert-danger alert-dismissible fade show" role="alert">
+    <i class="fas fa-exclamation-triangle me-2"></i>{{ error }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+  {% endif %}
+
+  <div class="alert-refresh d-flex flex-column flex-lg-row justify-content-between align-items-lg-center p-3 gap-3">
+    <div>
+      <i class="fas fa-database me-2" style="color:#667eea;"></i>
+      <strong>Ultima actualizacion:</strong> {{ fecha_actualizacion }}
+      {% if desde_cache %}
+      <span class="badge bg-info ms-2">Cache local</span>
+      {% else %}
+      <span class="badge bg-success ms-2">Datos MongoDB</span>
+      {% endif %}
+      <div class="small text-muted mt-1">
+        Se usa cache por 30 minutos para que el dashboard abra rapido aunque MongoDB Atlas este lento.
+      </div>
+    </div>
+    <a href="{{ url_for('graficas_ineo', refresh=1) }}" class="btn btn-refresh" id="btnRefresh">
+      <i class="fas fa-sync-alt me-2"></i>Actualizar graficas
+    </a>
+  </div>
+
+  <div class="section-title">
+    <i class="fas fa-gauge-high"></i>
+    Indicadores Principales
+  </div>
+
+  <div class="row g-4 mb-4">
+    {% for metrica in metricas %}
+    <div class="col-md-6 col-xl-4">
+      <div class="metric-card metric-{{ metrica.tone }}">
+        <i class="fas {{ metrica.icon }} fa-2x mb-2"></i>
+        <h3>{{ metrica.value }}</h3>
+        <small>{{ metrica.label }}</small>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="section-title">
+    <i class="fas fa-lightbulb"></i>
+    Hallazgos para Presentacion
+  </div>
+
+  <div class="section-card">
+    <div class="row g-3">
+      {% for item in hallazgos %}
+      <div class="col-md-6 col-xl-3">
+        <div class="insight-card">
+          <div class="d-flex align-items-start">
+            <i class="fas {{ item.icon }} mt-1 me-3"></i>
+            <div>
+              <h6 class="fw-bold mb-1">{{ item.titulo }}</h6>
+              <p class="small text-muted mb-0">{{ item.detalle }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="section-title">
+    <i class="fas fa-user-group"></i>
+    Enfoque por Rol
+  </div>
+
+  <div class="section-card">
+    <div class="row g-3">
+      {% for item in presentacion %}
+      <div class="col-md-4">
+        <div class="role-card">
+          <h6 class="fw-bold mb-2"><i class="fas fa-user-check me-2"></i>{{ item.rol }}</h6>
+          <p class="text-muted mb-0">{{ item.enfoque }}</p>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="section-title">
+    <i class="fas fa-chart-area"></i>
+    Visualizaciones
+  </div>
+
+  <div class="section-card">
+    <div class="row g-4">
+      {% for grafica in graficas %}
+      <div class="col-lg-6">
+        <div class="chart-card">
+          <div class="chart-header">
+            <div class="chart-title">{{ grafica.titulo }}</div>
+            <p class="chart-subtitle">{{ grafica.subtitulo }}</p>
+          </div>
+          <div class="chart-frame">
+            {{ grafica.svg|safe }}
+          </div>
+          <div class="chart-reading">
+            <i class="fas fa-magnifying-glass-chart me-2" style="color:#667eea"></i>
+            {{ grafica.lectura }}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="section-title">
+    <i class="fas fa-table"></i>
+    Resumen Estadistico
+  </div>
+
+  <div class="section-card">
+    <div class="row g-4">
+      <div class="col-lg-7">
+        <div class="table-responsive">
+          <table class="table table-hover stats-table mb-0">
+            <tbody>
+              <tr><td>Observaciones de importe</td><td class="text-end fw-bold">{{ estadistica.observaciones|default(0) }}</td></tr>
+              <tr><td>Media de subtotales</td><td class="text-end fw-bold">${{ "{:,.2f}".format(estadistica.media|default(0)|float) }}</td></tr>
+              <tr><td>Mediana de subtotales</td><td class="text-end fw-bold">${{ "{:,.2f}".format(estadistica.mediana|default(0)|float) }}</td></tr>
+              <tr><td>Q1</td><td class="text-end fw-bold">${{ "{:,.2f}".format(estadistica.q1|default(0)|float) }}</td></tr>
+              <tr><td>Q3</td><td class="text-end fw-bold">${{ "{:,.2f}".format(estadistica.q3|default(0)|float) }}</td></tr>
+              <tr><td>IQR</td><td class="text-end fw-bold">${{ "{:,.2f}".format(estadistica.iqr|default(0)|float) }}</td></tr>
+              <tr><td>Outliers por IQR</td><td class="text-end fw-bold">{{ estadistica.outliers|default(0) }}</td></tr>
+              <tr><td>Edad promedio de pacientes</td><td class="text-end fw-bold">{{ "%.1f"|format(estadistica.edad_promedio|default(0)|float) }} años</td></tr>
+              <tr><td>Diagnosticos oculares detectados</td><td class="text-end fw-bold">{{ estadistica.diagnosticos_oculares|default(0) }}</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="col-lg-5">
+        <h6 class="fw-bold mb-3"><i class="fas fa-clipboard-check me-2" style="color:#667eea"></i>Criterios aplicados</h6>
+        <div class="d-flex align-items-start p-2 border rounded mb-2">
+          <i class="fas fa-check-circle mt-1 me-3" style="color:#48bb78"></i>
+          <p class="mb-0">Claridad sobre creatividad: cada grafica responde una pregunta concreta.</p>
+        </div>
+        <div class="d-flex align-items-start p-2 border rounded mb-2">
+          <i class="fas fa-check-circle mt-1 me-3" style="color:#48bb78"></i>
+          <p class="mb-0">Escala honesta: ejes y etiquetas explican valores y unidades.</p>
+        </div>
+        <div class="d-flex align-items-start p-2 border rounded mb-2">
+          <i class="fas fa-check-circle mt-1 me-3" style="color:#48bb78"></i>
+          <p class="mb-0">Color con significado: alerta, promedio, maximos y categorias se distinguen.</p>
+        </div>
+        <div class="d-flex align-items-start p-2 border rounded">
+          <i class="fas fa-check-circle mt-1 me-3" style="color:#48bb78"></i>
+          <p class="mb-0">Outliers: se reportan con cuartiles e IQR para no ocultar casos extremos.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="text-center text-white-50 py-4">
+    <small>
+      <i class="fas fa-database me-2"></i>
+      MongoDB Atlas + SVG ligero | Visualizacion y presentacion INEO
+    </small>
+  </div>
+</main>
+
+<script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+<script>
+  document.getElementById('btnRefresh')?.addEventListener('click', function() {
+    document.getElementById('loadingOverlay').style.display = 'flex';
+  });
+  window.addEventListener('load', function() {
+    document.getElementById('loadingOverlay').style.display = 'none';
+  });
+</script>
+</body>
+</html>

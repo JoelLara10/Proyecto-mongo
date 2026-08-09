@@ -601,6 +601,36 @@ def check_analytics_files():
     return jsonify(files_info)
 
 
+@app.route('/admin/graficas-ineo')
+def graficas_ineo():
+    """Dashboard de graficas INEO alimentado desde MongoDB."""
+    if 'user_id' not in session:
+        flash('Acceso denegado.', 'error')
+        return redirect(url_for('dashboard'))
+
+    try:
+        db = get_db_connection()
+        from processing.ineo_graphics import build_ineo_graphics_context
+
+        graphics_data = build_ineo_graphics_context(
+            db,
+            force_refresh=request.args.get('refresh') == '1'
+        )
+    except Exception as e:
+        print(f"Error en graficas INEO: {e}")
+        graphics_data = {
+            "fecha_actualizacion": datetime.now().strftime("%d/%m/%Y %H:%M"),
+            "metricas": [],
+            "graficas": [],
+            "hallazgos": [],
+            "presentacion": [],
+            "estadistica": {},
+            "error": str(e),
+        }
+
+    return render_template('administrativo/graficas_ineo.html', **graphics_data)
+
+
 @app.template_filter('formato_fecha')
 def formato_fecha(valor, formato='%d/%m/%Y'):
     """Filtro para formatear fechas desde cualquier tipo"""
