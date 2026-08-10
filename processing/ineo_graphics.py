@@ -658,6 +658,64 @@ def _count_sign_anomalies(signs):
     return dict(anomalies)
 
 
+def _build_role_guidance(data, avg_ticket, outliers, bed_rate, best_month, best_exam):
+    """Genera recomendaciones por rol a partir de los resultados actuales."""
+    alerts = data["sign_anomalies"]
+    main_alert = max(alerts.items(), key=lambda item: item[1], default=None)
+    main_area = max(data["area_counts"].items(), key=lambda item: item[1], default=None)
+    main_profile = max(data["profile_counts"].items(), key=lambda item: item[1], default=None)
+
+    medico = (
+        f"El perfil con mayor demanda es {main_profile[0]} ({main_profile[1]} registros). "
+        "Úselo para priorizar la revisión de expedientes y el seguimiento clínico; la gráfica no sustituye la valoración médica."
+        if main_profile else
+        "Aún no hay estudios suficientes para definir un perfil clínico predominante. Revise la captura de diagnósticos y estudios."
+    )
+    enfermeria = (
+        f"La variable con más registros fuera del rango de referencia es {main_alert[0]} ({main_alert[1]}). "
+        "Confirme cada medición y valore al paciente antes de escalarla; un registro fuera de rango no equivale por sí solo a un diagnóstico."
+        if main_alert and main_alert[1] > 0 else
+        "La muestra reciente no contiene signos fuera de los rangos configurados. Mantenga la vigilancia y verifique que los signos se registren completos."
+    )
+    estudios = (
+        f"El estudio más solicitado es {best_exam[0]} ({best_exam[1]} solicitudes). "
+        "Considere su demanda al organizar agenda, equipo, materiales y tiempos de entrega."
+        if best_exam else
+        "No hay solicitudes suficientes para identificar el estudio de mayor demanda. Verifique nombres y registros de exámenes."
+    )
+    administrativo = (
+        f"El área con mayor volumen es {main_area[0]} ({main_area[1]} atenciones)"
+        + (f" y el periodo pico es {best_month['label']} ({best_month['total']})" if best_month else "")
+        + ". Use estos datos para distribuir personal, horarios y capacidad de atención."
+        if main_area else
+        "No hay atenciones suficientes para comparar la carga por área. Revise el registro de área y fecha de ingreso."
+    )
+    administrador = (
+        f"La ocupación registrada es {bed_rate:.1f}% y el ticket promedio de la muestra es {_format_money(avg_ticket)}. "
+        f"Se detectaron {outliers} importes atípicos; revise su documentación antes de considerarlos errores."
+        if data["total_camas"] or data["subtotals"] else
+        "No hay camas o importes suficientes para evaluar capacidad y comportamiento financiero. Revise catálogos y captura de cargos."
+    )
+
+    return [
+        {"rol": "Médico", "icon": "fa-user-doctor", "enfoque": medico},
+        {"rol": "Enfermería", "icon": "fa-heart-pulse", "enfoque": enfermeria},
+        {"rol": "Estudios", "icon": "fa-microscope", "enfoque": estudios},
+        {"rol": "Administrativo", "icon": "fa-clipboard-list", "enfoque": administrativo},
+        {"rol": "Administrador", "icon": "fa-user-gear", "enfoque": administrador},
+    ]
+
+
+def _chart_explanation(what, how, result, action, caution=None):
+    return {
+        "que_muestra": what,
+        "como_leer": how,
+        "resultado_actual": result,
+        "accion": action,
+        "precaucion": caution,
+    }
+
+
 def build_ineo_graphics_context(db, force_refresh=False):
     if not force_refresh and _cache_is_valid():
         return _read_cache()
@@ -719,11 +777,9 @@ def build_ineo_graphics_context(db, force_refresh=False):
                 "icon": "fa-file-invoice-dollar",
             },
         ],
-        "presentacion": [
-            {"rol": "Medicos", "enfoque": "Priorizar perfiles oculares frecuentes, estudios dominantes y seguimiento oportuno."},
-            {"rol": "Enfermeria", "enfoque": "Vigilar signos fuera de rango y ocupacion para reaccionar antes de saturacion."},
-            {"rol": "Administrativos", "enfoque": "Revisar volumen mensual, ticket promedio, outliers de cobro y carga por area."},
-        ],
+        "presentacion": _build_role_guidance(
+            data, avg_ticket, outliers, bed_rate, best_month, best_exam
+        ),
         "estadistica": {
             "observaciones": len(subtotals),
             "media": avg_ticket,
@@ -741,42 +797,91 @@ def build_ineo_graphics_context(db, force_refresh=False):
                 "subtitulo": "Tendencia de atenciones por periodo con promedio y maximo.",
                 "svg": _line_svg(data["month_counts"]),
                 "lectura": "Identifica meses pico y compara contra el promedio para anticipar carga operativa.",
+                "explicacion": _chart_explanation(
+                    "La cantidad de atenciones registradas en cada uno de los últimos 12 periodos disponibles.",
+                    "El eje horizontal representa los meses y el vertical el número de atenciones. Los puntos altos indican mayor carga; la línea de promedio sirve como referencia.",
+                    f"El periodo con más atenciones es {best_month['label']} con {best_month['total']} registros." if best_month else "No existen fechas válidas suficientes para calcular una tendencia.",
+                    "Compare los periodos altos con disponibilidad de personal, consultorios y camas para anticipar recursos.",
+                    "Un aumento puede deberse a mayor demanda o a una mejora en el registro; debe confirmarse con la operación de la clínica.",
+                ),
             },
             {
                 "titulo": "Pastel: composicion por area",
                 "subtitulo": "Composicion porcentual con pocas categorias.",
                 "svg": _donut_svg(data["area_counts"]),
                 "lectura": "Ayuda a ver la proporcion de consulta, urgencias u hospitalizacion dentro del total.",
+                "explicacion": _chart_explanation(
+                    "Cómo se distribuyen las atenciones entre las áreas registradas.",
+                    "Cada segmento representa un área; su tamaño y porcentaje muestran su participación respecto del total.",
+                    f"El área con mayor volumen es {max(data['area_counts'], key=data['area_counts'].get)} con {max(data['area_counts'].values())} atenciones." if data["area_counts"] else "No hay áreas registradas para comparar.",
+                    "Use la proporción para revisar la asignación de personal, espacios y materiales por área.",
+                    "La gráfica muestra volumen, no gravedad clínica ni calidad de la atención.",
+                ),
             },
             {
                 "titulo": "Barras: top estudios",
                 "subtitulo": "Comparacion de categorias, limitada a 7 para evitar exceso de color.",
                 "svg": _barh_svg(data["top_exams"]),
                 "lectura": "Senala que estudios requieren mas agenda, insumos o personal especializado.",
+                "explicacion": _chart_explanation(
+                    "Los siete estudios con más solicitudes dentro de los registros analizados.",
+                    "La longitud de cada barra corresponde al número de solicitudes; la barra superior representa el estudio más frecuente.",
+                    f"{best_exam[0]} ocupa el primer lugar con {best_exam[1]} solicitudes." if best_exam else "No hay estudios suficientes para elaborar la comparación.",
+                    "Priorice agenda, mantenimiento de equipo e insumos para los estudios con barras más largas.",
+                    "Solo se muestran hasta siete categorías y los nombres dependen de la calidad de captura.",
+                ),
             },
             {
                 "titulo": "Barras: perfil ocular",
                 "subtitulo": "Agrupa estudios por retina, glaucoma, cornea, catarata y refraccion.",
                 "svg": _bar_svg("Perfil de estudios oculares", profile_rows, "Cantidad"),
                 "lectura": "Resume la demanda clinica por linea de atencion ocular.",
+                "explicacion": _chart_explanation(
+                    "La agrupación de estudios por perfiles o líneas de atención ocular.",
+                    "Compare la altura de las barras: una barra mayor indica más registros asociados con ese perfil.",
+                    f"El perfil predominante es {max(data['profile_counts'], key=data['profile_counts'].get)} con {max(data['profile_counts'].values())} registros." if data["profile_counts"] else "No fue posible formar perfiles con los datos disponibles.",
+                    "Apoye la planeación de seguimiento médico y capacidad de estudios con los perfiles de mayor demanda.",
+                    "La clasificación se basa en palabras del nombre del estudio y no constituye un diagnóstico del paciente.",
+                ),
             },
             {
                 "titulo": "Histograma y caja: importes",
                 "subtitulo": "Distribucion, media, mediana, cuartiles y outliers por IQR.",
                 "svg": _histogram_box_svg(subtotals),
                 "lectura": "Permite detectar cargos atipicos y explicar variacion del gasto por servicio.",
+                "explicacion": _chart_explanation(
+                    "La distribución de los subtotales y su posición respecto de media, mediana, cuartiles y límites por IQR.",
+                    "El histograma agrupa importes por rangos; la caja muestra el 50% central. Los valores fuera del límite superior se marcan como atípicos.",
+                    f"Se analizaron {len(subtotals)} importes: mediana {_format_money(med_ticket)}, promedio {_format_money(avg_ticket)} y {outliers} atípicos." if subtotals else "No hay importes positivos suficientes para calcular la distribución.",
+                    "Revise los atípicos contra la cuenta y los servicios realizados antes de corregir o autorizar cargos.",
+                    "Atípico significa poco frecuente en esta muestra, no necesariamente incorrecto.",
+                ),
             },
             {
                 "titulo": "Barras: alertas de signos",
                 "subtitulo": "Conteo de variables fuera de rangos clinicos de referencia.",
                 "svg": _bar_svg("Registros fuera de rango en signos vitales", sign_rows, "Alertas"),
                 "lectura": "Orienta revisiones de enfermeria y monitoreo de pacientes con datos anormales.",
+                "explicacion": _chart_explanation(
+                    "Cuántos registros de TA, FC, FR, temperatura y SpO2 quedaron fuera de los rangos de referencia configurados.",
+                    "Cada barra cuenta registros, no pacientes únicos. Una misma toma puede aportar más de una alerta.",
+                    f"Se contabilizaron {signs_alerts_total} alertas en una muestra de {data['signs_total_sample']} registros de signos vitales.",
+                    "Enfermería debe confirmar la medición, revisar el contexto del paciente y aplicar el protocolo clínico correspondiente.",
+                    "Es un apoyo de vigilancia; no diagnostica ni reemplaza el criterio del personal de salud.",
+                ),
             },
             {
                 "titulo": "Mapa de calor: relacion financiera",
                 "subtitulo": "Correlacion entre cantidad, precio y subtotal.",
                 "svg": _heatmap_svg(_correlation_matrix(data["financial_records"])),
                 "lectura": "Evita asumir causalidad: una correlacion alta solo indica relacion estadistica.",
+                "explicacion": _chart_explanation(
+                    "La fuerza y dirección de la relación estadística entre cantidad, precio y subtotal.",
+                    "Los valores cercanos a 1 indican relación positiva fuerte, cercanos a -1 relación inversa y cercanos a 0 poca relación lineal.",
+                    f"La matriz se calculó con {len(data['financial_records'])} registros financieros de la muestra.",
+                    "Úsela para formular preguntas sobre qué variable explica más el subtotal y después valide con las cuentas originales.",
+                    "Correlación no demuestra causalidad y puede distorsionarse con pocos datos o valores extremos.",
+                ),
             },
         ],
         "error": None,

@@ -21,3 +21,5 @@ app.secret_key  # Si tienes un archivo con secrets
 
 configuracion/copias/*.sql
 .env
+
+ejemplos/

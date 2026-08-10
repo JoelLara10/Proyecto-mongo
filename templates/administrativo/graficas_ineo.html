@@ -162,6 +162,15 @@
       border-top: 1px solid #edf2f7;
     }
 
+    .chart-guide {
+      padding: 1rem;
+      background: #f8fafc;
+      border-top: 1px solid #edf2f7;
+    }
+
+    .chart-guide dt { color: #4c51bf; font-size: 0.86rem; margin-top: 0.65rem; }
+    .chart-guide dd { color: #4a5568; font-size: 0.9rem; margin-bottom: 0; }
+
     .stats-table td {
       vertical-align: middle;
       padding: 0.65rem 0.5rem;
@@ -311,9 +320,9 @@
   <div class="section-card">
     <div class="row g-3">
       {% for item in presentacion %}
-      <div class="col-md-4">
+      <div class="col-md-6 col-xl-4">
         <div class="role-card">
-          <h6 class="fw-bold mb-2"><i class="fas fa-user-check me-2"></i>{{ item.rol }}</h6>
+          <h6 class="fw-bold mb-2"><i class="fas {{ item.icon|default('fa-user-check') }} me-2"></i>{{ item.rol }}</h6>
           <p class="text-muted mb-0">{{ item.enfoque }}</p>
         </div>
       </div>
@@ -342,6 +351,18 @@
             <i class="fas fa-magnifying-glass-chart me-2" style="color:#667eea"></i>
             {{ grafica.lectura }}
           </div>
+          {% if grafica.explicacion %}
+          <div class="chart-guide">
+            <div class="fw-bold mb-2"><i class="fas fa-circle-info me-2" style="color:#667eea"></i>Guía para interpretar esta gráfica</div>
+            <dl class="mb-0">
+              <dt>¿Qué muestra?</dt><dd>{{ grafica.explicacion.que_muestra }}</dd>
+              <dt>¿Cómo se lee?</dt><dd>{{ grafica.explicacion.como_leer }}</dd>
+              <dt>Resultado actual</dt><dd>{{ grafica.explicacion.resultado_actual }}</dd>
+              <dt>¿Qué acción puede tomarse?</dt><dd>{{ grafica.explicacion.accion }}</dd>
+              {% if grafica.explicacion.precaucion %}<dt>Precaución</dt><dd>{{ grafica.explicacion.precaucion }}</dd>{% endif %}
+            </dl>
+          </div>
+          {% endif %}
         </div>
       </div>
       {% endfor %}
