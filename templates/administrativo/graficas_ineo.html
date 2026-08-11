@@ -11,165 +11,348 @@
   <link href="{{ url_for('static', filename='css/fonts.css') }}" rel="stylesheet">
 
   <style>
+    :root {
+      /* Paleta clínica "Iris": azul iris + teal de fondo de ojo + ámbar de
+         alerta. Reemplaza el degradado violeta genérico por una identidad
+         propia, pensada para lectura clínica/administrativa prolongada. */
+      --ineo-navy: #0F2942;
+      --ineo-navy-deep: #0A1D30;
+      --ineo-primary: #1E5F8C;
+      --ineo-primary-dark: #123A57;
+      --ineo-primary-light: #A9CBE6;
+      --ineo-teal: #0F766E;
+      --ineo-teal-light: #14B8A6;
+      --ineo-amber: #B45309;
+      --ineo-amber-light: #F59E0B;
+      --ineo-danger: #B91C1C;
+      --ineo-danger-light: #EF4444;
+      --ineo-purple: #6D28D9;
+      --ineo-cyan: #0891B2;
+      --ineo-bg-1: #EAF1F8;
+      --ineo-bg-2: #DCE7F2;
+      --ineo-ink: #16233B;
+      --ineo-muted: #5B6B85;
+      --ineo-border: #DDE6F0;
+      --ineo-card: #FFFFFF;
+    }
+
     * { font-family: "Inter", sans-serif; }
 
     body {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background:
+        radial-gradient(1100px 480px at 8% -10%, rgba(15,118,110,0.16), transparent 60%),
+        radial-gradient(900px 460px at 100% 0%, rgba(180,83,9,0.10), transparent 55%),
+        linear-gradient(160deg, var(--ineo-bg-1) 0%, var(--ineo-bg-2) 100%);
       min-height: 100vh;
+      color: var(--ineo-ink);
     }
 
     .navbar {
-      background: rgba(255,255,255,0.95);
-      backdrop-filter: blur(10px);
-      box-shadow: 0 4px 30px rgba(0,0,0,0.1);
+      background: linear-gradient(120deg, var(--ineo-navy) 0%, var(--ineo-navy-deep) 100%);
+      box-shadow: 0 4px 24px rgba(10,29,48,0.25);
+      padding-top: 0.85rem;
+      padding-bottom: 0.85rem;
     }
 
+    .navbar .btn-outline-light {
+      border-color: rgba(255,255,255,0.35);
+    }
+
+    .navbar-brand {
+      color: #F3F7FB !important;
+      letter-spacing: 0.01em;
+    }
+
+    .navbar-brand .brand-mark {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--ineo-primary), var(--ineo-teal));
+      margin-right: 0.6rem;
+      color: #fff;
+      font-size: 0.95rem;
+    }
+
+    .navbar .text-user { color: #D9E4F0; }
+
     .section-card {
-      background: rgba(255,255,255,0.95);
+      background: var(--ineo-card);
+      border: 1px solid var(--ineo-border);
       border-radius: 20px;
       padding: 1.5rem;
       margin-bottom: 2rem;
-      box-shadow: 0 15px 40px rgba(0,0,0,0.15);
-      transition: all 0.3s ease;
-    }
-
-    .section-card:hover {
-      transform: translateY(-3px);
+      box-shadow: 0 12px 32px rgba(15,41,66,0.10);
     }
 
     .section-title {
-      color: white;
-      font-weight: 600;
-      font-size: 1.5rem;
-      margin-bottom: 1.5rem;
+      color: #0E2A44;
+      font-weight: 700;
+      font-size: 1.35rem;
+      margin-bottom: 1.25rem;
       display: flex;
       align-items: center;
+      letter-spacing: -0.01em;
     }
 
     .section-title i {
-      margin-right: 1rem;
-      background: rgba(255,255,255,0.2);
-      padding: 0.5rem;
-      border-radius: 15px;
+      margin-right: 0.85rem;
+      background: linear-gradient(135deg, var(--ineo-primary), var(--ineo-teal));
+      color: #fff;
+      width: 2.4rem;
+      height: 2.4rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 12px;
+      font-size: 1rem;
+      box-shadow: 0 6px 16px rgba(30,95,140,0.28);
     }
 
+    /* ---- Indicadores ---- */
     .metric-card {
-      border-radius: 15px;
-      padding: 1rem;
-      color: white;
-      text-align: center;
+      position: relative;
+      border-radius: 16px;
+      padding: 1.1rem 1.1rem 1rem;
+      color: #fff;
+      text-align: left;
       margin-bottom: 1rem;
       height: 100%;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.12);
+      box-shadow: 0 10px 25px rgba(15,41,66,0.16);
+      overflow: hidden;
+    }
+
+    .metric-card::after {
+      content: "";
+      position: absolute;
+      right: -18px;
+      top: -18px;
+      width: 92px;
+      height: 92px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.12);
+    }
+
+    .metric-card i {
+      font-size: 1.3rem;
+      opacity: 0.9;
+      margin-bottom: 0.5rem;
+      display: block;
     }
 
     .metric-card h3 {
       font-size: 1.85rem;
-      font-weight: bold;
+      font-weight: 800;
       margin: 0;
       overflow-wrap: anywhere;
+      letter-spacing: -0.01em;
     }
 
-    .metric-primary { background: linear-gradient(135deg, #667eea, #764ba2); }
-    .metric-success { background: linear-gradient(135deg, #48bb78, #38a169); }
-    .metric-info { background: linear-gradient(135deg, #4299e1, #2b6cb0); }
-    .metric-purple { background: linear-gradient(135deg, #9f7aea, #6b46c1); }
-    .metric-warning { background: linear-gradient(135deg, #ed8936, #c05621); }
-    .metric-danger { background: linear-gradient(135deg, #f56565, #e53e3e); }
+    .metric-card small {
+      color: rgba(255,255,255,0.86);
+      font-weight: 600;
+      letter-spacing: 0.01em;
+    }
+
+    .metric-primary { background: linear-gradient(135deg, #1E5F8C, #123A57); }
+    .metric-success { background: linear-gradient(135deg, #0F766E, #0B5952); }
+    .metric-info    { background: linear-gradient(135deg, #0891B2, #0A6070); }
+    .metric-purple  { background: linear-gradient(135deg, #6D28D9, #4C1D95); }
+    .metric-warning { background: linear-gradient(135deg, #D97706, #92400E); }
+    .metric-danger  { background: linear-gradient(135deg, #DC2626, #7F1D1D); }
 
     .alert-refresh {
-      background: rgba(255,255,255,0.95);
-      border: none;
-      border-radius: 15px;
+      background: var(--ineo-card);
+      border: 1px solid var(--ineo-border);
+      border-radius: 16px;
       margin-bottom: 1.5rem;
+      box-shadow: 0 8px 20px rgba(15,41,66,0.08);
     }
 
     .btn-refresh {
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      color: white;
+      background: linear-gradient(135deg, var(--ineo-primary), var(--ineo-teal));
+      color: #fff;
       border: none;
       border-radius: 10px;
-      transition: all 0.3s ease;
+      transition: all 0.2s ease;
       font-weight: 600;
+      white-space: nowrap;
     }
 
     .btn-refresh:hover {
-      color: white;
+      color: #fff;
       transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(102,126,234,0.4);
+      box-shadow: 0 8px 18px rgba(30,95,140,0.35);
     }
 
     .insight-card,
     .role-card {
-      background: #f8f9fa;
-      border: 1px solid #e9ecef;
-      border-radius: 15px;
-      padding: 1rem;
+      background: #F6F9FC;
+      border: 1px solid var(--ineo-border);
+      border-left: 4px solid var(--ineo-primary);
+      border-radius: 12px;
+      padding: 1rem 1.1rem;
       height: 100%;
     }
 
     .insight-card i,
     .role-card i {
-      color: #667eea;
+      color: var(--ineo-primary);
     }
 
+    .role-card:nth-of-type(5n+2) { border-left-color: var(--ineo-teal); }
+    .role-card:nth-of-type(5n+3) { border-left-color: var(--ineo-amber); }
+    .role-card:nth-of-type(5n+4) { border-left-color: var(--ineo-purple); }
+    .role-card:nth-of-type(5n+5) { border-left-color: var(--ineo-cyan); }
+
+    /* ---- Gráficas ---- */
     .chart-card {
-      border: 1px solid #e9ecef;
-      border-radius: 15px;
+      border: 1px solid var(--ineo-border);
+      border-radius: 16px;
       overflow: hidden;
-      background: white;
+      background: #fff;
       height: 100%;
+      box-shadow: 0 8px 22px rgba(15,41,66,0.08);
     }
 
     .chart-header {
-      padding: 1rem 1rem 0.75rem;
-      border-bottom: 1px solid #edf2f7;
-      background: #fbfbfd;
+      padding: 1rem 1.15rem 0.8rem;
+      border-bottom: 1px solid var(--ineo-border);
+      background: linear-gradient(180deg, #F7FAFD 0%, #FFFFFF 100%);
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.75rem;
     }
 
     .chart-title {
       font-weight: 700;
-      color: #2d3748;
-      margin-bottom: 0.25rem;
+      color: #142A42;
+      margin-bottom: 0.2rem;
+      font-size: 1.15rem;
+      letter-spacing: -0.01em;
     }
 
     .chart-subtitle {
-      color: #718096;
-      font-size: 0.9rem;
+      color: var(--ineo-muted);
+      font-size: 0.88rem;
       margin: 0;
+    }
+
+    .chart-help-btn {
+      flex: 0 0 auto;
+      border: 1px solid var(--ineo-border);
+      background: #F1F6FB;
+      color: var(--ineo-primary);
+      width: 2.1rem;
+      height: 2.1rem;
+      border-radius: 10px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.95rem;
+      transition: all 0.15s ease;
+    }
+
+    .chart-help-btn:hover,
+    .chart-help-btn[aria-expanded="true"] {
+      background: var(--ineo-primary);
+      color: #fff;
+      border-color: var(--ineo-primary);
+    }
+
+    .chart-help-panel {
+      background: #F6FAFD;
+      border-bottom: 1px solid var(--ineo-border);
+      padding: 1rem 1.15rem;
+      font-size: 0.87rem;
+      color: #33465F;
+    }
+
+    .chart-help-panel dt {
+      font-weight: 700;
+      color: var(--ineo-primary-dark);
+      margin-top: 0.6rem;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .chart-help-panel dt:first-child { margin-top: 0; }
+    .chart-help-panel dd { margin-bottom: 0; }
+
+    .chart-help-panel .precaucion {
+      margin-top: 0.7rem;
+      padding: 0.6rem 0.75rem;
+      background: #FEF3E7;
+      border: 1px solid #F3D9B5;
+      border-radius: 10px;
+      color: #7A3F0B;
+      display: flex;
+      gap: 0.5rem;
+      align-items: flex-start;
     }
 
     .chart-frame {
       width: 100%;
-      min-height: 315px;
-      background: white;
+      min-height: 500px;
+      background: #FCFDFE;
       display: flex;
       align-items: center;
       justify-content: center;
-      overflow: hidden;
+      overflow-x: auto;
+      overflow-y: hidden;
+      position: relative;
     }
 
     .chart-svg {
       width: 100%;
       height: auto;
       display: block;
+      min-width: 900px;
     }
 
-    .chart-reading {
-      padding: 0.9rem 1rem 1rem;
-      color: #4a5568;
-      font-size: 0.92rem;
-      border-top: 1px solid #edf2f7;
+    .chart-loading {
+      position: absolute;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      background: rgba(255,255,255,0.92);
+      z-index: 4;
     }
 
-    .chart-guide {
-      padding: 1rem;
-      background: #f8fafc;
-      border-top: 1px solid #edf2f7;
+    .chart-card.is-loading .chart-loading { display: flex; }
+
+    .chart-filters {
+      padding: 0.75rem 1.15rem;
+      background: #F6FAFD;
+      border-bottom: 1px solid var(--ineo-border);
     }
 
-    .chart-guide dt { color: #4c51bf; font-size: 0.86rem; margin-top: 0.65rem; }
-    .chart-guide dd { color: #4a5568; font-size: 0.9rem; margin-bottom: 0; }
+    .chart-filter-label {
+      color: var(--ineo-muted);
+      font-size: 0.74rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      margin-bottom: 0.2rem;
+    }
+
+    .chart-filter {
+      min-width: 125px;
+      border-color: #C7D6E6;
+      color: var(--ineo-ink);
+      font-size: 0.82rem;
+    }
+
+    .chart-filter:focus {
+      border-color: var(--ineo-primary);
+      box-shadow: 0 0 0 0.2rem rgba(30, 95, 140, 0.15);
+    }
 
     .stats-table td {
       vertical-align: middle;
@@ -182,7 +365,7 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0,0,0,0.7);
+      background: rgba(10,29,48,0.72);
       backdrop-filter: blur(5px);
       z-index: 9999;
       display: none;
@@ -194,8 +377,8 @@
     .loading-spinner {
       width: 60px;
       height: 60px;
-      border: 4px solid #f3f3f3;
-      border-top: 4px solid #667eea;
+      border: 4px solid rgba(255,255,255,0.25);
+      border-top: 4px solid var(--ineo-teal-light);
       border-radius: 50%;
       animation: spin 1s linear infinite;
     }
@@ -213,7 +396,9 @@
 
     @media (max-width: 767px) {
       .metric-card h3 { font-size: 1.35rem; }
-      .chart-frame { min-height: 240px; }
+      .chart-frame { min-height: 340px; }
+      .chart-svg { min-width: 760px; }
+      .chart-header { flex-wrap: wrap; }
     }
   </style>
 </head>
@@ -231,12 +416,12 @@
     </a>
 
     <span class="navbar-brand fw-bold fs-4">
-      <i class="fas fa-chart-column me-2" style="color:#667eea"></i>
+      <span class="brand-mark"><i class="fas fa-chart-column"></i></span>
       Graficas INEO
     </span>
 
-    <div class="ms-auto">
-      <span class="me-3 fw-semibold">
+    <div class="ms-auto d-flex align-items-center">
+      <span class="me-3 fw-semibold text-user">
         <i class="bi bi-person-circle"></i> {{ session.get('username', 'Usuario') }}
       </span>
       <a href="{{ url_for('logout') }}" class="btn btn-outline-light">
@@ -256,14 +441,14 @@
 
   <div class="alert-refresh d-flex flex-column flex-lg-row justify-content-between align-items-lg-center p-3 gap-3">
     <div>
-      <i class="fas fa-database me-2" style="color:#667eea;"></i>
+      <i class="fas fa-database me-2" style="color:var(--ineo-primary);"></i>
       <strong>Ultima actualizacion:</strong> {{ fecha_actualizacion }}
       {% if desde_cache %}
-      <span class="badge bg-info ms-2">Cache local</span>
+      <span class="badge ms-2" style="background:var(--ineo-cyan);">Cache local</span>
       {% else %}
-      <span class="badge bg-success ms-2">Datos MongoDB</span>
+      <span class="badge ms-2" style="background:var(--ineo-teal);">Datos MongoDB</span>
       {% endif %}
-      <div class="small text-muted mt-1">
+      <div class="small mt-1" style="color:var(--ineo-muted);">
         Se usa cache por 30 minutos para que el dashboard abra rapido aunque MongoDB Atlas este lento.
       </div>
     </div>
@@ -281,7 +466,7 @@
     {% for metrica in metricas %}
     <div class="col-md-6 col-xl-4">
       <div class="metric-card metric-{{ metrica.tone }}">
-        <i class="fas {{ metrica.icon }} fa-2x mb-2"></i>
+        <i class="fas {{ metrica.icon }}"></i>
         <h3>{{ metrica.value }}</h3>
         <small>{{ metrica.label }}</small>
       </div>
@@ -289,21 +474,136 @@
     {% endfor %}
   </div>
 
+  {% if hallazgos %}
   <div class="section-title">
     <i class="fas fa-lightbulb"></i>
-    Hallazgos para Presentacion
+    Hallazgos clave
+  </div>
+  <div class="row g-3 mb-4">
+    {% for hallazgo in hallazgos %}
+    <div class="col-md-6 col-xl-3">
+      <div class="insight-card">
+        <i class="fas {{ hallazgo.icon }} mb-2"></i>
+        <div class="fw-bold" style="color:#142A42;">{{ hallazgo.titulo }}</div>
+        <div class="small mt-1" style="color:var(--ineo-muted);">{{ hallazgo.detalle }}</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if presentacion %}
+  <div class="section-title">
+    <i class="fas fa-users-gear"></i>
+    Guía por rol de trabajo
+  </div>
+  <div class="row g-3 mb-4">
+    {% for rol in presentacion %}
+    <div class="col-md-6 col-xl-4 col-xxl">
+      <div class="role-card">
+        <i class="fas {{ rol.icon }} mb-2"></i>
+        <div class="fw-bold mb-1" style="color:#142A42;">{{ rol.rol }}</div>
+        <div class="small" style="color:var(--ineo-muted);">{{ rol.enfoque }}</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="section-title">
+    <i class="fas fa-chart-area"></i>
+    Visualizaciones
   </div>
 
   <div class="section-card">
-    <div class="row g-3">
-      {% for item in hallazgos %}
-      <div class="col-md-6 col-xl-3">
-        <div class="insight-card">
-          <div class="d-flex align-items-start">
-            <i class="fas {{ item.icon }} mt-1 me-3"></i>
+    {% set active_filters = filter_values|default({}) %}
+    <div class="row g-4">
+      {% for grafica in graficas %}
+      <div class="{{ grafica.col_class|default('col-12') }}">
+        <div class="chart-card" data-chart-id="{{ grafica.id }}"
+             data-endpoint="{{ url_for('graficas_ineo_chart', chart_id=grafica.id) }}">
+          <div class="chart-header">
             <div>
-              <h6 class="fw-bold mb-1">{{ item.titulo }}</h6>
-              <p class="small text-muted mb-0">{{ item.detalle }}</p>
+              <div class="chart-title">{{ grafica.titulo }}</div>
+              <p class="chart-subtitle">{{ grafica.subtitulo }}</p>
+            </div>
+            {% if grafica.explicacion or grafica.lectura %}
+            <button type="button" class="chart-help-btn" data-bs-toggle="collapse"
+                    data-bs-target="#help-{{ grafica.id }}" aria-expanded="false"
+                    aria-controls="help-{{ grafica.id }}"
+                    aria-label="Cómo leer esta gráfica">
+              <i class="fas fa-circle-info"></i>
+            </button>
+            {% endif %}
+          </div>
+
+          {% if grafica.explicacion or grafica.lectura %}
+          <div class="collapse" id="help-{{ grafica.id }}">
+            <div class="chart-help-panel">
+              <dl class="mb-0">
+                {% if grafica.explicacion %}
+                {% if grafica.explicacion.que_muestra %}
+                <dt><i class="fas fa-eye me-1"></i>Qué muestra</dt>
+                <dd>{{ grafica.explicacion.que_muestra }}</dd>
+                {% endif %}
+                {% if grafica.explicacion.como_leer %}
+                <dt><i class="fas fa-ruler-combined me-1"></i>Cómo leerla</dt>
+                <dd>{{ grafica.explicacion.como_leer }}</dd>
+                {% endif %}
+                {% if grafica.explicacion.resultado_actual %}
+                <dt><i class="fas fa-flag-checkered me-1"></i>Resultado actual</dt>
+                <dd>{{ grafica.explicacion.resultado_actual }}</dd>
+                {% endif %}
+                {% if grafica.explicacion.accion %}
+                <dt><i class="fas fa-circle-check me-1"></i>Acción sugerida</dt>
+                <dd>{{ grafica.explicacion.accion }}</dd>
+                {% endif %}
+                {% endif %}
+                {% if grafica.lectura %}
+                <dt><i class="fas fa-book-open me-1"></i>Guía rápida de lectura</dt>
+                <dd>{{ grafica.lectura }}</dd>
+                {% endif %}
+              </dl>
+              {% if grafica.explicacion and grafica.explicacion.precaucion %}
+              <div class="precaucion">
+                <i class="fas fa-triangle-exclamation mt-1"></i>
+                <div>{{ grafica.explicacion.precaucion }}</div>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+          {% endif %}
+
+          {% if grafica.filtros %}
+          <div class="chart-filters" data-chart-id="{{ grafica.id }}">
+            <div class="d-flex flex-wrap align-items-end gap-2">
+              {% for filtro in grafica.filtros %}
+              <div>
+                <label class="chart-filter-label d-block" for="{{ grafica.id }}-{{ filtro.name }}">{{ filtro.label }}</label>
+                <select class="form-select form-select-sm chart-filter"
+                        id="{{ grafica.id }}-{{ filtro.name }}"
+                        name="{{ filtro.name }}"
+                        aria-label="{{ filtro.label }} de {{ grafica.titulo }}">
+                  {% for value, label in filtro.options %}
+                  <option value="{{ value }}" {% if active_filters.get(filtro.name) == value %}selected{% endif %}>{{ label }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              {% endfor %}
+              <button type="button" class="btn btn-sm btn-outline-secondary chart-filter-reset"
+                      data-filter-names="{{ grafica.filtros|map(attribute='name')|join(',') }}">
+                <i class="fas fa-rotate-left me-1"></i>Restablecer
+              </button>
+            </div>
+          </div>
+          {% endif %}
+          <div class="chart-frame">
+            <div class="chart-loading">
+              <div class="spinner-border" role="status" aria-hidden="true" style="color:var(--ineo-primary);"></div>
+              <span class="small fw-semibold mt-2">Actualizando esta gráfica...</span>
+            </div>
+            <div class="chart-svg-container">
+            {{ grafica.svg|safe }}
             </div>
           </div>
         </div>
@@ -312,110 +612,7 @@
     </div>
   </div>
 
-  <div class="section-title">
-    <i class="fas fa-user-group"></i>
-    Enfoque por Rol
-  </div>
-
-  <div class="section-card">
-    <div class="row g-3">
-      {% for item in presentacion %}
-      <div class="col-md-6 col-xl-4">
-        <div class="role-card">
-          <h6 class="fw-bold mb-2"><i class="fas {{ item.icon|default('fa-user-check') }} me-2"></i>{{ item.rol }}</h6>
-          <p class="text-muted mb-0">{{ item.enfoque }}</p>
-        </div>
-      </div>
-      {% endfor %}
-    </div>
-  </div>
-
-  <div class="section-title">
-    <i class="fas fa-chart-area"></i>
-    Visualizaciones
-  </div>
-
-  <div class="section-card">
-    <div class="row g-4">
-      {% for grafica in graficas %}
-      <div class="col-lg-6">
-        <div class="chart-card">
-          <div class="chart-header">
-            <div class="chart-title">{{ grafica.titulo }}</div>
-            <p class="chart-subtitle">{{ grafica.subtitulo }}</p>
-          </div>
-          <div class="chart-frame">
-            {{ grafica.svg|safe }}
-          </div>
-          <div class="chart-reading">
-            <i class="fas fa-magnifying-glass-chart me-2" style="color:#667eea"></i>
-            {{ grafica.lectura }}
-          </div>
-          {% if grafica.explicacion %}
-          <div class="chart-guide">
-            <div class="fw-bold mb-2"><i class="fas fa-circle-info me-2" style="color:#667eea"></i>Guía para interpretar esta gráfica</div>
-            <dl class="mb-0">
-              <dt>¿Qué muestra?</dt><dd>{{ grafica.explicacion.que_muestra }}</dd>
-              <dt>¿Cómo se lee?</dt><dd>{{ grafica.explicacion.como_leer }}</dd>
-              <dt>Resultado actual</dt><dd>{{ grafica.explicacion.resultado_actual }}</dd>
-              <dt>¿Qué acción puede tomarse?</dt><dd>{{ grafica.explicacion.accion }}</dd>
-              {% if grafica.explicacion.precaucion %}<dt>Precaución</dt><dd>{{ grafica.explicacion.precaucion }}</dd>{% endif %}
-            </dl>
-          </div>
-          {% endif %}
-        </div>
-      </div>
-      {% endfor %}
-    </div>
-  </div>
-
-  <div class="section-title">
-    <i class="fas fa-table"></i>
-    Resumen Estadistico
-  </div>
-
-  <div class="section-card">
-    <div class="row g-4">
-      <div class="col-lg-7">
-        <div class="table-responsive">
-          <table class="table table-hover stats-table mb-0">
-            <tbody>
-              <tr><td>Observaciones de importe</td><td class="text-end fw-bold">{{ estadistica.observaciones|default(0) }}</td></tr>
-              <tr><td>Media de subtotales</td><td class="text-end fw-bold">${{ "{:,.2f}".format(estadistica.media|default(0)|float) }}</td></tr>
-              <tr><td>Mediana de subtotales</td><td class="text-end fw-bold">${{ "{:,.2f}".format(estadistica.mediana|default(0)|float) }}</td></tr>
-              <tr><td>Q1</td><td class="text-end fw-bold">${{ "{:,.2f}".format(estadistica.q1|default(0)|float) }}</td></tr>
-              <tr><td>Q3</td><td class="text-end fw-bold">${{ "{:,.2f}".format(estadistica.q3|default(0)|float) }}</td></tr>
-              <tr><td>IQR</td><td class="text-end fw-bold">${{ "{:,.2f}".format(estadistica.iqr|default(0)|float) }}</td></tr>
-              <tr><td>Outliers por IQR</td><td class="text-end fw-bold">{{ estadistica.outliers|default(0) }}</td></tr>
-              <tr><td>Edad promedio de pacientes</td><td class="text-end fw-bold">{{ "%.1f"|format(estadistica.edad_promedio|default(0)|float) }} años</td></tr>
-              <tr><td>Diagnosticos oculares detectados</td><td class="text-end fw-bold">{{ estadistica.diagnosticos_oculares|default(0) }}</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-      <div class="col-lg-5">
-        <h6 class="fw-bold mb-3"><i class="fas fa-clipboard-check me-2" style="color:#667eea"></i>Criterios aplicados</h6>
-        <div class="d-flex align-items-start p-2 border rounded mb-2">
-          <i class="fas fa-check-circle mt-1 me-3" style="color:#48bb78"></i>
-          <p class="mb-0">Claridad sobre creatividad: cada grafica responde una pregunta concreta.</p>
-        </div>
-        <div class="d-flex align-items-start p-2 border rounded mb-2">
-          <i class="fas fa-check-circle mt-1 me-3" style="color:#48bb78"></i>
-          <p class="mb-0">Escala honesta: ejes y etiquetas explican valores y unidades.</p>
-        </div>
-        <div class="d-flex align-items-start p-2 border rounded mb-2">
-          <i class="fas fa-check-circle mt-1 me-3" style="color:#48bb78"></i>
-          <p class="mb-0">Color con significado: alerta, promedio, maximos y categorias se distinguen.</p>
-        </div>
-        <div class="d-flex align-items-start p-2 border rounded">
-          <i class="fas fa-check-circle mt-1 me-3" style="color:#48bb78"></i>
-          <p class="mb-0">Outliers: se reportan con cuartiles e IQR para no ocultar casos extremos.</p>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="text-center text-white-50 py-4">
+  <div class="text-center py-4" style="color:#5B6B85;">
     <small>
       <i class="fas fa-database me-2"></i>
       MongoDB Atlas + SVG ligero | Visualizacion y presentacion INEO
@@ -430,6 +627,66 @@
   });
   window.addEventListener('load', function() {
     document.getElementById('loadingOverlay').style.display = 'none';
+  });
+
+  async function updateSingleChart(card, params) {
+    if (!card || card.classList.contains('is-loading')) return;
+    card.classList.add('is-loading');
+    card.querySelectorAll('select, button').forEach(function(control) {
+      control.disabled = true;
+    });
+
+    try {
+      params.delete('refresh');
+      const endpoint = card.dataset.endpoint;
+      const response = await fetch(`${endpoint}?${params.toString()}`, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload.ok) {
+        throw new Error(payload.error || 'No fue posible actualizar la gráfica.');
+      }
+
+      const chart = payload.grafica;
+      card.querySelector('.chart-title').textContent = chart.titulo;
+      card.querySelector('.chart-subtitle').textContent = chart.subtitulo;
+      card.querySelector('.chart-svg-container').innerHTML = chart.svg;
+
+      Object.entries(payload.filter_values || {}).forEach(function([name, value]) {
+        const select = card.querySelector(`select[name="${name}"]`);
+        if (select) select.value = value;
+      });
+
+      const nextUrl = `${window.location.pathname}${params.toString() ? '?' + params.toString() : ''}${window.location.hash}`;
+      window.history.replaceState({}, '', nextUrl);
+    } catch (error) {
+      card.querySelector('.chart-subtitle').textContent = `Error: ${error.message}`;
+    } finally {
+      card.classList.remove('is-loading');
+      card.querySelectorAll('select, button').forEach(function(control) {
+        control.disabled = false;
+      });
+    }
+  }
+
+  document.querySelectorAll('.chart-filter').forEach(function(select) {
+    select.addEventListener('change', function() {
+      const card = select.closest('.chart-card');
+      const params = new URLSearchParams(window.location.search);
+      params.set(select.name, select.value);
+      updateSingleChart(card, params);
+    });
+  });
+
+  document.querySelectorAll('.chart-filter-reset').forEach(function(button) {
+    button.addEventListener('click', function() {
+      const card = button.closest('.chart-card');
+      const params = new URLSearchParams(window.location.search);
+      button.dataset.filterNames.split(',').forEach(function(name) {
+        params.delete(name);
+      });
+      updateSingleChart(card, params);
+    });
   });
 </script>
 </body>

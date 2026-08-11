@@ -7,6 +7,8 @@ from bson.objectid import ObjectId
 from bson.decimal128 import Decimal128
 from pymongo.errors import PyMongoError
 # En tu archivo de Flask (app.py o routes.py)
+import os
+from processing.ineo_graphics import build_ineo_graphics_context, empty_context
 import json
 from pathlib import Path
 import re
@@ -614,7 +616,8 @@ def graficas_ineo():
 
         graphics_data = build_ineo_graphics_context(
             db,
-            force_refresh=request.args.get('refresh') == '1'
+            force_refresh=request.args.get('refresh') == '1',
+            filters=request.args
         )
     except Exception as e:
         print(f"Error en graficas INEO: {e}")
@@ -625,12 +628,45 @@ def graficas_ineo():
             "hallazgos": [],
             "presentacion": [],
             "estadistica": {},
+            "filter_values": {},
             "error": str(e),
         }
 
     return render_template('administrativo/graficas_ineo.html', **graphics_data)
 
 
+@app.route('/admin/graficas-ineo/chart/<chart_id>')
+def graficas_ineo_chart(chart_id):
+    """Actualiza una sola gráfica mediante AJAX sin recargar el dashboard."""
+    if 'user_id' not in session:
+        return jsonify({"ok": False, "error": "La sesión expiró. Inicie sesión nuevamente."}), 401
+
+    try:
+        db = get_db_connection()
+        from processing.ineo_graphics import build_ineo_graphics_context
+
+        graphics_data = build_ineo_graphics_context(
+            db,
+            force_refresh=False,
+            filters=request.args,
+        )
+        chart = next(
+            (item for item in graphics_data.get("graficas", []) if item.get("id") == chart_id),
+            None,
+        )
+        if chart is None:
+            return jsonify({"ok": False, "error": "La gráfica solicitada no existe."}), 404
+
+        return jsonify({
+            "ok": True,
+            "grafica": chart,
+            "filter_values": graphics_data.get("filter_values", {}),
+            "fecha_actualizacion": graphics_data.get("fecha_actualizacion"),
+        })
+    except Exception as e:
+        print(f"Error actualizando grafica INEO {chart_id}: {e}")
+        return jsonify({"ok": False, "error": "No fue posible actualizar esta gráfica."}), 500
+    
 @app.template_filter('formato_fecha')
 def formato_fecha(valor, formato='%d/%m/%Y'):
     """Filtro para formatear fechas desde cualquier tipo"""
